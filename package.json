@@ -1,0 +1,71 @@
+{
+  "name": "prontuario-pessoal",
+  "productName": "Prontuário Pessoal",
+  "version": "1.0.0",
+  "description": "Gestão Pessoal de Saúde — prontuário pessoal inteligente",
+  "author": "almircs",
+  "license": "UNLICENSED",
+  "private": true,
+  "main": "electron/main.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node --disable-warning=ExperimentalWarning server/index.js",
+    "dev": "node --disable-warning=ExperimentalWarning --watch server/index.js",
+    "app": "electron .",
+    "backup": "node --disable-warning=ExperimentalWarning server/scripts/backup.js",
+    "demo": "node --disable-warning=ExperimentalWarning server/scripts/demo.js",
+    "test": "node --disable-warning=ExperimentalWarning --test test/*.test.js",
+    "dist:win": "electron-builder --win --publish never",
+    "dist:mac": "electron-builder --mac dir --x64 --arm64 --publish never"
+  },
+  "engines": {
+    "node": ">=22.13"
+  },
+  "optionalDependencies": {
+    "better-sqlite3": "^12.4.1"
+  },
+  "devDependencies": {
+    "electron": "^38.2.0",
+    "electron-builder": "^26.0.12"
+  },
+  "build": {
+    "appId": "br.prontuariopessoal.app",
+    "productName": "Prontuário Pessoal",
+    "copyright": "Prontuário Pessoal",
+    "directories": { "output": "dist", "buildResources": "build" },
+    "files": [
+      "electron/**",
+      "server/**",
+      "!server/scripts/demo.js",
+      "public/**",
+      "build/icon.png",
+      "package.json"
+    ],
+    "asar": true,
+    "asarUnpack": ["**/*.node"],
+    "win": {
+      "target": [{ "target": "nsis", "arch": ["x64"] }],
+      "icon": "build/icon.png",
+      "executableName": "ProntuarioPessoal"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": "always",
+      "createStartMenuShortcut": true,
+      "shortcutName": "Prontuário Pessoal",
+      "runAfterFinish": true,
+      "deleteAppDataOnUninstall": false,
+      "installerLanguages": ["pt_BR"],
+      "language": "1046",
+      "artifactName": "Instalar-Prontuario-Pessoal-Windows.${ext}"
+    },
+    "mac": {
+      "category": "public.app-category.medical",
+      "icon": "build/icon.png",
+      "identity": null,
+      "target": ["dir"]
+    }
+  }
+}

@@ -1,0 +1,125 @@
+name: Gerar instaladores
+
+# Roda sozinho a cada envio para a branch main (quando o programa muda)
+# ou manualmente pela aba Actions. Testa, gera os instaladores de Windows
+# e Mac e publica tudo na página "Releases" do repositório.
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'server/**'
+      - 'public/**'
+      - 'electron/**'
+      - 'build/**'
+      - 'package.json'
+      - '.github/workflows/instaladores.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  testes:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install
+      - name: Testes da API (Node)
+        run: npm test
+      - name: Teste dentro do Electron
+        run: |
+          npx electron-builder install-app-deps
+          ELECTRON_RUN_AS_NODE=1 npx electron test/electron-smoke.js
+
+  windows:
+    needs: testes
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install
+      - name: Teste dentro do Electron (Windows)
+        shell: bash
+        run: |
+          npx electron-builder install-app-deps
+          ELECTRON_RUN_AS_NODE=1 npx electron test/electron-smoke.js
+      - name: Gerar instalador do Windows
+        run: npx electron-builder --win --publish never
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+      - name: Separar o instalador
+        shell: bash
+        run: |
+          mkdir saida
+          cp dist/*.exe "saida/Instalar-Prontuario-Pessoal-Windows.exe"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows
+          path: saida/*
+          if-no-files-found: error
+
+  mac:
+    needs: testes
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install
+      - name: Montar o app para Mac (Intel e chip Apple)
+        run: npx electron-builder --mac dir --x64 --arm64 --publish never
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+      - name: Assinar (ad-hoc) e compactar
+        run: |
+          mkdir saida
+          for d in dist/mac dist/mac-arm64; do
+            app=$(ls -d "$d"/*.app)
+            codesign --force --deep --sign - "$app"
+            codesign --verify --deep "$app"
+          done
+          ditto -c -k --keepParent "$(ls -d dist/mac-arm64/*.app)" "saida/Prontuario-Pessoal-Mac-chip-Apple-M1-a-M4.zip"
+          ditto -c -k --keepParent "$(ls -d dist/mac/*.app)" "saida/Prontuario-Pessoal-Mac-Intel.zip"
+      - name: Conferir que o app abre (chip Apple)
+        continue-on-error: true
+        run: |
+          app=$(ls -d dist/mac-arm64/*.app)
+          bin=$(ls "$app/Contents/MacOS/" | head -1)
+          "$app/Contents/MacOS/$bin" & PID=$!
+          sleep 15
+          curl -sf http://127.0.0.1:47321/ | grep -q "Prontuário Pessoal" && echo "App abriu e respondeu"
+          kill $PID || true
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mac
+          path: saida/*
+          if-no-files-found: error
+
+  publicar:
+    needs: [windows, mac]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: arquivos
+          merge-multiple: true
+      - name: Publicar na página Releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VER=$(node -p "require('./package.json').version")
+          TAG="v$VER"
+          ls -la arquivos
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" arquivos/* --clobber
+          else
+            gh release create "$TAG" arquivos/* --target "$GITHUB_SHA" \
+              --title "Prontuário Pessoal $VER" --notes-file .github/notas-da-versao.md
+          fi
