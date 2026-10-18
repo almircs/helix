@@ -10,6 +10,10 @@ Na primeira vez, clique no programa com o botão direito → **Abrir** → **Abr
 
 Não sabe qual é o seu Mac? Menu  → **Sobre este Mac**: se aparecer "Chip Apple M…", use o primeiro; se aparecer "Processador Intel", use o segundo.
 
+## Novidades da 1.2.0
+- **Documentos:** guarde PDFs e fotos de laudos, receitas, pedidos de exame e relatórios. Arraste o arquivo para a tela ou clique para escolher. Cada documento pode ser ligado a uma consulta, exame, médico ou medicamento, e aparece na página deles e na linha do tempo. Os arquivos ficam **criptografados** neste computador e entram no backup.
+- **Novo visual do menu:** verde-petróleo, mais sóbrio e confortável para a vista.
+
 ## Correção da 1.1.3
 - **Windows:** o Helyx fechava sozinho, sem mensagem, em computadores que tinham a versão anterior ("Prontuário Pessoal") instalada. A cópia dos dados antigos foi refeita e agora funciona com a pasta acentuada.
 

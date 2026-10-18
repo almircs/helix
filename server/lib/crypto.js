@@ -54,3 +54,19 @@ const sha256 = (s) => crypto.createHash('sha256').update(s).digest('hex');
 const randomToken = () => crypto.randomBytes(32).toString('base64url');
 
 module.exports = { encrypt, decrypt, hashPassword, verifyPassword, sha256, randomToken };
+
+// Arquivos (documentos): mesmo AES-256-GCM, em binário — [iv 12][tag 16][dados]
+function encryptBuffer(buf) {
+  const iv = crypto.randomBytes(12);
+  const c = crypto.createCipheriv('aes-256-gcm', KEY, iv);
+  const ct = Buffer.concat([c.update(buf), c.final()]);
+  return Buffer.concat([Buffer.from('HLX1'), iv, c.getAuthTag(), ct]);
+}
+function decryptBuffer(buf) {
+  if (buf.subarray(0, 4).toString() !== 'HLX1') throw new Error('Arquivo de documento inválido');
+  const d = crypto.createDecipheriv('aes-256-gcm', KEY, buf.subarray(4, 16));
+  d.setAuthTag(buf.subarray(16, 32));
+  return Buffer.concat([d.update(buf.subarray(32)), d.final()]);
+}
+module.exports.encryptBuffer = encryptBuffer;
+module.exports.decryptBuffer = decryptBuffer;

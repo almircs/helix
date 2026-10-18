@@ -77,6 +77,7 @@ export async function form({ params, query }) {
 
 export async function detail({ params }) {
   const r = await api(`/medications/${params[0]}/related`);
+  const docBlock = await (await import('./documents.js')).linkedBlock('medication_id', params[0], 'ligado a este medicamento (anexe a receita)');
   const m = r.medication;
   const marks = m.versions.map((v) => ({ x: v.effective_date, label: v.version === 1 ? `início ${v.dosage || ''}` : `alteração: ${v.dosage || ''} ${v.status}`, short: v.version === 1 ? 'início' : v.dosage || 'alt.' }));
   return view(html`
@@ -94,6 +95,7 @@ export async function detail({ params }) {
         <div class="title">${fmtDate(v.effective_date)} — ${v.version === 1 ? 'Início' : 'Alteração ' + (v.version - 1)}</div>
         <div class="meta">${[v.dosage, v.frequency, v.schedule].filter(Boolean).join(' · ')}</div>${v.change_reason ? html`<div class="meta">Motivo: ${v.change_reason}</div>` : ''}</div>${statusTag(v.status)}</li>`)}</ul></div>
     </div>
+    <div style="margin-top:1rem">${docBlock}</div>
     <div class="card" style="margin-top:1rem"><h2>Exames acompanhados</h2>
       <div class="note" style="margin-bottom:1rem">${r.aviso}</div>
       ${r.series.length ? html`<div class="grid ${r.series.length > 1 ? 'g2' : ''}">${r.series.map((s) => {

@@ -1,3 +1,4 @@
+import { linkedBlock } from './documents.js';
 import { api, html, icon, fields, readForm, readRows, options, toast, view, go, cached, invalidate,
   fmtDate, fmtLongDate, today, statusTag, confirmDialog, relDay } from '../lib.js';
 
@@ -95,6 +96,7 @@ export async function form({ params, query }) {
 
 export async function detail({ params }) {
   const c = await api(`/consultations/${params[0]}`);
+  const docBlock = await linkedBlock('consultation_id', c.id, 'ligado a esta consulta');
   const pending = c.requests.filter((r) => r.status === 'pendente');
   const field = (label, v) => (v ? html`<dt>${label}</dt><dd>${v}</dd>` : '');
   return view(html`
@@ -124,6 +126,7 @@ export async function detail({ params }) {
           ${c.requests.length ? html`<ul class="list">${c.requests.map((r) => html`<li><div class="grow"><div class="title">${r.description}</div>${r.fulfilled_exam_id ? html`<a class="meta" href="#/exames/${r.fulfilled_exam_id}">feito em ${fmtDate(r.fulfilled_date)}</a>` : ''}</div>${statusTag(r.status)}</li>`)}</ul>` : html`<p class="empty">Nenhum exame solicitado.</p>`}
           ${pending.length ? html`<a class="btn small primary" href="#/exames/novo?consulta=${c.id}">${icon('plus')}Lançar resultados</a> <a class="btn small" href="#/agenda?novo=exame&consulta=${c.id}">Agendar coleta</a>` : ''}
         </div>
+        ${docBlock}
         ${c.events.length ? html`<div class="card"><h2>Na agenda</h2><ul class="list">${c.events.map((e) => html`<li><div class="grow"><div class="title">${e.title}</div><div class="meta">${fmtDate(e.starts_at.slice(0, 10))} ${e.starts_at.slice(11)}</div></div>${statusTag(e.status)}</li>`)}</ul></div>` : ''}
       </div>
     </div>`, (el) => {

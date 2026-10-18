@@ -9,6 +9,7 @@ import * as health from './views/health.js';
 import * as timeline from './views/timeline.js';
 import * as settings from './views/settings.js';
 import * as misc from './views/misc.js';
+import * as docs from './views/documents.js';
 import { startReminders } from './reminders.js';
 
 const app = document.getElementById('app');
@@ -22,7 +23,7 @@ const NAV = [
   ['#/medicamentos', 'Medicamentos', 'medicamentos'],
   ['#/linha-do-tempo', 'Linha do tempo', 'tempo'],
   ['#/saude', 'Saúde', 'saude'],
-  ['#/documentos', 'Documentos', 'documentos', true],
+  ['#/documentos', 'Documentos', 'documentos'],
   ['#/relatorios', 'Relatórios', 'relatorios'],
   ['#/ia', 'IA', 'ia', true],
   ['#/configuracoes', 'Configurações', 'config'],
@@ -49,7 +50,8 @@ const ROUTES = [
   [/^\/linha-do-tempo$/, timeline.render, '#/linha-do-tempo'],
   [/^\/saude$/, health.render, '#/saude'],
   [/^\/busca$/, misc.search, null],
-  [/^\/documentos$/, misc.placeholder('documentos'), '#/documentos'],
+  [/^\/documentos$/, docs.list, '#/documentos'],
+  [/^\/documentos\/(\d+)$/, docs.detail, '#/documentos'],
   [/^\/relatorios$/, misc.reports, '#/relatorios'],
   [/^\/ia$/, misc.placeholder('ia'), '#/ia'],
   [/^\/configuracoes(?:\/(\w+))?$/, settings.render, '#/configuracoes'],

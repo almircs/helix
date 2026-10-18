@@ -96,6 +96,25 @@ r.put('/api/medications/:id', A, (ctx) => medsSvc.updateMedication(uid(ctx), ctx
 r.put('/api/medications/:id/markers', A, (ctx) => { medsSvc.setMarkers(uid(ctx), M.medications.get(uid(ctx), ctx.params.id).id, ctx.body.marker_names || [], ctx.body.marker_ids || []); return medsSvc.getMedication(uid(ctx), ctx.params.id); });
 r.delete('/api/medications/:id', A, (ctx) => medsSvc.removeMedication(uid(ctx), ctx.params.id));
 
+// ---------- Documentos
+const docs = require('./services/documents');
+r.get('/api/documents', A, (ctx) => docs.list(uid(ctx), ctx.query));
+r.get('/api/documents/:id', A, (ctx) => docs.getOne(uid(ctx), ctx.params.id));
+r.post('/api/documents', A, (ctx) => docs.create(uid(ctx), ctx.body));
+r.put('/api/documents/:id', A, (ctx) => docs.update(uid(ctx), ctx.params.id, ctx.body));
+r.delete('/api/documents/:id', A, (ctx) => docs.remove(uid(ctx), ctx.params.id));
+r.get('/api/documents/:id/file', A, (ctx) => {
+  const f = docs.readFile(uid(ctx), ctx.params.id);
+  const res = ctx.res;
+  res.statusCode = 200;
+  res.setHeader('Content-Type', f.mime);
+  res.setHeader('Cache-Control', 'no-store');
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+  res.setHeader('Content-Security-Policy', "default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; frame-ancestors 'self'");
+  res.setHeader('Content-Disposition', `${ctx.query.baixar ? 'attachment' : 'inline'}; filename*=UTF-8''${encodeURIComponent(f.name)}`);
+  res.end(f.buffer);
+});
+
 // ---------- Visões integradas
 r.get('/api/dashboard', A, (ctx) => ov.dashboard(uid(ctx)));
 r.get('/api/timeline', A, (ctx) => ov.timeline(uid(ctx), ctx.query));
@@ -138,6 +157,7 @@ r.get('/api/audit', A, (ctx) => audit.list(uid(ctx), Number(ctx.query.limit) || 
 r.post('/api/account/delete', A, (ctx) => {
   if (auth.requireLogin() && !auth.verifyPasswordOf(uid(ctx), ctx.body.password)) throw new HttpError(401, 'Senha incorreta.');
   if (ctx.body.confirm !== 'EXCLUIR') throw new HttpError(400, 'Digite EXCLUIR para confirmar.');
+  require('./services/documents').wipeFiles(uid(ctx));
   tx(() => {
     run('DELETE FROM exam_results WHERE user_id = ?', uid(ctx));
     run('DELETE FROM users WHERE id = ?', uid(ctx)); // ON DELETE CASCADE remove o restante

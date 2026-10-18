@@ -93,7 +93,7 @@ export async function form({ params, query }) {
         <datalist id="markerList">${markers.map((m) => html`<option value="${m.name}">`)}</datalist>
       </fieldset>
       <fieldset><legend>Observações</legend>${fields([{ name: 'notes', label: 'Observação', type: 'textarea', full: true }], exam)}
-        <p class="small muted">O anexo do PDF/imagem do laudo chega com o módulo de Documentos (próxima etapa).</p></fieldset>
+        <p class="small muted">Depois de salvar, anexe o PDF ou a foto do laudo na página do exame.</p></fieldset>
       <div class="form-actions"><button class="btn primary">Salvar exame</button><a class="btn" href="${id ? '#/exames/' + id : '#/exames'}">Cancelar</a></div>
     </form>`, (el) => {
     const rows = el.querySelector('#rows');
@@ -124,6 +124,7 @@ export async function form({ params, query }) {
 // ---------------------------------------------------------------- Detalhe
 export async function detail({ params }) {
   const e = await api(`/exams/${params[0]}`);
+  const docBlock = await (await import('./documents.js')).linkedBlock('exam_id', e.id, 'ligado a este exame (anexe o PDF do laudo)');
   return view(html`
     <a class="back" href="#/exames?ver=datas">${icon('back')}Exames</a>
     <div class="page-head"><div><h1>Exames de ${fmtDate(e.collection_date)}</h1>
@@ -142,7 +143,7 @@ export async function detail({ params }) {
       </tbody></table></div></div>
     <div class="grid g2" style="margin-top:1rem"><div class="card"><h2>Informações</h2><dl class="kv">
       <dt>Médico solicitante</dt><dd>${e.doctor ? e.doctor.name : '—'}</dd>
-      <dt>Motivo</dt><dd>${e.reason || '—'}</dd><dt>Observação</dt><dd>${e.notes || '—'}</dd></dl></div></div>
+      <dt>Motivo</dt><dd>${e.reason || '—'}</dd><dt>Observação</dt><dd>${e.notes || '—'}</dd></dl></div>${docBlock}</div>
     ${DISCLAIMER}`, (el) => {
     el.querySelector('#del').onclick = async () => {
       if (!confirmDialog('Excluir este exame e todos os seus resultados? Esta ação fica registrada no histórico de alterações.')) return;

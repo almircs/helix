@@ -16,12 +16,12 @@ const MIME = {
 
 const SECURITY_HEADERS = {
   'X-Content-Type-Options': 'nosniff',
-  'X-Frame-Options': 'DENY',
+  'X-Frame-Options': 'SAMEORIGIN',
   'Referrer-Policy': 'no-referrer',
   'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
   'Content-Security-Policy':
     "default-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; " +
-    "script-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'",
+    "script-src 'self'; connect-src 'self'; frame-src 'self' blob:; object-src 'self' blob:; frame-ancestors 'self'; base-uri 'self'; form-action 'self'",
 };
 
 function parseCookies(header = '') {
@@ -100,7 +100,7 @@ function createServer({ router, staticDir, onError }) {
         if (['POST', 'PUT', 'DELETE'].includes(req.method)) {
           // Proteção CSRF: só aceita JSON da própria origem
           const ct = req.headers['content-type'] || '';
-          const raw = await readBody(req, url.pathname.startsWith('/api/backup/') ? 100 * 1024 * 1024 : undefined);
+          const raw = await readBody(req, (url.pathname.startsWith('/api/backup/') || url.pathname === '/api/documents') ? 200 * 1024 * 1024 : undefined);
           if (raw.length) {
             if (!ct.includes('application/json')) throw new HttpError(415, 'Envie JSON');
             try { ctx.body = JSON.parse(raw.toString('utf8')); } catch { throw new HttpError(400, 'JSON inválido'); }

@@ -42,7 +42,7 @@ function wipe(userId) {
 function summary(d) {
   return {
     consultas: d.consultas?.length || 0, exames: d.exames?.length || 0, resultados: d.resultados?.length || 0,
-    medicamentos: d.medicamentos?.length || 0, medicoes: d.medicoes?.length || 0, agenda: d.agenda?.length || 0, medicos: d.medicos?.length || 0,
+    medicamentos: d.medicamentos?.length || 0, medicoes: d.medicoes?.length || 0, agenda: d.agenda?.length || 0, medicos: d.medicos?.length || 0, documentos: d.documentos?.length || 0,
   };
 }
 
@@ -55,6 +55,8 @@ function restore(userId, d) {
   validate(d);
   // Cópia de segurança do estado atual antes de substituir
   saveFile(userId, `antes-de-restaurar-${new Date().toISOString().slice(0, 16).replace(/[T:]/g, '-')}`);
+  const docs = require('./documents');
+  docs.wipeFiles(userId);
   tx(() => {
     wipe(userId);
     const map = { doc: new Map(), con: new Map(), mk: new Map(), ex: new Map(), med: new Map() };
@@ -89,6 +91,7 @@ function restore(userId, d) {
     for (const r of d.medicamentos_marcadores || []) if (m('med', r.medication_id) && m('mk', r.marker_id))
       run('INSERT OR IGNORE INTO medication_markers (medication_id, marker_id) VALUES (?, ?)', m('med', r.medication_id), m('mk', r.marker_id));
     for (const r of d.medicoes || []) insert('measurements', userId, r, [...fieldsOf(M.measurements), 'created_at'], M.measurements.encrypted);
+    for (const r of d.documentos || []) docs.importOne(userId, r, { consultation_id: m('con', r.consultation_id), exam_id: m('ex', r.exam_id), doctor_id: m('doc', r.doctor_id), medication_id: m('med', r.medication_id) });
     for (const r of d.agenda || []) insert('events', userId, { ...r, consultation_id: m('con', r.consultation_id), exam_id: m('ex', r.exam_id), medication_id: m('med', r.medication_id) }, keepDates(fieldsOf(M.events)), M.events.encrypted);
   });
   const s = summary(d);

@@ -47,6 +47,9 @@ function timeline(userId, q = {}) {
     items.push({ date: ev.starts_at.slice(0, 10), time: ev.starts_at.slice(11, 16) || null, kind: ev.type === 'vacina' || ev.type === 'procedimento' ? ev.type : 'agenda',
       id: ev.id, link: `#/agenda?evento=${ev.id}`, status: ev.status, title: ev.title, lines: ev.location ? [{ text: ev.location }] : [] });
   }
+  if (want('documento')) for (const d of all('SELECT id, title, kind, doc_date FROM documents WHERE user_id = ? AND doc_date BETWEEN ? AND ?', userId, from, to)) {
+    items.push({ date: d.doc_date, kind: 'documento', id: d.id, link: `#/documentos/${d.id}`, title: d.title, lines: [{ text: { laudo: 'Laudo / resultado', receita: 'Receita', pedido: 'Pedido de exame', relatorio: 'Relatório médico', imagem: 'Imagem de exame' }[d.kind] || 'Documento' }] });
+  }
   if (want('medicao')) {
     const byDay = new Map();
     for (const m of all('SELECT * FROM measurements WHERE user_id = ? AND substr(measured_at,1,10) BETWEEN ? AND ? ORDER BY measured_at', userId, from, to)) {
@@ -57,7 +60,7 @@ function timeline(userId, q = {}) {
     for (const [day, ms] of byDay) items.push({ date: day, kind: 'medicao', link: '#/saude', title: `Medições (${ms.length})`,
       lines: ms.slice(0, 4).map((m) => ({ text: `${MEASUREMENT_TYPES[m.type]?.label || m.label}: ${m.type === 'pressao' ? `${fmtNum(m.value1)}/${fmtNum(m.value2)}` : fmtNum(m.value1)} ${m.unit || ''}` })) });
   }
-  const order = { consulta: 1, retorno: 1, exame: 2, medicamento: 3, agenda: 4, vacina: 4, procedimento: 4, medicao: 5 };
+  const order = { consulta: 1, retorno: 1, exame: 2, documento: 2, medicamento: 3, agenda: 4, vacina: 4, procedimento: 4, medicao: 5 };
   items.sort((a, b) => b.date.localeCompare(a.date) || (order[a.kind] - order[b.kind]) || String(a.time || '').localeCompare(String(b.time || '')));
   return items;
 }
@@ -197,6 +200,7 @@ function exportAll(userId) {
     medicamentos_marcadores: all('SELECT mm.* FROM medication_markers mm JOIN medications m ON m.id = mm.medication_id WHERE m.user_id = ?', userId),
     medicoes: measurements.list(userId, '', [], 'measured_at'),
     agenda: events.list(userId, '', [], 'starts_at'),
+    documentos: require('./documents').exportAll(userId),
   };
 }
 

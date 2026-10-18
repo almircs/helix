@@ -16,7 +16,6 @@ export async function search({ query }) {
 
 // ---------------------------------------------------------------- Módulos das próximas etapas
 const SOON = {
-  documentos: ['Documentos', 'Guardar PDFs, fotos de laudos, receitas e pedidos de exame, ligados à consulta, ao exame, ao médico ou ao medicamento. Os arquivos serão gravados criptografados.', 'A tabela de documentos já existe no banco; falta a tela de envio e o armazenamento dos arquivos (etapa 2).'],
   ia: ['Assistente de IA', 'Perguntas como “Mostre a evolução da creatinina nos últimos 12 meses” ou “Prepare um resumo dos últimos 6 meses para o nefrologista”. A IA apenas organiza informações — nunca dá diagnóstico — e só funciona com sua autorização explícita.', 'A API já monta o contexto estruturado dos seus dados (/api/ai/context) e as regras de segurança; falta conectar o provedor (etapa 4).'],
 };
 export const placeholder = (key) => async () => {

@@ -98,10 +98,10 @@ function isInternal(url) { return baseUrl && url.startsWith(baseUrl); }
 function createWindow() {
   win = new BrowserWindow({
     width: 1300, height: 880, minWidth: 380, minHeight: 500,
-    title: APP_NAME, backgroundColor: '#f2f5fa', show: false,
+    title: APP_NAME, backgroundColor: '#f3f6f6', show: false,
     icon: path.join(__dirname, '..', 'build', 'icon.png'),
     autoHideMenuBar: process.platform === 'win32',
-    webPreferences: { contextIsolation: true, nodeIntegration: false, sandbox: !compat, spellcheck: true },
+    webPreferences: { contextIsolation: true, nodeIntegration: false, sandbox: !compat, spellcheck: true, plugins: true },
   });
   // Mostra a janela quando a página estiver pronta — ou após 4 s, para nunca ficar invisível
   const reveal = () => { if (win && !win.isDestroyed() && !win.isVisible()) win.show(); };

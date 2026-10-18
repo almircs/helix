@@ -1,10 +1,10 @@
 import { api, html, view, go, fmtLongDate, today, relDay } from '../lib.js';
 
-const KINDS = [['consulta', 'Consultas'], ['exame', 'Exames'], ['medicamento', 'Medicamentos'], ['agenda', 'Agenda'], ['medicao', 'Medições']];
-const LABEL = { consulta: 'Consulta', retorno: 'Retorno', exame: 'Exame', medicamento: 'Medicamento', agenda: 'Compromisso', vacina: 'Vacina', procedimento: 'Procedimento', medicao: 'Medições' };
+const KINDS = [['consulta', 'Consultas'], ['exame', 'Exames'], ['medicamento', 'Medicamentos'], ['documento', 'Documentos'], ['agenda', 'Agenda'], ['medicao', 'Medições']];
+const LABEL = { consulta: 'Consulta', retorno: 'Retorno', exame: 'Exame', medicamento: 'Medicamento', agenda: 'Compromisso', vacina: 'Vacina', procedimento: 'Procedimento', medicao: 'Medições', documento: 'Documento' };
 
 export async function render({ query }) {
-  const active = new Set((query.tipos || 'consulta,exame,medicamento,agenda').split(','));
+  const active = new Set((query.tipos || 'consulta,exame,medicamento,documento,agenda').split(','));
   const period = query.periodo || 'tudo';
   const from = period === '12m' ? new Date(Date.now() - 365 * 864e5).toISOString().slice(0, 10) : period === '6m' ? new Date(Date.now() - 182 * 864e5).toISOString().slice(0, 10) : '';
   const items = await api(`/timeline?kinds=${[...active].join(',')}${from ? '&from=' + from : ''}`);

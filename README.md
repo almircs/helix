@@ -25,6 +25,7 @@ Para dados fictícios de demonstração, rode `npm run demo` numa pasta de dados
 - No programa instalado: Windows `%APPDATA%\Helyx\dados`, Mac `~/Library/Application Support/Helyx/dados` (menu *Arquivo → Abrir pasta dos dados*). Na versão de navegador, na pasta `data/`: `saude.db` (banco) e `chave.key` (chave de criptografia).
 - **Backup:** *Configurações → Backup* (ou menu *Arquivo → Fazer backup…*) salva um arquivo `.helyx` com todos os dados, que pode ser restaurado neste ou em outro computador. O programa também guarda uma cópia automática por dia (últimas 30), que pode ser restaurada pela mesma tela.
   O arquivo `.helyx` contém os dados legíveis: guarde-o em local seguro.
+- **Documentos:** PDFs e fotos ficam na subpasta `documentos`, criptografados; entram no arquivo de backup `.helyx`.
 - **Exportar:** Configurações → Segurança e dados → Exportar meus dados (arquivo JSON legível).
 - **Excluir tudo:** Configurações → Segurança e dados.
 
