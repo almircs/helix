@@ -10,6 +10,9 @@ Na primeira vez, clique no programa com o botão direito → **Abrir** → **Abr
 
 Não sabe qual é o seu Mac? Menu  → **Sobre este Mac**: se aparecer "Chip Apple M…", use o primeiro; se aparecer "Processador Intel", use o segundo.
 
+## Correção da 1.1.3
+- **Windows:** o Helyx fechava sozinho, sem mensagem, em computadores que tinham a versão anterior ("Prontuário Pessoal") instalada. A cópia dos dados antigos foi refeita e agora funciona com a pasta acentuada.
+
 ## Correção da 1.1.2
 - Em alguns computadores com Windows, o motor gráfico fechava antes de mostrar a janela (driver de vídeo ou antivírus). Agora, se uma abertura não chegar ao fim, a seguinte entra sozinha em **modo de compatibilidade** (sem aceleração gráfica). Se não abrir na primeira vez, **abra de novo**.
 

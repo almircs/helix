@@ -56,18 +56,32 @@ let baseUrl = null;
 
 function dataDir() { return path.join(app.getPath('userData'), 'dados'); }
 
-// Versões até a 1.0.1 se chamavam "Prontuário Pessoal": traz os dados da pasta antiga na primeira abertura
+// Versões até a 1.0.1 se chamavam "Prontuário Pessoal": traz os dados da pasta antiga na primeira abertura.
+// Cópia arquivo por arquivo (fs.cpSync pode derrubar o processo no Windows com caminhos acentuados).
+function copyDir(from, to) {
+  fs.mkdirSync(to, { recursive: true });
+  for (const ent of fs.readdirSync(from, { withFileTypes: true })) {
+    const a = path.join(from, ent.name), b = path.join(to, ent.name);
+    if (ent.isDirectory()) copyDir(a, b);
+    else if (ent.isFile()) fs.copyFileSync(a, b);
+  }
+}
 function migrateOldData() {
   const target = dataDir();
   if (fs.existsSync(path.join(target, 'saude.db'))) return;
   const old = path.join(app.getPath('appData'), 'Prontuário Pessoal', 'dados');
   if (!fs.existsSync(path.join(old, 'saude.db'))) return;
-  fs.mkdirSync(target, { recursive: true });
-  fs.cpSync(old, target, { recursive: true });
-  log('dados da versão anterior copiados de', old);
+  log('copiando dados da versão anterior de', old);
+  const tmp = target + '-copiando';
+  fs.rmSync(tmp, { recursive: true, force: true });
+  copyDir(old, tmp);
+  fs.rmSync(target, { recursive: true, force: true });
+  fs.renameSync(tmp, target);
+  log('dados da versão anterior copiados');
 }
 
 async function startServer() {
+  log('verificando dados da versão anterior');
   try { migrateOldData(); } catch (e) { log('falha ao migrar dados antigos', e); }
   process.env.SAUDE_DATA_DIR = dataDir();
   log('pasta de dados', dataDir());

@@ -61,6 +61,11 @@ jobs:
           $exe = "$env:LOCALAPPDATA\Programs\Helyx\Helyx.exe"
           $instalado = Test-Path $exe
           if (-not $instalado) { $exe = (Get-ChildItem dist/win-unpacked/*.exe | Select-Object -First 1).FullName }
+          # Simula quem tinha a versão "Prontuário Pessoal" (pasta com acento) com dados de verdade
+          $antigo = Join-Path $env:APPDATA 'Prontuário Pessoal\dados'
+          New-Item -ItemType Directory -Force -Path (Join-Path $antigo 'backups\auto-2026-10-17') | Out-Null
+          $env:SAUDE_DATA_DIR = $antigo; node --disable-warning=ExperimentalWarning server/scripts/demo.js; Remove-Item Env:SAUDE_DATA_DIR
+          Copy-Item (Join-Path $antigo 'saude.db') (Join-Path $antigo 'backups\auto-2026-10-17\saude.db')
           $p = Start-Process $exe -PassThru
           Start-Sleep -Seconds 25
           $vivo = -not $p.HasExited
@@ -68,7 +73,9 @@ jobs:
           foreach ($porta in 47321) { try { $r = Invoke-WebRequest "http://127.0.0.1:$porta/" -UseBasicParsing -TimeoutSec 5; $http = "$($r.StatusCode) $(if ($r.Content -match 'Helyx') {'pagina ok'})" } catch { $http = "falhou: $($_.Exception.Message)" } }
           $janelas = (Get-Process Helyx -ErrorAction SilentlyContinue | Where-Object MainWindowTitle | ForEach-Object MainWindowTitle) -join ','
           $log = Get-Content "$env:APPDATA\Helyx\helyx.log" -Raw -ErrorAction SilentlyContinue
-          $msg = "instalado=$instalado vivo=$vivo http=$http janelas=[$janelas]`n$log"
+          $migrado = Test-Path "$env:APPDATA\Helyx\dados\saude.db"
+          $dados = try { (Invoke-WebRequest "http://127.0.0.1:47321/api/exams" -UseBasicParsing -TimeoutSec 5).Content.Length } catch { 'erro' }
+          $msg = "instalado=$instalado vivo=$vivo http=$http janelas=[$janelas] migrado=$migrado bytes_exames=$dados`n$log"
           Write-Output $msg
           $enc = $msg -replace '%','%25' -replace "`r",'' -replace "`n",'%0A'
           Write-Output "::warning title=Diagnostico Windows::$enc"
