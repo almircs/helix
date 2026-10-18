@@ -73,6 +73,17 @@ jobs:
           $enc = $msg -replace '%','%25' -replace "`r",'' -replace "`n",'%0A'
           Write-Output "::warning title=Diagnostico Windows::$enc"
           Stop-Process -Name Helyx -Force -ErrorAction SilentlyContinue
+          Start-Sleep -Seconds 3
+          Remove-Item "$env:APPDATA\Helyx\helyx.log" -ErrorAction SilentlyContinue
+          $p2 = Start-Process $exe -ArgumentList '--compat' -PassThru
+          Start-Sleep -Seconds 25
+          $janelas2 = (Get-Process Helyx -ErrorAction SilentlyContinue | Where-Object MainWindowTitle | ForEach-Object MainWindowTitle) -join ','
+          $log2 = Get-Content "$env:APPDATA\Helyx\helyx.log" -Raw -ErrorAction SilentlyContinue
+          $msg2 = "COMPAT vivo=$(-not $p2.HasExited) janelas=[$janelas2]`n$log2"
+          Write-Output $msg2
+          $enc2 = $msg2 -replace '%','%25' -replace "`r",'' -replace "`n",'%0A'
+          Write-Output "::warning title=Diagnostico Windows compat::$enc2"
+          Stop-Process -Name Helyx -Force -ErrorAction SilentlyContinue
       - name: Separar o instalador
         shell: bash
         run: |

@@ -10,6 +10,9 @@ Na primeira vez, clique no programa com o botão direito → **Abrir** → **Abr
 
 Não sabe qual é o seu Mac? Menu  → **Sobre este Mac**: se aparecer "Chip Apple M…", use o primeiro; se aparecer "Processador Intel", use o segundo.
 
+## Correção da 1.1.2
+- Em alguns computadores com Windows, o motor gráfico fechava antes de mostrar a janela (driver de vídeo ou antivírus). Agora, se uma abertura não chegar ao fim, a seguinte entra sozinha em **modo de compatibilidade** (sem aceleração gráfica). Se não abrir na primeira vez, **abra de novo**.
+
 ## Correção da 1.1.1
 - No Windows, o programa podia ficar aberto escondido, sem mostrar a janela. Agora a janela sempre aparece, e erros mostram uma mensagem com o motivo. O registro de funcionamento fica em `%APPDATA%\Helyx\helyx.log`.
 - Se o Helyx não abrir: abra o Gerenciador de Tarefas (Ctrl+Shift+Esc), finalize qualquer processo **Helyx** e abra de novo.

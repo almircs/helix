@@ -23,11 +23,33 @@ function fatal(where, err) {
 }
 process.on('uncaughtException', (e) => fatal('Erro inesperado', e));
 process.on('unhandledRejection', (e) => fatal('Erro inesperado', e));
-log('iniciando', { versao: app.getVersion(), electron: process.versions.electron, node: process.versions.node, so: process.platform, arq: process.arch });
+const os = require('node:os');
+log('iniciando', { versao: app.getVersion(), electron: process.versions.electron, node: process.versions.node, so: process.platform, arq: process.arch, windows: os.release(), versao_so: os.version ? os.version() : '' });
+
+// Modo de compatibilidade: se a abertura anterior não chegou até a tela (o motor gráfico caiu
+// por driver de vídeo ou antivírus), esta abertura desliga a aceleração gráfica e o sandbox.
+// Uma única janela aberta por vez
+const gotLock = app.requestSingleInstanceLock();
+if (!gotLock) { log('já existe uma janela aberta; encerrando esta'); app.quit(); }
+const markerFile = () => path.join(app.getPath('userData'), 'abrindo.txt');
+let compat = process.argv.includes('--compat') || process.env.HELYX_COMPAT === '1';
+if (gotLock) try {
+  const m = markerFile();
+  if (fs.existsSync(m)) { compat = true; log('a abertura anterior não terminou — usando modo de compatibilidade'); }
+  fs.mkdirSync(path.dirname(m), { recursive: true });
+  fs.writeFileSync(m, new Date().toISOString());
+} catch (e) { log('marcador', e); }
+if (compat) {
+  app.disableHardwareAcceleration();
+  app.commandLine.appendSwitch('disable-gpu');
+  app.commandLine.appendSwitch('disable-gpu-compositing');
+  app.commandLine.appendSwitch('no-sandbox');
+  log('modo de compatibilidade ligado');
+}
+app.on('child-process-gone', (_e, d) => log('processo interno encerrou', d));
+app.on('render-process-gone', (_e, _w, d) => log('janela caiu', d));
 if (process.platform === 'win32') app.setAppUserModelId('br.helyx.app');
 
-// Uma única janela aberta por vez
-if (!app.requestSingleInstanceLock()) { log('já existe uma janela aberta; encerrando esta'); app.quit(); }
 
 let win = null;
 let baseUrl = null;
@@ -65,7 +87,7 @@ function createWindow() {
     title: APP_NAME, backgroundColor: '#f2f5fa', show: false,
     icon: path.join(__dirname, '..', 'build', 'icon.png'),
     autoHideMenuBar: process.platform === 'win32',
-    webPreferences: { contextIsolation: true, nodeIntegration: false, sandbox: true, spellcheck: true },
+    webPreferences: { contextIsolation: true, nodeIntegration: false, sandbox: !compat, spellcheck: true },
   });
   // Mostra a janela quando a página estiver pronta — ou após 4 s, para nunca ficar invisível
   const reveal = () => { if (win && !win.isDestroyed() && !win.isVisible()) win.show(); };
@@ -77,7 +99,10 @@ function createWindow() {
     win.loadURL('data:text/html;charset=utf-8,' + encodeURIComponent(`<body style="font-family:system-ui;padding:2rem"><h2>O Helyx não conseguiu abrir a tela inicial</h2><p>${desc} (${code})</p><p>Detalhes em: ${logFile()}</p></body>`));
   });
   win.webContents.on('render-process-gone', (_e, d) => log('janela encerrada', d));
-  win.webContents.on('did-finish-load', () => log('tela carregada', win.webContents.getURL()));
+  win.webContents.on('did-finish-load', () => {
+    log('tela carregada', win.webContents.getURL());
+    try { fs.rmSync(markerFile(), { force: true }); } catch { /* */ }
+  });
   // Downloads (backup, exportação): pergunta onde salvar
   win.webContents.session.on('will-download', (_e, item) => {
     item.setSaveDialogOptions({ title: 'Salvar backup do Helyx', defaultPath: path.join(app.getPath('documents'), item.getFilename()),
@@ -138,6 +163,7 @@ function buildMenu() {
 app.on('second-instance', () => { if (win) { if (win.isMinimized()) win.restore(); win.show(); win.focus(); } });
 
 app.whenReady().then(async () => {
+  log('motor gráfico pronto');
   try {
     const { url } = await startServer();
     baseUrl = url;
