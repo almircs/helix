@@ -1,22 +1,26 @@
 ## Como instalar
 
-**Windows** — baixe `Instalar-Prontuario-Pessoal-Windows.exe`, dê dois cliques e siga o instalador.
+**Windows** — baixe `Instalar-Helyx-Windows.exe`, dê dois cliques e siga o instalador.
 Se aparecer o aviso azul "O Windows protegeu o computador", clique em **Mais informações → Executar assim mesmo**.
 
-**Mac com chip Apple (M1 a M4)** — baixe `Prontuario-Pessoal-Mac-chip-Apple-M1-a-M4.zip`, abra o arquivo e arraste o **Prontuário Pessoal** para a pasta **Aplicativos**.
+**Mac com chip Apple (M1 a M4)** — baixe `Helyx-Mac-chip-Apple-M1-a-M4.zip`, abra o arquivo e arraste o **Helyx** para a pasta **Aplicativos**.
 Na primeira vez, clique no programa com o botão direito → **Abrir** → **Abrir**.
 
-**Mac com processador Intel** — mesmo procedimento com `Prontuario-Pessoal-Mac-Intel.zip`.
+**Mac com processador Intel** — mesmo procedimento com `Helyx-Mac-Intel.zip`.
 
 Não sabe qual é o seu Mac? Menu  → **Sobre este Mac**: se aparecer "Chip Apple M…", use o primeiro; se aparecer "Processador Intel", use o segundo.
 
-## Novidade da 1.0.1
-O programa abre direto, **sem tela de login**, para facilitar os testes.
+## Novidades da 1.1.0
+- **Novo nome e ícone: Helyx.** Seus dados da versão anterior ("Prontuário Pessoal") são trazidos automaticamente na primeira abertura.
+- **Backup e restauração:** em *Configurações → Backup* (ou menu *Arquivo → Fazer backup…*), salve um arquivo `.helyx` com todos os seus dados e restaure-o neste ou em outro computador. Antes de restaurar, o Helyx guarda uma cópia do que existe hoje.
+- **Dashboard reorganizado:** avisos do que pede atenção no topo, exames com mini gráfico e faixa de referência, próximos dias, remédios com horário e medições.
+
+Se você tinha o "Prontuário Pessoal" instalado: no Windows ele continua na lista de programas e pode ser desinstalado depois de abrir o Helyx uma vez; no Mac, apague o app antigo da pasta Aplicativos.
 
 ## Seus dados
 Ficam somente no seu computador, com os campos sensíveis criptografados:
-- Windows: `%APPDATA%\Prontuário Pessoal\dados`
-- Mac: `~/Library/Application Support/Prontuário Pessoal/dados`
+- Windows: `%APPDATA%\Helyx\dados`
+- Mac: `~/Library/Application Support/Helyx/dados`
 
 O programa faz uma cópia automática por dia (últimas 30) na subpasta `backups`. Menu **Arquivo → Abrir pasta dos dados e cópias**.
 

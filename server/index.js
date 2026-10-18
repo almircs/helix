@@ -1,4 +1,4 @@
-// Prontuário Pessoal — servidor
+// Helyx — servidor
 // Pode ser iniciado pelo terminal (node server/index.js) ou pelo programa de computador (electron/main.js).
 const path = require('node:path');
 
@@ -6,9 +6,8 @@ function start({ port, host } = {}) {
   const config = require('./config');
   const { migrate } = require('./db');
   const { createServer } = require('./lib/http');
-  const { autoBackup } = require('./lib/backup');
   migrate();
-  try { autoBackup(); } catch (e) { console.error('[backup] falhou:', e.message); }
+  try { require('./services/restore').autoForAllUsers(); } catch (e) { console.error('[backup] falhou:', e.message); }
   const router = require('./routes');
   const server = createServer({ router, staticDir: path.join(__dirname, '..', 'public'), onError: (e) => console.error('[erro]', e) });
   port = port ?? config.port; host = host ?? config.host;
@@ -30,7 +29,7 @@ if (require.main === module) {
     process.exit(1);
   }
   start().then(({ url, dataDir }) => {
-    console.log(`\n  Prontuário Pessoal rodando em ${url}\n  Dados em: ${dataDir}\n  Para encerrar: Ctrl+C\n`);
+    console.log(`\n  Helyx rodando em ${url}\n  Dados em: ${dataDir}\n  Para encerrar: Ctrl+C\n`);
     if (process.env.SAUDE_ABRIR_NAVEGADOR === '1') {
       const { exec } = require('node:child_process');
       exec(process.platform === 'win32' ? `start "" "${url}"` : process.platform === 'darwin' ? `open "${url}"` : `xdg-open "${url}"`);

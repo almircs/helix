@@ -9,5 +9,5 @@ if ! command -v node >/dev/null 2>&1; then
   exit 1
 fi
 export SAUDE_ABRIR_NAVEGADOR=1
-echo "  Iniciando o Prontuário Pessoal... (feche esta janela para encerrar)"
+echo "  Iniciando o Helyx... (feche esta janela para encerrar)"
 node --disable-warning=ExperimentalWarning server/index.js

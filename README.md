@@ -1,4 +1,4 @@
-# Prontuário Pessoal
+# Helyx
 
 Sistema de Gestão Pessoal de Saúde: exames, consultas, medicamentos, agenda, medições e linha do tempo —
 tudo interligado, guardado no seu computador e protegido por senha e criptografia.
@@ -9,9 +9,9 @@ tudo interligado, guardado no seu computador e protegido por senha e criptografi
 
 Baixe o instalador na página **Releases** do repositório:
 
-- **Windows:** `Instalar-Prontuario-Pessoal-Windows.exe` → dois cliques e siga o instalador.
-- **Mac com chip Apple (M1 a M4):** `Prontuario-Pessoal-Mac-chip-Apple-M1-a-M4.zip` → abra e arraste para *Aplicativos*.
-- **Mac com processador Intel:** `Prontuario-Pessoal-Mac-Intel.zip`.
+- **Windows:** `Instalar-Helyx-Windows.exe` → dois cliques e siga o instalador.
+- **Mac com chip Apple (M1 a M4):** `Helyx-Mac-chip-Apple-M1-a-M4.zip` → abra e arraste para *Aplicativos*.
+- **Mac com processador Intel:** `Helyx-Mac-Intel.zip`.
 
 Na primeira abertura no Mac: botão direito no app → *Abrir*. No Windows, se aparecer o aviso azul: *Mais informações → Executar assim mesmo*.
 
@@ -22,9 +22,9 @@ Para dados fictícios de demonstração, rode `npm run demo` numa pasta de dados
 
 ## Seus dados
 
-- No programa instalado: Windows `%APPDATA%\Prontuário Pessoal\dados`, Mac `~/Library/Application Support/Prontuário Pessoal/dados` (menu *Arquivo → Abrir pasta dos dados*). Na versão de navegador, na pasta `data/`: `saude.db` (banco) e `chave.key` (chave de criptografia).
-- **Backup:** cópia automática diária (últimas 30) na subpasta `backups`; também em *Configurações → Segurança e dados → Fazer cópia agora*. Guarde o banco **e** a chave juntos, em local seguro.
-  Sem a chave, alergias, diagnósticos, observações e demais campos sensíveis não podem ser lidos.
+- No programa instalado: Windows `%APPDATA%\Helyx\dados`, Mac `~/Library/Application Support/Helyx/dados` (menu *Arquivo → Abrir pasta dos dados*). Na versão de navegador, na pasta `data/`: `saude.db` (banco) e `chave.key` (chave de criptografia).
+- **Backup:** *Configurações → Backup* (ou menu *Arquivo → Fazer backup…*) salva um arquivo `.helyx` com todos os dados, que pode ser restaurado neste ou em outro computador. O programa também guarda uma cópia automática por dia (últimas 30), que pode ser restaurada pela mesma tela.
+  O arquivo `.helyx` contém os dados legíveis: guarde-o em local seguro.
 - **Exportar:** Configurações → Segurança e dados → Exportar meus dados (arquivo JSON legível).
 - **Excluir tudo:** Configurações → Segurança e dados.
 

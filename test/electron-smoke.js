@@ -30,7 +30,7 @@ process.env.SAUDE_DATA_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'saude-smoke-
   assert.ok((await call('GET', '/dashboard')).data.alerts.length > 0);
   assert.equal((await call('POST', '/backup')).status, 200);
   const html = await (await fetch(url + '/')).text();
-  assert.match(html, /Prontuário Pessoal/);
+  assert.match(html, /Helyx/);
   server.close();
   console.log('OK — servidor, banco, criptografia e backup funcionando dentro do Electron');
   process.exit(0);

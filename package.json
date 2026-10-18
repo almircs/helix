@@ -1,7 +1,7 @@
 {
   "name": "prontuario-pessoal",
-  "productName": "Prontuário Pessoal",
-  "version": "1.0.1",
+  "productName": "Helyx",
+  "version": "1.1.0",
   "description": "Gestão Pessoal de Saúde — prontuário pessoal inteligente",
   "author": "almircs",
   "license": "UNLICENSED",
@@ -29,9 +29,9 @@
     "electron-builder": "^26.0.12"
   },
   "build": {
-    "appId": "br.prontuariopessoal.app",
-    "productName": "Prontuário Pessoal",
-    "copyright": "Prontuário Pessoal",
+    "appId": "br.helyx.app",
+    "productName": "Helyx",
+    "copyright": "Helyx",
     "directories": { "output": "dist", "buildResources": "build" },
     "files": [
       "electron/**",
@@ -46,7 +46,7 @@
     "win": {
       "target": [{ "target": "nsis", "arch": ["x64"] }],
       "icon": "build/icon.png",
-      "executableName": "ProntuarioPessoal"
+      "executableName": "Helyx"
     },
     "nsis": {
       "oneClick": false,
@@ -54,12 +54,12 @@
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": "always",
       "createStartMenuShortcut": true,
-      "shortcutName": "Prontuário Pessoal",
+      "shortcutName": "Helyx",
       "runAfterFinish": true,
       "deleteAppDataOnUninstall": false,
       "installerLanguages": ["pt_BR"],
       "language": "1046",
-      "artifactName": "Instalar-Prontuario-Pessoal-Windows.${ext}"
+      "artifactName": "Instalar-Helyx-Windows.${ext}"
     },
     "mac": {
       "category": "public.app-category.medical",

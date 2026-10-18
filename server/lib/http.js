@@ -100,7 +100,7 @@ function createServer({ router, staticDir, onError }) {
         if (['POST', 'PUT', 'DELETE'].includes(req.method)) {
           // Proteção CSRF: só aceita JSON da própria origem
           const ct = req.headers['content-type'] || '';
-          const raw = await readBody(req);
+          const raw = await readBody(req, url.pathname.startsWith('/api/backup/') ? 100 * 1024 * 1024 : undefined);
           if (raw.length) {
             if (!ct.includes('application/json')) throw new HttpError(415, 'Envie JSON');
             try { ctx.body = JSON.parse(raw.toString('utf8')); } catch { throw new HttpError(400, 'JSON inválido'); }

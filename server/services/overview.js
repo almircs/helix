@@ -94,7 +94,14 @@ function dashboard(userId) {
   const meds = listMedications(userId, { status: 'ativo' });
 
   const mk = listMarkers(userId).filter((m) => m.count > 0).sort((a, b) => String(b.last_date).localeCompare(String(a.last_date)));
-  const latestResults = mk.slice(0, 8).map((m) => ({ marker_id: m.id, name: m.name, value: m.last_value, unit: m.unit, date: m.last_date, situation: m.last_situation, trend: m.overall }));
+  const latestResults = mk.slice(0, 10).map((m) => {
+    const pts = markerHistory(userId, m.id).points;
+    const last = pts[pts.length - 1] || {};
+    return { marker_id: m.id, name: m.name, value: m.last_value, unit: m.unit, date: m.last_date, situation: m.last_situation,
+      trend: last.trend || null, ref_label: last.ref_label || '', ref_min: last.ref_min ?? null, ref_max: last.ref_max ?? null,
+      recent: pts.slice(-8).map((p) => ({ x: p.date, y: p.value_num, s: p.situation })) };
+  });
+  const outOfRange = mk.filter((m) => m.last_situation === 'acima' || m.last_situation === 'abaixo').length;
 
   const indicators = Object.keys(MEASUREMENT_TYPES).filter((t) => t !== 'outro').map((t) => {
     const rows = all('SELECT * FROM measurements WHERE user_id = ? AND type = ? ORDER BY measured_at DESC LIMIT 10', userId, t);
@@ -109,7 +116,7 @@ function dashboard(userId) {
     alerts.push({ level: 'aviso', kind: 'proximo', text: `${e.title} em ${br(e.date)}${e.time ? ' às ' + e.time : ''}`, link: e.source === 'consulta' ? `#/consultas/${e.id}` : '#/agenda' });
   for (const m of meds.filter((m) => m.end_date && m.end_date >= today && m.end_date <= addDays(today, 15)))
     alerts.push({ level: 'aviso', kind: 'medicamento_termino', text: `${m.name}: término previsto em ${br(m.end_date)} — verifique a receita`, link: `#/medicamentos/${m.id}` });
-  for (const r of latestResults.concat(mk.slice(8).map((m) => ({ marker_id: m.id, name: m.name, value: m.last_value, unit: m.unit, date: m.last_date, situation: m.last_situation }))))
+  for (const r of latestResults.concat(mk.slice(10).map((m) => ({ marker_id: m.id, name: m.name, value: m.last_value, unit: m.unit, date: m.last_date, situation: m.last_situation }))))
     if (r.situation === 'acima' || r.situation === 'abaixo')
       alerts.push({ level: 'atencao', kind: 'fora_referencia', text: `${r.name} ${r.situation} da referência no último resultado (${br(r.date)})`, link: `#/exames/marcador/${r.marker_id}` });
 
@@ -117,9 +124,12 @@ function dashboard(userId) {
   return {
     name: p?.full_name || null, today,
     next: { consulta: next(['consulta']), exame: next(['exame']), retorno: next(['retorno']) },
-    upcoming: upcoming.slice(0, 6), medications: meds.map(({ id, name, dosage, schedule, frequency, end_date }) => ({ id, name, dosage, schedule, frequency, end_date })),
+    upcoming: upcoming.slice(0, 8), medications: meds.map(({ id, name, dosage, schedule, frequency, end_date }) => ({ id, name, dosage, schedule, frequency, end_date })),
     latest_results: latestResults, indicators, alerts,
-    counts: { exams: get('SELECT COUNT(*) n FROM exams WHERE user_id = ?', userId).n, consultations: get('SELECT COUNT(*) n FROM consultations WHERE user_id = ?', userId).n },
+    counts: { exams: get('SELECT COUNT(*) n FROM exams WHERE user_id = ?', userId).n, consultations: get('SELECT COUNT(*) n FROM consultations WHERE user_id = ?', userId).n,
+      markers: mk.length, out_of_range: outOfRange, active_meds: meds.length,
+      pending_requests: get("SELECT COUNT(*) n FROM exam_requests WHERE user_id = ? AND status = 'pendente'", userId).n,
+      upcoming_30: upcoming.filter((e) => e.date <= addDays(today, 30)).length },
   };
 }
 
@@ -174,7 +184,7 @@ function exportAll(userId) {
   delete prof.user_id;
   const dec = (rows, fields) => rows.map((r) => { const o = { ...r }; for (const f of fields) o[f] = decrypt(o[f]); delete o.user_id; return o; });
   return {
-    formato: 'prontuario-pessoal', versao: 1, exportado_em: new Date().toISOString(),
+    formato: 'helyx', versao: 1, exportado_em: new Date().toISOString(),
     perfil: prof,
     medicos: doctors.list(userId, '', [], 'id'),
     consultas: consultations.list(userId, '', [], 'date'),

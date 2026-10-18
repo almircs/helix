@@ -1,4 +1,4 @@
-// Prontuário Pessoal — casca da aplicação, rotas e autenticação.
+// Helyx — casca da aplicação, rotas e autenticação.
 import { api, html, icon, toast, fields, readForm } from './lib.js';
 import * as dash from './views/dashboard.js';
 import * as agenda from './views/agenda.js';
@@ -59,7 +59,7 @@ function shell() {
   app.innerHTML = html`
     <div class="shell">
       <aside class="side" id="side">
-        <a class="brand" href="#/"><img src="/icon.svg" alt="">Prontuário Pessoal</a>
+        <a class="brand" href="#/"><img src="/icon.png" alt="">Helyx</a>
         <nav aria-label="Menu principal"><ul class="nav">
           ${NAV.map(([href, label, ic, soon]) => html`<li><a href="${href}" data-nav="${href}">${icon(ic)}${label}${soon ? html`<span class="soon">em breve</span>` : ''}</a></li>`)}
         </ul></nav>
@@ -94,7 +94,7 @@ function authView(mode) {
   const isLogin = mode === 'login';
   app.innerHTML = html`
     <div class="auth"><div class="card">
-      <div class="brand"><img src="/icon.svg" alt="">Prontuário Pessoal</div>
+      <div class="brand"><img src="/icon.png" alt="">Helyx</div>
       <h1 style="text-align:center">${isLogin ? 'Entrar' : 'Criar conta'}</h1>
       <p class="muted small" style="text-align:center">Seus dados de saúde ficam guardados neste computador, protegidos por senha e criptografia.</p>
       <form id="authForm" class="stack" style="margin-top:1rem">

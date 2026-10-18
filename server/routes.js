@@ -113,14 +113,26 @@ r.get('/api/export', A, (ctx) => {
   ctx.res.setHeader('Content-Disposition', `attachment; filename="prontuario-${ov.localDate()}.json"`);
   return ov.exportAll(uid(ctx));
 });
-r.get('/api/system', A, () => {
+r.get('/api/system', A, (ctx) => {
   const cfg = require('./config');
-  return { data_dir: cfg.dataDir, backups_dir: require('./lib/backup').dir(), backups: require('./lib/backup').list().slice(0, 10), desktop: !!process.versions.electron };
+  return { data_dir: cfg.dataDir, backups_dir: require('./lib/backup').dir(), backups: require('./services/restore').listFiles(ctx.user.id).map((b) => b.name).slice(0, 10), desktop: !!process.versions.electron };
 });
+const restoreSvc = require('./services/restore');
 r.post('/api/backup', A, (ctx) => {
-  const target = require('./lib/backup').backupNow();
+  const target = restoreSvc.saveFile(uid(ctx));
   audit.log(uid(ctx), 'dados', null, 'backup', null, null);
   return { ok: true, path: target };
+});
+r.get('/api/backup/list', A, (ctx) => restoreSvc.listFiles(uid(ctx)));
+r.get('/api/backup/download', A, (ctx) => {
+  audit.log(uid(ctx), 'dados', null, 'baixar backup', null, null);
+  ctx.res.setHeader('Content-Disposition', `attachment; filename="${restoreSvc.downloadName()}"`);
+  return ov.exportAll(uid(ctx));
+});
+r.post('/api/backup/preview', A, (ctx) => { restoreSvc.validate(ctx.body.data); return { exportado_em: ctx.body.data.exportado_em, ...restoreSvc.summary(ctx.body.data) }; });
+r.post('/api/backup/restore', A, (ctx) => {
+  if (ctx.body.confirm !== 'RESTAURAR') throw new HttpError(400, 'Confirme digitando RESTAURAR.');
+  return ctx.body.name ? restoreSvc.restoreLocal(uid(ctx), ctx.body.name) : restoreSvc.restore(uid(ctx), ctx.body.data);
 });
 r.get('/api/audit', A, (ctx) => audit.list(uid(ctx), Number(ctx.query.limit) || 200));
 r.post('/api/account/delete', A, (ctx) => {

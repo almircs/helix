@@ -1,4 +1,4 @@
-# Prontuário Pessoal — Arquitetura
+# Helyx — Arquitetura
 
 Sistema de Gestão Pessoal de Saúde. Este documento cobre os 7 itens pedidos antes da implementação:
 arquitetura, estrutura do banco, modelo das tabelas, fluxo de navegação, tecnologias, pastas e plano por etapas.

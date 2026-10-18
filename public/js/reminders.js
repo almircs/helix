@@ -18,7 +18,7 @@ async function check() {
     shown.add(key);
     const msg = `${e.title} às ${e.time}${e.location ? ' — ' + e.location : ''}`;
     toast('Lembrete: ' + msg);
-    try { if ('Notification' in window && Notification.permission === 'granted') new Notification('Prontuário Pessoal', { body: msg, icon: '/icon.svg' }); } catch { /* sem suporte */ }
+    try { if ('Notification' in window && Notification.permission === 'granted') new Notification('Helyx', { body: msg, icon: '/icon.png' }); } catch { /* sem suporte */ }
   }
 }
 

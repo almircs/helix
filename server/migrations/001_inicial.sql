@@ -1,4 +1,4 @@
--- Prontuário Pessoal — esquema inicial
+-- Helyx — esquema inicial
 -- Campos marcados (C) são gravados criptografados (AES-256-GCM) pela aplicação.
 
 CREATE TABLE users (

@@ -148,3 +148,23 @@ export async function cached(key, path, fresh = false) {
   try { return await cache[key]; } catch (e) { delete cache[key]; throw e; }
 }
 export const invalidate = (...keys) => keys.forEach((k) => delete cache[k]);
+
+// Janela de confirmação própria (o Electron não suporta window.prompt)
+export function askConfirm({ title, message, word, button = 'Confirmar', danger = false }) {
+  return new Promise((resolve) => {
+    const wrap = document.createElement('div');
+    wrap.className = 'modal-wrap';
+    wrap.innerHTML = html`<div class="modal" role="dialog" aria-modal="true" aria-labelledby="mTitle">
+      <h2 id="mTitle">${title}</h2><p>${message}</p>
+      ${word ? html`<label for="mWord">Digite <b>${word}</b> para confirmar</label><input id="mWord" autocomplete="off">` : ''}
+      <div class="form-actions" style="position:static;background:none;padding-bottom:0"><button class="btn ${danger ? 'danger' : 'primary'}" id="mOk" ${word ? raw('disabled') : ''}>${button}</button><button class="btn" id="mNo">Cancelar</button></div></div>`.__raw;
+    document.body.append(wrap);
+    const input = wrap.querySelector('#mWord'); const ok = wrap.querySelector('#mOk');
+    const close = (v) => { wrap.remove(); resolve(v); };
+    if (input) { input.oninput = () => { ok.disabled = input.value.trim().toUpperCase() !== word; }; input.focus(); } else ok.focus();
+    ok.onclick = () => close(word || true);
+    wrap.querySelector('#mNo').onclick = () => close(null);
+    wrap.onclick = (e) => { if (e.target === wrap) close(null); };
+    wrap.onkeydown = (e) => { if (e.key === 'Escape') close(null); if (e.key === 'Enter' && !ok.disabled) close(word || true); };
+  });
+}

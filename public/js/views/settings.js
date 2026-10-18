@@ -1,6 +1,6 @@
-import { api, html, icon, fields, readForm, toast, view, go, invalidate, fmtDate, confirmDialog } from '../lib.js';
+import { api, html, icon, fields, readForm, toast, view, go, invalidate, fmtDate, confirmDialog, askConfirm } from '../lib.js';
 
-const TABS = [['perfil', 'Meu perfil'], ['medicos', 'Médicos'], ['seguranca', 'Segurança e dados'], ['aparencia', 'Aparência']];
+const TABS = [['perfil', 'Meu perfil'], ['medicos', 'Médicos'], ['backup', 'Backup'], ['seguranca', 'Segurança e dados'], ['aparencia', 'Aparência']];
 const ENTITY = { usuario: 'Conta', sessao: 'Acesso', perfil: 'Perfil', medico: 'Médico', consulta: 'Consulta', exame: 'Exame', marcador: 'Exame (catálogo)', medicamento: 'Medicamento', medicao: 'Medição', agenda: 'Agenda', dados: 'Dados', ia: 'IA' };
 
 export function applyTheme() {
@@ -14,6 +14,7 @@ export async function render({ params, query }) {
   if (tab === 'perfil') return profile(head);
   if (tab === 'medicos') return doctors(head, query);
   if (tab === 'seguranca') return security(head);
+  if (tab === 'backup') return backupView(head);
   let cur = 'auto'; try { cur = localStorage.getItem('tema') || 'auto'; } catch { /* */ }
   return view(html`${head}<div class="card"><h2>Tema</h2><div class="seg">${[['auto', 'Automático'], ['light', 'Claro'], ['dark', 'Escuro']].map(([v, l]) => html`<button class="${cur === v ? 'on' : ''}" data-t="${v}">${l}</button>`)}</div></div>`, (el) => {
     el.querySelectorAll('[data-t]').forEach((b) => b.onclick = () => { try { localStorage.setItem('tema', b.dataset.t); } catch { /* */ } applyTheme(); go('#/configuracoes/aparencia'); });
@@ -97,13 +98,8 @@ async function security(head) {
         <p>O programa está abrindo <b>sem senha</b>, direto no seu perfil deste computador.</p>
         <p class="small muted">Quem usar este computador consegue ver os dados. Os campos sensíveis continuam gravados criptografados no disco. A proteção por senha poderá ser ligada numa próxima versão.</p></div>`}
       <div class="card"><h2>Seus dados</h2>
-        <p>Baixe uma cópia completa e legível de tudo o que está cadastrado (formato JSON).</p>
-        <a class="btn" href="/api/export" download>Exportar meus dados</a>
-        <h3 style="margin-top:1.25rem">Cópias de segurança</h3>
-        <p class="small">O programa faz uma cópia automática por dia ao abrir (guarda as últimas 30). ${sys.backups.length ? `Última: ${sys.backups[0].replace('auto-', '')}.` : 'Nenhuma cópia ainda.'}</p>
-        <button class="btn" id="bk">Fazer cópia agora</button>
-        <p class="small muted" style="margin-top:.75rem">Pasta dos dados: <code>${sys.data_dir}</code><br>Cópias em: <code>${sys.backups_dir}</code><br>
-          Para guardar fora do computador, copie essa pasta para um pendrive ou nuvem. A cópia leva junto a chave de criptografia (<code>chave.key</code>): guarde em local seguro.</p>
+        <p>Para salvar ou restaurar seus dados, use a aba <a href="#/configuracoes/backup">Backup</a>.</p>
+        <p class="small muted">Pasta dos dados neste computador: <code>${sys.data_dir}</code></p>
         <p class="small muted">Nenhum dado é enviado a terceiros. O sistema roda neste computador.</p></div>
     </div>
     <div class="card" style="margin-top:1rem"><h2>Registro de alterações</h2>
@@ -111,12 +107,9 @@ async function security(head) {
       ${log.map((l) => html`<tr><td>${new Date(l.at.replace(' ', 'T') + 'Z').toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}</td><td>${ENTITY[l.entity] || l.entity}${l.entity_id ? ' #' + l.entity_id : ''}</td><td>${l.action}</td></tr>`)}
       </tbody></table></div></div>
     <div class="card" style="margin-top:1rem;border-color:var(--danger)"><h2 style="color:var(--danger)">Excluir conta e todos os dados</h2>
-      <p>Apaga definitivamente seu cadastro, exames, consultas, medicamentos, agenda e histórico. Exporte seus dados antes, se quiser guardar uma cópia.</p>
+      <p>Apaga definitivamente seu cadastro, exames, consultas, medicamentos, agenda e histórico. Faça um <a href="#/configuracoes/backup">backup</a> antes, se quiser guardar uma cópia.</p>
       <form id="delacc" class="form-grid">${fields([...(me.login ? [{ name: 'password', label: 'Sua senha', type: 'password', required: true }] : []), { name: 'confirm', label: 'Digite EXCLUIR', required: true }])}
         <div class="full"><button class="btn danger">Excluir tudo definitivamente</button></div></form></div>`, (el) => {
-    el.querySelector('#bk').onclick = async () => {
-      try { const r = await api('/backup', { method: 'POST' }); toast('Cópia criada em ' + r.path); } catch (err) { toast(err.message, true); }
-    };
     el.querySelector('#pw')?.addEventListener('submit', async (e) => {
       e.preventDefault();
       try { await api('/auth/password', { method: 'POST', body: readForm(e.target) }); toast('Senha alterada'); e.target.reset(); } catch (err) { toast(err.message, true); }
@@ -125,6 +118,63 @@ async function security(head) {
       e.preventDefault();
       if (!confirmDialog('Tem certeza? Esta ação não pode ser desfeita.')) return;
       try { await api('/account/delete', { method: 'POST', body: readForm(e.target) }); location.hash = me.login ? '#/cadastro' : '#/'; location.reload(); } catch (err) { toast(err.message, true); }
+    };
+  });
+}
+
+// ---------------------------------------------------------------- Backup e restauração
+const fmtWhen = (iso) => (iso ? new Date(iso).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) : '—');
+const countsText = (c) => [`${c.consultas} consulta(s)`, `${c.exames} exame(s)`, `${c.resultados} resultado(s)`, `${c.medicamentos} medicamento(s)`, `${c.medicoes} medição(ões)`, `${c.agenda} compromisso(s)`].join(' · ');
+
+async function backupView(head) {
+  const [list, sys] = await Promise.all([api('/backup/list'), api('/system')]);
+  return view(html`${head}
+    <div class="grid g2">
+      <div class="card"><h2>Fazer backup</h2>
+        <p>Salva um arquivo <b>.helyx</b> com todos os seus dados: perfil, médicos, consultas, exames, medicamentos, medições e agenda.</p>
+        <p class="small muted">Guarde o arquivo num pendrive, e-mail ou nuvem. Ele pode ser restaurado neste ou em outro computador. Atenção: o arquivo contém seus dados de saúde — guarde em local seguro.</p>
+        <div style="display:flex;gap:.5rem;flex-wrap:wrap"><a class="btn primary" href="/api/backup/download" download id="dl">Salvar arquivo de backup</a>
+        <button class="btn" id="bk">Guardar cópia neste computador</button></div></div>
+      <div class="card"><h2>Restaurar de um arquivo</h2>
+        <p>Escolha um arquivo <b>.helyx</b>. Os dados atuais serão <b>substituídos</b> pelos do arquivo.</p>
+        <p class="small muted">Antes de restaurar, o Helyx guarda automaticamente uma cópia do que existe hoje, para você poder voltar atrás.</p>
+        <label class="btn" for="file" style="width:auto">Escolher arquivo…</label>
+        <input type="file" id="file" accept=".helyx,.json,application/json" style="display:none">
+        <div id="preview"></div></div>
+    </div>
+    <div class="card" style="margin-top:1rem"><h2>Cópias guardadas neste computador <span class="small muted">${list.length}</span></h2>
+      <p class="small muted">O Helyx faz uma cópia automática por dia ao abrir e guarda as últimas 30.</p>
+      ${list.length ? html`<div class="table-wrap"><table class="bk-table"><thead><tr><th>Data</th><th>Tipo</th><th class="bk-content">Conteúdo</th><th></th></tr></thead><tbody>
+        ${list.map((b) => html`<tr><td><b>${fmtWhen(b.exportado_em)}</b></td><td><span class="tag">${b.kind}</span></td>
+          <td class="small bk-content">${b.erro ? 'arquivo ilegível' : countsText(b)}</td>
+          <td style="text-align:right">${b.erro ? '' : html`<button class="btn small" data-restore="${b.name}" data-when="${fmtWhen(b.exportado_em)}">Restaurar</button>`}</td></tr>`)}
+      </tbody></table></div>` : html`<p class="empty">Nenhuma cópia ainda.</p>`}
+      <p class="small muted">Pasta: <code>${sys.backups_dir}</code></p></div>`, (el) => {
+    const doRestore = async (body, label) => {
+      const typed = await askConfirm({ title: `Restaurar ${label}?`, message: 'Os dados atuais serão substituídos pelos do backup. Antes disso, o Helyx guarda uma cópia do que existe hoje.', word: 'RESTAURAR', button: 'Restaurar', danger: true });
+      if (!typed) return;
+      try {
+        const r = await api('/backup/restore', { method: 'POST', body: { ...body, confirm: typed } });
+        toast(`Backup restaurado: ${r.consultas} consulta(s), ${r.exames} exame(s), ${r.medicamentos} medicamento(s)`);
+        invalidate('doctors'); go('#/configuracoes/backup');
+      } catch (err) { toast(err.message, true); }
+    };
+    el.querySelector('#bk').onclick = async () => {
+      try { await api('/backup', { method: 'POST' }); toast('Cópia guardada neste computador'); go('#/configuracoes/backup'); } catch (err) { toast(err.message, true); }
+    };
+    el.querySelectorAll('[data-restore]').forEach((b) => b.onclick = () => doRestore({ name: b.dataset.restore }, `a cópia de ${b.dataset.when}`));
+    el.querySelector('#file').onchange = async (e) => {
+      const f = e.target.files[0]; if (!f) return;
+      const box = el.querySelector('#preview');
+      let data;
+      try { data = JSON.parse(await f.text()); } catch { box.innerHTML = html`<p class="alert atencao" style="margin-top:.75rem">Não foi possível ler este arquivo.</p>`.__raw; return; }
+      try {
+        const p = await api('/backup/preview', { method: 'POST', body: { data } });
+        box.innerHTML = html`<div class="note" style="margin-top:.75rem"><b>${f.name}</b><br>Backup de ${fmtWhen(p.exportado_em)}<br><span class="small">${countsText(p)}</span></div>
+          <button class="btn primary" id="go" style="margin-top:.75rem">Restaurar este backup</button>`.__raw;
+        box.querySelector('#go').onclick = () => doRestore({ data }, `o backup de ${fmtWhen(p.exportado_em)}`);
+      } catch (err) { box.innerHTML = html`<p class="alert atencao" style="margin-top:.75rem">${err.message}</p>`.__raw; }
+      e.target.value = '';
     };
   });
 }

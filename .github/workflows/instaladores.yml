@@ -56,7 +56,7 @@ jobs:
         shell: bash
         run: |
           mkdir saida
-          cp dist/*.exe "saida/Instalar-Prontuario-Pessoal-Windows.exe"
+          cp dist/*.exe "saida/Instalar-Helyx-Windows.exe"
       - uses: actions/upload-artifact@v4
         with:
           name: windows
@@ -84,8 +84,8 @@ jobs:
             codesign --force --deep --sign - "$app"
             codesign --verify --deep "$app"
           done
-          ditto -c -k --keepParent "$(ls -d dist/mac-arm64/*.app)" "saida/Prontuario-Pessoal-Mac-chip-Apple-M1-a-M4.zip"
-          ditto -c -k --keepParent "$(ls -d dist/mac/*.app)" "saida/Prontuario-Pessoal-Mac-Intel.zip"
+          ditto -c -k --keepParent "$(ls -d dist/mac-arm64/*.app)" "saida/Helyx-Mac-chip-Apple-M1-a-M4.zip"
+          ditto -c -k --keepParent "$(ls -d dist/mac/*.app)" "saida/Helyx-Mac-Intel.zip"
       - name: Conferir que o app abre (chip Apple)
         continue-on-error: true
         run: |
@@ -93,7 +93,7 @@ jobs:
           bin=$(ls "$app/Contents/MacOS/" | head -1)
           "$app/Contents/MacOS/$bin" & PID=$!
           sleep 15
-          curl -sf http://127.0.0.1:47321/ | grep -q "Prontuário Pessoal" && echo "App abriu e respondeu"
+          curl -sf http://127.0.0.1:47321/ | grep -q "Helyx" && echo "App abriu e respondeu"
           kill $PID || true
       - uses: actions/upload-artifact@v4
         with:
@@ -121,5 +121,5 @@ jobs:
             gh release upload "$TAG" arquivos/* --clobber
           else
             gh release create "$TAG" arquivos/* --target "$GITHUB_SHA" \
-              --title "Prontuário Pessoal $VER" --notes-file .github/notas-da-versao.md
+              --title "Helyx $VER" --notes-file .github/notas-da-versao.md
           fi

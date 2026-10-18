@@ -66,7 +66,7 @@ export async function reports({ query }) {
       ${dash.alerts.filter((a) => a.kind === 'exame_pendente').length ? html`<div><h2>Exames pedidos ainda não realizados</h2><ul>${dash.alerts.filter((a) => a.kind === 'exame_pendente').map((a) => html`<li>${a.text.replace('Exame pendente: ', '')}</li>`)}</ul></div>` : ''}
 
       <div><h2>Minhas perguntas e anotações</h2><textarea id="qs" placeholder="Escreva aqui o que quer perguntar ao médico. O texto aparece na impressão."></textarea></div>
-      <p class="small muted">Documento de organização pessoal gerado pelo Prontuário Pessoal. Não contém diagnóstico; “acima/abaixo” compara com a referência do laudo.</p>
+      <p class="small muted">Documento de organização pessoal gerado pelo Helyx. Não contém diagnóstico; “acima/abaixo” compara com a referência do laudo.</p>
     </div>`, (el) => {
     const reload = () => { location.hash = `#/relatorios?meses=${el.querySelector('#meses').value}${el.querySelector('#esp').value ? '&esp=' + encodeURIComponent(el.querySelector('#esp').value) : ''}`; };
     el.querySelector('#meses').onchange = reload; el.querySelector('#esp').onchange = reload;
