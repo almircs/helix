@@ -52,6 +52,27 @@ jobs:
         run: npx electron-builder --win --publish never
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: false
+      - name: Diagnóstico - instalar e abrir no Windows
+        continue-on-error: true
+        shell: pwsh
+        run: |
+          $inst = Get-ChildItem dist/*.exe | Select-Object -First 1
+          Start-Process $inst.FullName -ArgumentList '/S' -Wait
+          $exe = "$env:LOCALAPPDATA\Programs\Helyx\Helyx.exe"
+          $instalado = Test-Path $exe
+          if (-not $instalado) { $exe = (Get-ChildItem dist/win-unpacked/*.exe | Select-Object -First 1).FullName }
+          $p = Start-Process $exe -PassThru
+          Start-Sleep -Seconds 25
+          $vivo = -not $p.HasExited
+          $http = 'sem resposta'
+          foreach ($porta in 47321) { try { $r = Invoke-WebRequest "http://127.0.0.1:$porta/" -UseBasicParsing -TimeoutSec 5; $http = "$($r.StatusCode) $(if ($r.Content -match 'Helyx') {'pagina ok'})" } catch { $http = "falhou: $($_.Exception.Message)" } }
+          $janelas = (Get-Process Helyx -ErrorAction SilentlyContinue | Where-Object MainWindowTitle | ForEach-Object MainWindowTitle) -join ','
+          $log = Get-Content "$env:APPDATA\Helyx\helyx.log" -Raw -ErrorAction SilentlyContinue
+          $msg = "instalado=$instalado vivo=$vivo http=$http janelas=[$janelas]`n$log"
+          Write-Output $msg
+          $enc = $msg -replace '%','%25' -replace "`r",'' -replace "`n",'%0A'
+          Write-Output "::warning title=Diagnostico Windows::$enc"
+          Stop-Process -Name Helyx -Force -ErrorAction SilentlyContinue
       - name: Separar o instalador
         shell: bash
         run: |
@@ -86,15 +107,22 @@ jobs:
           done
           ditto -c -k --keepParent "$(ls -d dist/mac-arm64/*.app)" "saida/Helyx-Mac-chip-Apple-M1-a-M4.zip"
           ditto -c -k --keepParent "$(ls -d dist/mac/*.app)" "saida/Helyx-Mac-Intel.zip"
-      - name: Conferir que o app abre (chip Apple)
+      - name: Diagnóstico - abrir no Mac (chip Apple)
         continue-on-error: true
         run: |
           app=$(ls -d dist/mac-arm64/*.app)
-          bin=$(ls "$app/Contents/MacOS/" | head -1)
-          "$app/Contents/MacOS/$bin" & PID=$!
-          sleep 15
-          curl -sf http://127.0.0.1:47321/ | grep -q "Helyx" && echo "App abriu e respondeu"
-          kill $PID || true
+          open "$app"
+          sleep 25
+          vivo=$(pgrep -f "$app/Contents/MacOS" >/dev/null && echo true || echo false)
+          http=$(curl -s -o /tmp/p.html -w "%{http_code}" http://127.0.0.1:47321/ || echo falhou)
+          grep -q Helyx /tmp/p.html 2>/dev/null && http="$http pagina ok"
+          log=$(cat "$HOME/Library/Application Support/Helyx/helyx.log" 2>/dev/null)
+          msg="vivo=$vivo http=$http
+          $log"
+          echo "$msg"
+          enc=$(printf '%s' "$msg" | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}')
+          echo "::warning title=Diagnostico Mac::$enc"
+          pkill -f "$app/Contents/MacOS" || true
       - uses: actions/upload-artifact@v4
         with:
           name: mac

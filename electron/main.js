@@ -5,10 +5,29 @@ const path = require('node:path');
 
 const APP_NAME = 'Helyx';
 app.setName(APP_NAME);
+
+// Registro de funcionamento em <pasta do usuário>/Helyx/helyx.log — ajuda a descobrir problemas
+const fs = require('node:fs');
+function logFile() { try { return path.join(app.getPath('userData'), 'helyx.log'); } catch { return null; } }
+function log(...args) {
+  const line = `[${new Date().toISOString()}] ${args.map((a) => (a instanceof Error ? a.stack : typeof a === 'object' ? JSON.stringify(a) : String(a))).join(' ')}\n`;
+  try { process.stdout.write(line); } catch { /* sem console */ }
+  try { const f = logFile(); if (f) { fs.mkdirSync(path.dirname(f), { recursive: true }); fs.appendFileSync(f, line); } } catch { /* ignora */ }
+}
+let fatalShown = false;
+function fatal(where, err) {
+  log('ERRO', where, err);
+  if (fatalShown) return; fatalShown = true;
+  try { dialog.showErrorBox(`${APP_NAME} — não foi possível abrir`, `${where}\n\n${err && err.message ? err.message : err}\n\nDetalhes em: ${logFile()}`); } catch { /* */ }
+  app.exit(1);
+}
+process.on('uncaughtException', (e) => fatal('Erro inesperado', e));
+process.on('unhandledRejection', (e) => fatal('Erro inesperado', e));
+log('iniciando', { versao: app.getVersion(), electron: process.versions.electron, node: process.versions.node, so: process.platform, arq: process.arch });
 if (process.platform === 'win32') app.setAppUserModelId('br.helyx.app');
 
 // Uma única janela aberta por vez
-if (!app.requestSingleInstanceLock()) { app.quit(); }
+if (!app.requestSingleInstanceLock()) { log('já existe uma janela aberta; encerrando esta'); app.quit(); }
 
 let win = null;
 let baseUrl = null;
@@ -17,21 +36,25 @@ function dataDir() { return path.join(app.getPath('userData'), 'dados'); }
 
 // Versões até a 1.0.1 se chamavam "Prontuário Pessoal": traz os dados da pasta antiga na primeira abertura
 function migrateOldData() {
-  const fs = require('node:fs');
   const target = dataDir();
   if (fs.existsSync(path.join(target, 'saude.db'))) return;
   const old = path.join(app.getPath('appData'), 'Prontuário Pessoal', 'dados');
   if (!fs.existsSync(path.join(old, 'saude.db'))) return;
   fs.mkdirSync(target, { recursive: true });
   fs.cpSync(old, target, { recursive: true });
+  log('dados da versão anterior copiados de', old);
 }
 
 async function startServer() {
-  try { migrateOldData(); } catch (e) { console.error('[migração] ', e); }
+  try { migrateOldData(); } catch (e) { log('falha ao migrar dados antigos', e); }
   process.env.SAUDE_DATA_DIR = dataDir();
+  log('pasta de dados', dataDir());
+  let driver = 'node:sqlite'; try { require('node:sqlite'); } catch (e) { driver = 'better-sqlite3 (' + e.code + ')'; }
+  log('banco de dados via', driver);
   const { start } = require('../server/index.js');
+  // Porta fixa; se estiver ocupada ou bloqueada pelo Windows, usa qualquer porta livre
   try { return await start({ host: '127.0.0.1', port: 47321 }); }
-  catch (e) { if (e.code === 'EADDRINUSE') return start({ host: '127.0.0.1', port: 0 }); throw e; }
+  catch (e) { log('porta 47321 indisponível:', e.code); return start({ host: '127.0.0.1', port: 0 }); }
 }
 
 function isInternal(url) { return baseUrl && url.startsWith(baseUrl); }
@@ -44,7 +67,17 @@ function createWindow() {
     autoHideMenuBar: process.platform === 'win32',
     webPreferences: { contextIsolation: true, nodeIntegration: false, sandbox: true, spellcheck: true },
   });
-  win.once('ready-to-show', () => win.show());
+  // Mostra a janela quando a página estiver pronta — ou após 4 s, para nunca ficar invisível
+  const reveal = () => { if (win && !win.isDestroyed() && !win.isVisible()) win.show(); };
+  win.once('ready-to-show', reveal);
+  setTimeout(reveal, 4000);
+  win.webContents.on('did-fail-load', (_e, code, desc, url) => {
+    log('falha ao carregar a página', code, desc, url);
+    reveal();
+    win.loadURL('data:text/html;charset=utf-8,' + encodeURIComponent(`<body style="font-family:system-ui;padding:2rem"><h2>O Helyx não conseguiu abrir a tela inicial</h2><p>${desc} (${code})</p><p>Detalhes em: ${logFile()}</p></body>`));
+  });
+  win.webContents.on('render-process-gone', (_e, d) => log('janela encerrada', d));
+  win.webContents.on('did-finish-load', () => log('tela carregada', win.webContents.getURL()));
   // Downloads (backup, exportação): pergunta onde salvar
   win.webContents.session.on('will-download', (_e, item) => {
     item.setSaveDialogOptions({ title: 'Salvar backup do Helyx', defaultPath: path.join(app.getPath('documents'), item.getFilename()),
@@ -102,16 +135,14 @@ function buildMenu() {
   Menu.setApplicationMenu(Menu.buildFromTemplate(template));
 }
 
-app.on('second-instance', () => { if (win) { if (win.isMinimized()) win.restore(); win.focus(); } });
+app.on('second-instance', () => { if (win) { if (win.isMinimized()) win.restore(); win.show(); win.focus(); } });
 
 app.whenReady().then(async () => {
   try {
     const { url } = await startServer();
     baseUrl = url;
-  } catch (e) {
-    dialog.showErrorBox(APP_NAME, `Não foi possível iniciar o programa.\n\n${e.message}`);
-    app.quit(); return;
-  }
+    log('servidor interno em', url);
+  } catch (e) { fatal('Não foi possível iniciar o banco de dados ou o servidor interno.', e); return; }
   buildMenu();
   createWindow();
   app.on('activate', () => { if (BrowserWindow.getAllWindows().length === 0) createWindow(); });

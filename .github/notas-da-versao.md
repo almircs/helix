@@ -10,6 +10,10 @@ Na primeira vez, clique no programa com o botão direito → **Abrir** → **Abr
 
 Não sabe qual é o seu Mac? Menu  → **Sobre este Mac**: se aparecer "Chip Apple M…", use o primeiro; se aparecer "Processador Intel", use o segundo.
 
+## Correção da 1.1.1
+- No Windows, o programa podia ficar aberto escondido, sem mostrar a janela. Agora a janela sempre aparece, e erros mostram uma mensagem com o motivo. O registro de funcionamento fica em `%APPDATA%\Helyx\helyx.log`.
+- Se o Helyx não abrir: abra o Gerenciador de Tarefas (Ctrl+Shift+Esc), finalize qualquer processo **Helyx** e abra de novo.
+
 ## Novidades da 1.1.0
 - **Novo nome e ícone: Helyx.** Seus dados da versão anterior ("Prontuário Pessoal") são trazidos automaticamente na primeira abertura.
 - **Backup e restauração:** em *Configurações → Backup* (ou menu *Arquivo → Fazer backup…*), salve um arquivo `.helyx` com todos os seus dados e restaure-o neste ou em outro computador. Antes de restaurar, o Helyx guarda uma cópia do que existe hoje.
