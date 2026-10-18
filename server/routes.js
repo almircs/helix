@@ -19,7 +19,7 @@ const uid = (ctx) => ctx.user.id;
 r.post('/api/auth/register', auth.register);
 r.post('/api/auth/login', auth.login);
 r.post('/api/auth/logout', auth.logout);
-r.get('/api/auth/me', A, (ctx) => ({ id: ctx.user.id, email: ctx.user.email }));
+r.get('/api/auth/me', A, (ctx) => ({ id: ctx.user.id, email: ctx.user.email, login: auth.requireLogin() }));
 r.post('/api/auth/password', A, auth.changePassword);
 
 // ---------- Perfil
@@ -124,7 +124,7 @@ r.post('/api/backup', A, (ctx) => {
 });
 r.get('/api/audit', A, (ctx) => audit.list(uid(ctx), Number(ctx.query.limit) || 200));
 r.post('/api/account/delete', A, (ctx) => {
-  if (!auth.verifyPasswordOf(uid(ctx), ctx.body.password)) throw new HttpError(401, 'Senha incorreta.');
+  if (auth.requireLogin() && !auth.verifyPasswordOf(uid(ctx), ctx.body.password)) throw new HttpError(401, 'Senha incorreta.');
   if (ctx.body.confirm !== 'EXCLUIR') throw new HttpError(400, 'Digite EXCLUIR para confirmar.');
   tx(() => {
     run('DELETE FROM exam_results WHERE user_id = ?', uid(ctx));

@@ -69,8 +69,27 @@ function logout(ctx) {
   return { ok: true };
 }
 
+// Perfil local usado quando o login está desligado: o primeiro usuário do banco (criado se não existir)
+function localUser() {
+  let u = get('SELECT id, email FROM users ORDER BY id LIMIT 1');
+  if (!u) {
+    const r = run('INSERT INTO users (email, password_hash) VALUES (?, ?)', 'local@prontuario', hashPassword(randomToken()));
+    const id = Number(r.lastInsertRowid);
+    run('INSERT INTO profiles (user_id) VALUES (?)', id);
+    audit.log(id, 'usuario', id, 'criar', null, { modo: 'sem login' });
+    u = { id, email: 'local@prontuario' };
+  }
+  return u;
+}
+
 function requireAuth(ctx) {
   const t = ctx.cookies[COOKIE];
+  if (!config.requireLogin) {
+    const s = t && get('SELECT s.user_id, u.email FROM sessions s JOIN users u ON u.id = s.user_id WHERE token_hash = ?', sha256(t));
+    const u = s ? { id: s.user_id, email: s.email } : localUser();
+    ctx.user = { id: u.id, email: u.email, local: !s };
+    return;
+  }
   if (!t) throw new HttpError(401, 'Faça login para continuar.');
   const s = get(`SELECT s.*, u.email FROM sessions s JOIN users u ON u.id = s.user_id WHERE token_hash = ?`, sha256(t));
   const now = Date.now();
@@ -95,7 +114,7 @@ function changePassword(ctx) {
   return { ok: true };
 }
 
-module.exports = { register, login, logout, requireAuth, changePassword, verifyPasswordOf: (id, pw) => {
+module.exports = { register, login, logout, requireAuth, changePassword, requireLogin: () => config.requireLogin, verifyPasswordOf: (id, pw) => {
   const u = get('SELECT password_hash FROM users WHERE id = ?', id);
   return u && verifyPassword(String(pw || ''), u.password_hash);
 } };

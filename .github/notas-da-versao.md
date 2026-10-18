@@ -10,8 +10,11 @@ Na primeira vez, clique no programa com o botão direito → **Abrir** → **Abr
 
 Não sabe qual é o seu Mac? Menu  → **Sobre este Mac**: se aparecer "Chip Apple M…", use o primeiro; se aparecer "Processador Intel", use o segundo.
 
+## Novidade da 1.0.1
+O programa abre direto, **sem tela de login**, para facilitar os testes.
+
 ## Seus dados
-Ficam somente no seu computador, protegidos por senha e criptografia:
+Ficam somente no seu computador, com os campos sensíveis criptografados:
 - Windows: `%APPDATA%\Prontuário Pessoal\dados`
 - Mac: `~/Library/Application Support/Prontuário Pessoal/dados`
 

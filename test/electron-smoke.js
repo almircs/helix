@@ -20,7 +20,7 @@ process.env.SAUDE_DATA_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'saude-smoke-
     const sc = r.headers.get('set-cookie'); if (sc) cookie = sc.split(';')[0];
     return { status: r.status, data: await r.json().catch(() => null) };
   };
-  assert.equal((await call('POST', '/auth/register', { email: 't@t.com', password: 'teste1234' })).status, 200);
+  assert.equal((await call('GET', '/auth/me')).data.login, false, 'abre sem login');
   const c = (await call('POST', '/consultations', { date: '2026-09-02', diagnoses: 'x', requests: [{ description: 'Creatinina' }] })).data;
   const e = (await call('POST', '/exams', { collection_date: '2026-09-10', results: [{ marker_name: 'Creatinina', value: '1,4', ref_min: '0,7', ref_max: '1,3' }] })).data;
   assert.equal(e.results[0].situation, 'acima');

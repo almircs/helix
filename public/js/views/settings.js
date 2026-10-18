@@ -91,9 +91,11 @@ async function security(head) {
   const [me, log, sys] = await Promise.all([api('/auth/me'), api('/audit?limit=60'), api('/system')]);
   return view(html`${head}
     <div class="grid g2">
-      <div class="card"><h2>Trocar senha</h2><p class="meta">Conta: ${me.email}</p>
+      ${me.login ? html`<div class="card"><h2>Trocar senha</h2><p class="meta">Conta: ${me.email}</p>
         <form id="pw" class="stack">${fields([{ name: 'current', label: 'Senha atual', type: 'password', required: true }, { name: 'password', label: 'Nova senha', type: 'password', required: true, hint: 'mín. 8, letras e números' }])}
-        <button class="btn primary">Trocar senha</button></form></div>
+        <button class="btn primary">Trocar senha</button></form></div>` : html`<div class="card"><h2>Acesso</h2>
+        <p>O programa está abrindo <b>sem senha</b>, direto no seu perfil deste computador.</p>
+        <p class="small muted">Quem usar este computador consegue ver os dados. Os campos sensíveis continuam gravados criptografados no disco. A proteção por senha poderá ser ligada numa próxima versão.</p></div>`}
       <div class="card"><h2>Seus dados</h2>
         <p>Baixe uma cópia completa e legível de tudo o que está cadastrado (formato JSON).</p>
         <a class="btn" href="/api/export" download>Exportar meus dados</a>
@@ -110,19 +112,19 @@ async function security(head) {
       </tbody></table></div></div>
     <div class="card" style="margin-top:1rem;border-color:var(--danger)"><h2 style="color:var(--danger)">Excluir conta e todos os dados</h2>
       <p>Apaga definitivamente seu cadastro, exames, consultas, medicamentos, agenda e histórico. Exporte seus dados antes, se quiser guardar uma cópia.</p>
-      <form id="delacc" class="form-grid">${fields([{ name: 'password', label: 'Sua senha', type: 'password', required: true }, { name: 'confirm', label: 'Digite EXCLUIR', required: true }])}
+      <form id="delacc" class="form-grid">${fields([...(me.login ? [{ name: 'password', label: 'Sua senha', type: 'password', required: true }] : []), { name: 'confirm', label: 'Digite EXCLUIR', required: true }])}
         <div class="full"><button class="btn danger">Excluir tudo definitivamente</button></div></form></div>`, (el) => {
     el.querySelector('#bk').onclick = async () => {
       try { const r = await api('/backup', { method: 'POST' }); toast('Cópia criada em ' + r.path); } catch (err) { toast(err.message, true); }
     };
-    el.querySelector('#pw').onsubmit = async (e) => {
+    el.querySelector('#pw')?.addEventListener('submit', async (e) => {
       e.preventDefault();
       try { await api('/auth/password', { method: 'POST', body: readForm(e.target) }); toast('Senha alterada'); e.target.reset(); } catch (err) { toast(err.message, true); }
-    };
+    });
     el.querySelector('#delacc').onsubmit = async (e) => {
       e.preventDefault();
       if (!confirmDialog('Tem certeza? Esta ação não pode ser desfeita.')) return;
-      try { await api('/account/delete', { method: 'POST', body: readForm(e.target) }); location.hash = '#/cadastro'; location.reload(); } catch (err) { toast(err.message, true); }
+      try { await api('/account/delete', { method: 'POST', body: readForm(e.target) }); location.hash = me.login ? '#/cadastro' : '#/'; location.reload(); } catch (err) { toast(err.message, true); }
     };
   });
 }

@@ -259,3 +259,4 @@ legend { font-weight: 700; padding: 0 .4rem; }
 @media print { .side, .top, .form-actions, .no-print { display: none !important; } .shell { display: block; } .card { box-shadow: none; break-inside: avoid; } }
 .flow a.step { text-decoration: none; color: var(--text); }
 .flow a.step:hover { outline: 2px solid var(--primary); }
+[hidden] { display: none !important; }

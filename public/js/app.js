@@ -120,11 +120,15 @@ async function route() {
   const hash = location.hash.slice(1) || '/';
   const [path, qs] = hash.split('?');
   const query = Object.fromEntries(new URLSearchParams(qs || ''));
-  if (path === '/entrar' || path === '/cadastro') { me = null; return authView(path === '/entrar' ? 'login' : 'register'); }
+  if (path === '/entrar' || path === '/cadastro') {
+    const info = await api('/auth/me').catch(() => null);
+    if (info && !info.login) { me = info; location.hash = '#/'; return; } // login desligado
+    me = null; return authView(path === '/entrar' ? 'login' : 'register');
+  }
   if (!me) {
     try { me = await api('/auth/me'); } catch { location.hash = '#/entrar'; return; }
   }
-  if (!document.getElementById('content')) { shell(); startReminders(); }
+  if (!document.getElementById('content')) { shell(); startReminders(); if (!me.login) document.getElementById('logoutBtn').style.display = 'none'; }
   const content = document.getElementById('content');
   const found = ROUTES.find(([re]) => re.test(path));
   document.querySelectorAll('[data-nav]').forEach((a) => a.classList.toggle('active', found && a.dataset.nav === found[2]));
