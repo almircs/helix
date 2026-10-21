@@ -101,6 +101,8 @@ jobs:
           name: windows
           path: saida/*
           if-no-files-found: error
+          # Só serve para passar os arquivos à etapa 'publicar'; o que fica é o Release
+          retention-days: 1
 
   mac:
     needs: testes
@@ -146,6 +148,8 @@ jobs:
           name: mac
           path: saida/*
           if-no-files-found: error
+          # Só serve para passar os arquivos à etapa 'publicar'; o que fica é o Release
+          retention-days: 1
 
   publicar:
     needs: [windows, mac]
