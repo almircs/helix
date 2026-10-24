@@ -34,8 +34,25 @@ jobs:
           npx electron-builder install-app-deps
           ELECTRON_RUN_AS_NODE=1 npx electron test/electron-smoke.js
 
-  windows:
+  # Cria a página do Release antes; cada sistema envia o seu instalador direto
+  # para lá (sem usar o espaço de "artifacts" do GitHub, que tem cota).
+  preparar:
     needs: testes
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Criar o Release (se ainda não existir)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VER=$(node -p "require('./package.json').version")
+          if ! gh release view "v$VER" >/dev/null 2>&1; then
+            gh release create "v$VER" --target "$GITHUB_SHA" \
+              --title "Helyx $VER" --notes-file .github/notas-da-versao.md
+          fi
+
+  windows:
+    needs: preparar
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -96,16 +113,16 @@ jobs:
         run: |
           mkdir saida
           cp dist/*.exe "saida/Instalar-Helyx-Windows.exe"
-      - uses: actions/upload-artifact@v4
-        with:
-          name: windows
-          path: saida/*
-          if-no-files-found: error
-          # Só serve para passar os arquivos à etapa 'publicar'; o que fica é o Release
-          retention-days: 1
+      - name: Enviar para a página Releases
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VER=$(node -p "require('./package.json').version")
+          gh release upload "v$VER" saida/* --clobber
 
   mac:
-    needs: testes
+    needs: preparar
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
@@ -143,33 +160,10 @@ jobs:
           enc=$(printf '%s' "$msg" | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}')
           echo "::warning title=Diagnostico Mac::$enc"
           pkill -f "$app/Contents/MacOS" || true
-      - uses: actions/upload-artifact@v4
-        with:
-          name: mac
-          path: saida/*
-          if-no-files-found: error
-          # Só serve para passar os arquivos à etapa 'publicar'; o que fica é o Release
-          retention-days: 1
-
-  publicar:
-    needs: [windows, mac]
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
-        with:
-          path: arquivos
-          merge-multiple: true
-      - name: Publicar na página Releases
+      - name: Enviar para a página Releases
+        shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           VER=$(node -p "require('./package.json').version")
-          TAG="v$VER"
-          ls -la arquivos
-          if gh release view "$TAG" >/dev/null 2>&1; then
-            gh release upload "$TAG" arquivos/* --clobber
-          else
-            gh release create "$TAG" arquivos/* --target "$GITHUB_SHA" \
-              --title "Helyx $VER" --notes-file .github/notas-da-versao.md
-          fi
+          gh release upload "v$VER" saida/* --clobber
