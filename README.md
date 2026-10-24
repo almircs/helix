@@ -13,7 +13,7 @@ Baixe o instalador na página **Releases** do repositório:
 - **Mac com chip Apple (M1 a M4):** `Helyx-Mac-chip-Apple-M1-a-M4.zip` → abra e arraste para *Aplicativos*.
 - **Mac com processador Intel:** `Helyx-Mac-Intel.zip`.
 
-Na primeira abertura no Mac: botão direito no app → *Abrir*. No Windows, se aparecer o aviso azul: *Mais informações → Executar assim mesmo*.
+Na primeira abertura no Mac: no macOS 15 Sequoia ou mais novo, tente abrir uma vez e depois vá em *Ajustes do Sistema → Privacidade e Segurança → Abrir Mesmo Assim*; no macOS 14 Sonoma ou mais antigo, botão direito no app → *Abrir*. Se o Mac disser que o app está danificado, rode no Terminal `xattr -dr com.apple.quarantine /Applications/Helyx.app`. No Windows, se aparecer o aviso azul: *Mais informações → Executar assim mesmo*.
 
 ### Sem instalar (versão no navegador)
 Com o Node.js 22.13+ instalado, dê dois cliques em `iniciar-windows.bat` ou `iniciar-mac.command`, ou rode `npm start`.

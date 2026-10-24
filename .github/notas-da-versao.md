@@ -4,7 +4,12 @@
 Se aparecer o aviso azul "O Windows protegeu o computador", clique em **Mais informações → Executar assim mesmo**.
 
 **Mac com chip Apple (M1 a M4)** — baixe `Helyx-Mac-chip-Apple-M1-a-M4.zip`, abra o arquivo e arraste o **Helyx** para a pasta **Aplicativos**.
-Na primeira vez, clique no programa com o botão direito → **Abrir** → **Abrir**.
+Na primeira vez, o Mac avisa que não consegue verificar o Helyx, porque ele não tem assinatura paga da Apple. Para liberar:
+- **macOS 15 Sequoia ou mais novo:** tente abrir o Helyx uma vez e feche o aviso. Depois vá em **Ajustes do Sistema → Privacidade e Segurança**, role até o fim e clique em **Abrir Mesmo Assim** ao lado do aviso do Helyx. Confirme com a senha do Mac.
+- **macOS 14 Sonoma ou mais antigo:** clique no Helyx com o botão direito → **Abrir** → **Abrir**.
+- **Se nada disso aparecer** (ou o Mac disser que o app está danificado): abra o **Terminal** e rode `xattr -dr com.apple.quarantine /Applications/Helyx.app`, depois abra o Helyx de novo.
+
+Isso só é preciso na primeira vez.
 
 **Mac com processador Intel** — mesmo procedimento com `Helyx-Mac-Intel.zip`.
 
