@@ -16,7 +16,7 @@ const app = document.getElementById('app');
 let me = null;
 
 const NAV = [
-  ['#/', 'Dashboard', 'dashboard'],
+  ['#/', 'Início', 'dashboard'],
   ['#/agenda', 'Agenda', 'agenda'],
   ['#/exames', 'Exames', 'exames'],
   ['#/consultas', 'Consultas', 'consultas'],
@@ -57,33 +57,38 @@ const ROUTES = [
   [/^\/configuracoes(?:\/(\w+))?$/, settings.render, '#/configuracoes'],
 ];
 
+const WEEK = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'];
+const MONTH = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+
 function shell() {
+  const d = new Date();
   app.innerHTML = html`
     <div class="shell">
-      <aside class="side" id="side">
-        <a class="brand" href="#/"><img src="/icon.png" alt="">Helyx</a>
-        <nav aria-label="Menu principal"><ul class="nav">
-          ${NAV.map(([href, label, ic, soon]) => html`<li><a href="${href}" data-nav="${href}">${icon(ic)}${label}${soon ? html`<span class="soon">em breve</span>` : ''}</a></li>`)}
-        </ul></nav>
-      </aside>
-      <div class="main">
-        <header class="top">
-          <button class="btn icon ghost menu-btn" id="menuBtn" aria-label="Abrir menu">${icon('menu')}</button>
-          <form class="search" id="searchForm" role="search">${icon('search')}
-            <input type="search" name="q" id="searchInput" placeholder="Buscar: creatinina 2026, valsartana, nefrologia…" aria-label="Busca">
-          </form>
-          <button class="btn icon ghost" id="logoutBtn" title="Sair" aria-label="Sair">${icon('logout')}</button>
-        </header>
-        <main class="content" id="content" tabindex="-1"></main>
-      </div>
+      <header class="apphead">
+        <a class="brand" href="#/"><img src="/icon.png" alt=""><span><b>Helyx</b><small>Saúde pessoal · ${WEEK[d.getDay()]}, ${d.getDate()} de ${MONTH[d.getMonth()]}</small></span></a>
+        <form class="search" id="searchForm" role="search">${icon('search')}
+          <input type="search" name="q" id="searchInput" placeholder="Buscar em exames, remédios, consultas…" aria-label="Busca">
+        </form>
+        <span class="safe-pill"><i></i>Dados só neste computador</span>
+        <button class="btn icon ghost" id="logoutBtn" title="Sair" aria-label="Sair">${icon('logout')}</button>
+      </header>
+      <nav class="topnav" aria-label="Menu principal">
+        <div class="topnav-links">
+          ${NAV.filter(([, , , soon]) => !soon).map(([href, label]) => html`<a href="${href}" data-nav="${href}">${label}</a>`)}
+        </div>
+        <details class="launch" id="launch">
+          <summary class="btn primary">${icon('plus')}Lançar</summary>
+          <div class="launch-menu">
+            <a href="#/exames/novo">Exame</a><a href="#/consultas/nova">Consulta</a><a href="#/medicamentos/novo">Medicamento</a>
+            <a href="#/saude">Medição</a><a href="#/documentos?novo=1">Documento</a><a href="#/agenda?novo=outro">Compromisso</a>
+          </div>
+        </details>
+      </nav>
+      <main class="content" id="content" tabindex="-1"></main>
     </div>`.__raw;
-  const side = document.getElementById('side');
-  const close = () => { side.classList.remove('open'); document.querySelector('.scrim')?.remove(); };
-  document.getElementById('menuBtn').onclick = () => {
-    side.classList.add('open');
-    const s = document.createElement('div'); s.className = 'scrim'; s.onclick = close; document.body.append(s);
-  };
-  side.addEventListener('click', (e) => { if (e.target.closest('a')) close(); });
+  const launch = document.getElementById('launch');
+  launch.addEventListener('click', (e) => { if (e.target.closest('.launch-menu a')) launch.open = false; });
+  document.addEventListener('click', (e) => { if (!launch.contains(e.target)) launch.open = false; });
   document.getElementById('searchForm').onsubmit = (e) => {
     e.preventDefault();
     const q = document.getElementById('searchInput').value.trim();
@@ -133,7 +138,7 @@ async function route() {
   if (!document.getElementById('content')) { shell(); startReminders(); if (!me.login) document.getElementById('logoutBtn').style.display = 'none'; }
   const content = document.getElementById('content');
   const found = ROUTES.find(([re]) => re.test(path));
-  document.querySelectorAll('[data-nav]').forEach((a) => a.classList.toggle('active', found && a.dataset.nav === found[2]));
+  document.querySelectorAll('[data-nav]').forEach((a) => { const on = found && a.dataset.nav === found[2]; a.classList.toggle('active', on); if (on) a.scrollIntoView({ block: 'nearest', inline: 'nearest' }); });
   if (!found) { content.innerHTML = '<h1>Página não encontrada</h1>'; return; }
   const id = ++renderId;
   content.innerHTML = '<p class="muted">Carregando…</p>';

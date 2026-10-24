@@ -136,6 +136,58 @@ function dashboard(userId) {
   };
 }
 
+// ---------------------------------------------------------------- Página inicial discreta
+// Só datas, horários e contagens: nada que identifique exames, remédios, médicos ou especialidades.
+const DAILY_EXCLUDE = /seman|mens|m[êe]s|quinzen|anual/i;
+function medTimes(m) {
+  if (!m.schedule || DAILY_EXCLUDE.test(m.frequency || '')) return [];
+  return [...String(m.schedule).matchAll(/(\d{1,2})\s*[:hH]\s*(\d{2})?/g)].map((x) => `${x[1].padStart(2, '0')}:${x[2] || '00'}`);
+}
+function home(userId) {
+  const today = localDate();
+  const ag = agenda(userId, today, addDays(today, 60)).filter((e) => e.status === 'agendado');
+  const appts = ag.filter((e) => e.type !== 'receita');
+  const meds = listMedications(userId, { status: 'ativo' });
+  const times = [...new Set(meds.flatMap(medTimes))].sort();
+  const mk = listMarkers(userId).filter((m) => m.count > 0);
+  const outOfRange = mk.filter((m) => m.last_situation === 'acima' || m.last_situation === 'abaixo').length;
+  const pendingReq = get("SELECT COUNT(*) n FROM exam_requests WHERE user_id = ? AND status = 'pendente'", userId).n;
+  const ending = meds.filter((m) => m.end_date && m.end_date >= today && m.end_date <= addDays(today, 15)).length;
+  const pend = [];
+  if (outOfRange) pend.push('Exames');
+  if (pendingReq) pend.push('Pedidos de exame');
+  if (ending) pend.push('Medicamentos');
+  const week = Array.from({ length: 7 }, (_, i) => {
+    const date = addDays(today, i);
+    const items = [
+      ...appts.filter((e) => e.date === date).map((e) => ({ time: e.time || null, kind: 'compromisso' })),
+      ...ag.filter((e) => e.date === date && e.type === 'receita').map(() => ({ time: null, kind: 'receita' })),
+      ...times.map((t) => ({ time: t, kind: 'remedio' })),
+    ].sort((a, b) => String(a.time || '99').localeCompare(String(b.time || '99')));
+    return { date, items };
+  });
+  const lastExam = get('SELECT MAX(collection_date) d FROM exams WHERE user_id = ?', userId).d;
+  const lastMeas = get('SELECT MAX(measured_at) d, COUNT(*) n FROM measurements WHERE user_id = ?', userId);
+  const nextCons = get("SELECT MIN(date) d FROM consultations WHERE user_id = ? AND status = 'agendada' AND date >= ?", userId, today).d;
+  const lastFile = get("SELECT MAX(at) d FROM audit_log WHERE user_id = ? AND entity = 'dados' AND action = 'baixar backup'", userId).d;
+  const autos = require('../lib/backup').list().filter((n) => n.startsWith('auto-'));
+  const n = appts[0] || null;
+  return {
+    today,
+    next: n ? { date: n.date, time: n.time || null, more: appts.filter((e) => e !== n && e.date <= addDays(today, 30)).length } : null,
+    today_meds: { count: meds.filter((m) => medTimes(m).length).length, times },
+    pending: { count: (outOfRange ? 1 : 0) + (pendingReq ? 1 : 0) + ending, areas: pend },
+    exams: { tracked: mk.length, last: lastExam },
+    consultations: { total: get('SELECT COUNT(*) n FROM consultations WHERE user_id = ?', userId).n, next: nextCons },
+    medications: { active: meds.length },
+    measurements: { total: lastMeas.n, last: lastMeas.d },
+    documents: { total: get('SELECT COUNT(*) n FROM documents WHERE user_id = ?', userId).n },
+    week,
+    backup: { last_auto: autos[0] ? autos[0].slice(5) : null, last_file: lastFile || null },
+    empty: mk.length + meds.length + appts.length === 0 && !lastMeas.n,
+  };
+}
+
 // ---------------------------------------------------------------- Busca global
 function search(userId, q) {
   const raw = String(q || '').trim();
@@ -204,4 +256,4 @@ function exportAll(userId) {
   };
 }
 
-module.exports = { timeline, agenda, dashboard, search, exportAll, localDate, addDays };
+module.exports = { timeline, agenda, dashboard, home, search, exportAll, localDate, addDays };

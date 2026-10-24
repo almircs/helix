@@ -10,6 +10,11 @@ Na primeira vez, clique no programa com o botão direito → **Abrir** → **Abr
 
 Não sabe qual é o seu Mac? Menu  → **Sobre este Mac**: se aparecer "Chip Apple M…", use o primeiro; se aparecer "Processador Intel", use o segundo.
 
+## Novidades da 1.3.0
+- **Visual escuro em todo o programa**, em verde-petróleo, com o menu no alto da tela e o botão **Lançar** para cadastrar exame, consulta, medicamento, medição, documento ou compromisso. O tema claro continua disponível em *Configurações → Aparência*.
+- **Página inicial discreta:** mostra só datas, horários e contagens (próximo compromisso, remédios do dia, pendências, exames, medições, a semana e o resumo). Nomes de exames, remédios, médicos, especialidades e valores aparecem só dentro de cada seção — dá para abrir o Helyx em público.
+- Lembretes da agenda também ficaram discretos ("Compromisso de saúde às 09:00").
+
 ## Novidades da 1.2.0
 - **Documentos:** guarde PDFs e fotos de laudos, receitas, pedidos de exame e relatórios. Arraste o arquivo para a tela ou clique para escolher. Cada documento pode ser ligado a uma consulta, exame, médico ou medicamento, e aparece na página deles e na linha do tempo. Os arquivos ficam **criptografados** neste computador e entram no backup.
 - **Novo visual do menu:** verde-petróleo, mais sóbrio e confortável para a vista.
@@ -39,7 +44,7 @@ Ficam somente no seu computador, com os campos sensíveis criptografados:
 O programa faz uma cópia automática por dia (últimas 30) na subpasta `backups`. Menu **Arquivo → Abrir pasta dos dados e cópias**.
 
 ## O que tem nesta versão
-- Dashboard com próximos eventos, medicamentos em uso, últimos exames, indicadores e alertas
+- Página inicial discreta com próximos compromissos, remédios do dia, pendências e atalhos
 - Exames com vários resultados, evolução em gráfico, comparação e situação em relação à referência do laudo
 - Consultas com exames solicitados, ligadas automaticamente aos resultados e aos retornos
 - Medicamentos com histórico de alterações e exames acompanhados (relação apenas temporal)

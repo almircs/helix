@@ -16,7 +16,8 @@ async function check() {
     const key = `${e.source}-${e.id}-${e.date}-${e.time}`;
     if (shown.has(key) || now < at - before || now > at) continue;
     shown.add(key);
-    const msg = `${e.title} às ${e.time}${e.location ? ' — ' + e.location : ''}`;
+    // Discreto: sem nome, especialidade ou local (o aviso pode aparecer com outras pessoas por perto)
+    const msg = `${e.type === 'medicamento' ? 'Hora do remédio' : 'Compromisso de saúde'} às ${e.time}`;
     toast('Lembrete: ' + msg);
     try { if ('Notification' in window && Notification.permission === 'granted') new Notification('Helyx', { body: msg, icon: '/icon.png' }); } catch { /* sem suporte */ }
   }

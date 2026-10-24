@@ -1,105 +1,111 @@
-import { api, html, icon, fmtDate, fmtNum, relDay, parseISO, MONTHS_SHORT, WEEKDAYS, EVENT_TYPES, today, daysUntil } from '../lib.js';
-import { lineChart } from '../chart.js';
+// Página inicial discreta: só datas, horários e contagens.
+// Nada que identifique exames, remédios, médicos ou especialidades (usa /api/home).
+import { api, html, raw, icon, fmtDate, parseISO, MONTHS_SHORT, WEEKDAYS, daysUntil } from '../lib.js';
 
-const SIT = { acima: 'Acima', abaixo: 'Abaixo', dentro: 'Normal' };
-const ARROW = { aumento: '↑', reducao: '↓', estavel: '→' };
-
-function dateBlock(iso) {
-  const d = parseISO(iso);
-  return html`<div class="dblock ${iso === today() ? 'is-today' : ''}"><b>${d.getDate()}</b><span>${MONTHS_SHORT[d.getMonth()]}</span></div>`;
+const WD = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'];
+const KIND = { compromisso: 'Compromisso', remedio: 'Remédio', receita: 'Renovar receita' };
+const plural = (n, um, varios) => `${n} ${n === 1 ? um : varios}`;
+const svg = (d, color) => raw(`<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${d}"/></svg>`);
+const I = {
+  cal: 'M8 2v4M16 2v4M3 9h18M5 5h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z',
+  clock: 'M12 7v5l3 2M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z',
+  alert: 'M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z',
+  flask: 'M9 2h6M10 2v6L4.5 18.5A2 2 0 0 0 6.3 21h11.4a2 2 0 0 0 1.8-2.5L14 8V2M7 14h10',
+  pulse: 'M3 12h4l3-8 4 16 3-8h4',
+};
+function relText(iso) {
+  const n = daysUntil(iso);
+  return n === 0 ? 'hoje' : n === 1 ? 'amanhã' : n > 1 ? `em ${n} dias` : `há ${-n} dias`;
+}
+function ago(isoDateTime) {
+  if (!isoDateTime) return null;
+  const n = -daysUntil(isoDateTime.slice(0, 10));
+  return n <= 0 ? 'hoje' : n === 1 ? 'ontem' : `há ${n} dias`;
 }
 
-// Frases curtas do que pede atenção; cada uma leva à tela certa
-function attention(d) {
-  const items = [];
-  const out = d.alerts.filter((a) => a.kind === 'fora_referencia');
-  if (out.length) items.push({ level: 'high', link: '#/exames', text: out.length === 1 ? out[0].text.replace(' no último resultado', '') : `${out.length} exames com o último resultado fora da referência` });
-  const pend = d.alerts.filter((a) => a.kind === 'exame_pendente');
-  if (pend.length) items.push({ level: 'warn', link: pend[0].link, text: pend.length === 1 ? pend[0].text.replace(/ \(pedido.*$/, '') + ' — pedido ainda não realizado' : `${pend.length} exames pedidos ainda não realizados` });
-  for (const a of d.alerts.filter((x) => x.kind === 'medicamento_termino')) items.push({ level: 'warn', link: a.link, text: a.text.replace(' — verifique a receita', '. Verifique a receita') });
-  const soon = d.upcoming.find((e) => daysUntil(e.date) <= 2 && ['consulta', 'retorno', 'exame', 'procedimento', 'vacina'].includes(e.type));
-  if (soon) items.push({ level: 'info', link: soon.source === 'consulta' ? `#/consultas/${soon.id}` : '#/agenda', text: `${soon.title} ${relDay(soon.date)}${soon.time ? ' às ' + soon.time : ''}` });
-  return items;
-}
-
-function examRow(r) {
-  const flag = r.situation === 'acima' || r.situation === 'abaixo';
-  const pts = r.recent.filter((p) => Number.isFinite(p.y));
-  return html`<a class="xrow ${flag ? 'is-flag' : ''}" href="#/exames/marcador/${r.marker_id}">
-    <span class="xname">${r.name}<small>${fmtDate(r.date)}</small></span>
-    <span class="xval"><b>${typeof r.value === 'number' ? fmtNum(r.value, 3) : r.value}</b> <small>${r.unit || ''}</small></span>
-    <span class="xspark">${pts.length > 1 ? lineChart({ compact: true, width: 180, height: 44, band: r.ref_min != null || r.ref_max != null ? { min: r.ref_min, max: r.ref_max } : null,
-      series: [{ name: r.name, points: pts.map((p) => ({ x: p.x, y: p.y, flag: p.s })) }] }) : html`<span class="muted small">1º registro</span>`}</span>
-    <span class="xref small muted">${r.ref_label ? 'ref. ' + r.ref_label : ''}</span>
-    <span class="xsit">${r.situation ? html`<span class="tag ${r.situation}">${SIT[r.situation]}</span>` : ''}${r.trend ? html` <span class="trend" title="Comparado ao resultado anterior">${ARROW[r.trend.direction]} ${r.trend.direction !== 'estavel' ? fmtNum(Math.abs(r.trend.pct), 1) + '%' : 'estável'}</span>` : ''}</span>
-  </a>`;
-}
-
-function indicator(i) {
-  const isBP = i.type === 'pressao';
-  const series = [{ name: i.label, points: i.recent.map((r) => ({ x: r.at.slice(0, 10), y: r.v1 })) }];
-  if (isBP) series.push({ name: 'Diastólica', points: i.recent.map((r) => ({ x: r.at.slice(0, 10), y: r.v2 })) });
-  return html`<a class="ind" href="#/saude?tipo=${i.type}">
-    <span class="ind-label">${i.label}</span>
-    <span class="ind-val">${isBP ? `${fmtNum(i.last.value1)}/${fmtNum(i.last.value2)}` : fmtNum(i.last.value1, 1)} <small>${i.unit}</small></span>
-    <span class="ind-when small muted">${fmtDate(i.last.measured_at.slice(0, 10))} ${i.last.measured_at.slice(11)}</span>
-    ${i.recent.length > 1 ? html`<span class="ind-spark">${lineChart({ compact: true, width: 220, height: 40, series })}</span>` : ''}
-  </a>`;
+function kpi({ label, color, grad, ic, value, sub, href }) {
+  return html`<a class="kpi" href="${href}" style="--k:${color};--g:${grad}">
+    <span class="kpi-label">${label}${svg(ic, color)}</span>
+    <b class="kpi-value">${value}</b>
+    <span class="kpi-sub">${sub}</span>
+    <span class="kpi-bar"></span></a>`;
 }
 
 export async function render() {
-  const d = await api('/dashboard');
+  const h = await api('/home');
   const hour = new Date().getHours();
   const greet = hour < 12 ? 'Bom dia' : hour < 18 ? 'Boa tarde' : 'Boa noite';
-  const first = d.name ? d.name.split(' ')[0] : '';
-  const now = parseISO(d.today);
-  const att = attention(d);
-  const empty = d.counts.exams + d.counts.consultations + d.medications.length === 0;
+  const nd = h.next ? parseISO(h.next.date) : null;
+
+  const kpis = [
+    kpi({ label: 'Próximo compromisso', color: '#22c7b0', grad: 'linear-gradient(90deg,#22c7b0,#38bdf8)', ic: I.cal, href: '#/agenda',
+      value: nd ? `${nd.getDate()} ${MONTHS_SHORT[nd.getMonth()]}` : '—',
+      sub: nd ? `${WEEKDAYS[nd.getDay()][0].toUpperCase() + WEEKDAYS[nd.getDay()].slice(1)}${h.next.time ? ', ' + h.next.time : ''} · ${relText(h.next.date)}` : 'Nada agendado' }),
+    kpi({ label: 'Hoje', color: '#38bdf8', grad: 'linear-gradient(90deg,#38bdf8,#6366f1)', ic: I.clock, href: '#/medicamentos',
+      value: h.today_meds.count ? plural(h.today_meds.count, 'remédio', 'remédios') : '—',
+      sub: h.today_meds.times.length ? `Horários: ${h.today_meds.times.join(', ')}` : 'Sem horários cadastrados' }),
+    kpi({ label: 'Pendências', color: '#f87171', grad: 'linear-gradient(90deg,#fbbf24,#f87171)', ic: I.alert, href: '#/exames',
+      value: String(h.pending.count), sub: h.pending.count ? 'Itens para revisar' : 'Nada para revisar' }),
+    kpi({ label: 'Exames', color: '#a78bfa', grad: 'linear-gradient(90deg,#8b5cf6,#ec4899)', ic: I.flask, href: '#/exames',
+      value: String(h.exams.tracked), sub: h.exams.last ? `Acompanhados · último ${fmtDate(h.exams.last).slice(0, 5)}` : 'Nenhum lançado' }),
+    kpi({ label: 'Medições', color: '#34d399', grad: 'linear-gradient(90deg,#34d399,#22c7b0)', ic: I.pulse, href: '#/saude',
+      value: String(h.measurements.total), sub: h.measurements.last ? `Registradas · última ${ago(h.measurements.last)}` : 'Nenhuma registrada' }),
+  ];
+
+  const apptDays = h.week.filter((d) => d.items.some((i) => i.kind === 'compromisso')).length;
+  const apptCount = h.week.reduce((n, d) => n + d.items.filter((i) => i.kind === 'compromisso').length, 0);
+
+  const quick = [
+    ['Exames', h.exams.tracked ? `${plural(h.exams.tracked, 'acompanhado', 'acompanhados')}${h.exams.last ? ' · último ' + fmtDate(h.exams.last).slice(0, 5) : ''}` : 'Lançar o primeiro', '#a78bfa', '#/exames'],
+    ['Consultas', `${plural(h.consultations.total, 'registrada', 'registradas')}${h.consultations.next ? ' · próxima ' + fmtDate(h.consultations.next).slice(0, 5) : ''}`, '#22c7b0', '#/consultas'],
+    ['Medicamentos', h.medications.active ? `${h.medications.active} em uso` : 'Nenhum em uso', '#38bdf8', '#/medicamentos'],
+    ['Documentos', plural(h.documents.total, 'guardado', 'guardados'), '#fbbf24', '#/documentos'],
+    ['Medições', h.measurements.last ? `última ${ago(h.measurements.last)}, ${h.measurements.last.slice(11, 16)}` : 'Registrar a primeira', '#34d399', '#/saude'],
+    ['Relatórios', 'Resumo para levar à consulta', '#f87171', '#/relatorios'],
+  ];
+
+  const headline = h.empty ? 'Comece cadastrando o que já tem em mãos.'
+    : h.pending.count ? `Acompanhamento em dia, com ${plural(h.pending.count, 'item', 'itens')} para revisar.` : 'Tudo em dia por aqui.';
 
   return html`
-  <div class="dash">
-    <header class="dash-head">
-      <div><h1>${greet}${first ? ', ' + first : ''}</h1>
-        <p class="muted">${WEEKDAYS[now.getDay()][0].toUpperCase() + WEEKDAYS[now.getDay()].slice(1)}, ${now.getDate()} de ${MONTHS_SHORT[now.getMonth()]}.</p></div>
-      <div class="actions"><a class="btn" href="#/exames/novo">${icon('plus')}Exame</a><a class="btn" href="#/consultas/nova">${icon('plus')}Consulta</a><a class="btn primary" href="#/saude">${icon('plus')}Medição</a></div>
-    </header>
+  <div class="home">
+    <div class="home-head"><h1>${greet}</h1></div>
 
-    ${empty ? html`<div class="welcome"><h2>Vamos começar</h2>
-      <p>Cadastre o que já tem em mãos. O Helyx liga tudo sozinho na linha do tempo.</p>
-      <div class="actions"><a class="btn primary" href="#/exames/novo">Lançar um exame</a><a class="btn" href="#/medicamentos/novo">Cadastrar remédio</a><a class="btn" href="#/configuracoes/perfil">Preencher perfil</a><a class="btn" href="#/configuracoes/backup">Restaurar backup</a></div></div>` : ''}
+    <section class="kpis" aria-label="Resumo">${kpis}</section>
 
-    ${att.length ? html`<ul class="attention" aria-label="Pede atenção">${att.map((a) => html`<li><a class="att ${a.level}" href="${a.link}">${icon(a.level === 'info' ? 'agenda' : 'alert')}<span>${a.text}</span></a></li>`)}</ul>`
-      : !empty ? html`<p class="all-good">${icon('info')}Nada pedindo atenção agora.</p>` : ''}
-
-    <div class="dash-grid">
-      <section class="panel exams-panel">
-        <div class="panel-head"><h2>Exames</h2><span class="muted small">${d.counts.markers} acompanhado(s)${d.counts.out_of_range ? ` · ${d.counts.out_of_range} fora da referência` : ''}</span><a href="#/exames" class="small">Ver todos</a></div>
-        ${d.latest_results.length ? html`<div class="xlist">${d.latest_results.map(examRow)}</div>
-          <p class="small muted panel-foot">A faixa verde é a referência do laudo. Ponto vazado = fora dela. Não é diagnóstico.</p>`
-          : html`<p class="empty">Nenhum resultado ainda. <a href="#/exames/novo">Lançar exame</a></p>`}
+    <div class="home-grid">
+      <section class="glass-panel">
+        <div class="panel-head"><h2>Próximos 7 dias</h2>
+          <span class="muted small">${apptCount ? `${plural(apptCount, 'compromisso', 'compromissos')}` : 'Nenhum compromisso'}${h.today_meds.times.length ? ` · remédio todo dia às ${h.today_meds.times.join(', ')}` : ''}</span>
+          <a href="#/agenda" class="small">Abrir agenda</a></div>
+        <div class="week">${h.week.map((d, i) => {
+          const dt = parseISO(d.date);
+          return html`<a class="day ${i === 0 ? 'is-today' : ''}" href="#/agenda?modo=dia&d=${d.date}">
+            <span class="day-head"><small>${i === 0 ? 'hoje' : WD[dt.getDay()]}</small><b>${dt.getDate()}</b></span>
+            ${d.items.length ? d.items.map((it) => html`<span class="chip-${it.kind}" title="${KIND[it.kind]}"><b>${it.time || (it.kind === 'receita' ? 'receita' : '—')}</b><span class="sr">${KIND[it.kind]}</span></span>`) : html`<span class="free">livre</span>`}
+          </a>`;
+        })}</div>
+        <div class="legend-row"><span><i class="chip-compromisso"></i>Compromisso</span><span><i class="chip-remedio"></i>Remédio</span><span><i class="chip-receita"></i>Renovar receita</span></div>
+        <p class="small muted" style="margin:0">Os detalhes de cada compromisso e remédio ficam na Agenda e em Medicamentos.</p>
       </section>
 
-      <aside class="side-col">
-        <section class="panel">
-          <div class="panel-head"><h2>Próximos dias</h2><a href="#/agenda" class="small">Agenda</a></div>
-          ${d.upcoming.length ? html`<ul class="agenda-list">${d.upcoming.map((e) => html`<li>
-            <a href="${e.source === 'consulta' ? `#/consultas/${e.id}` : e.source === 'medicamento' ? `#/medicamentos/${e.id}` : '#/agenda'}">
-              ${dateBlock(e.date)}<span><b>${e.title}</b><small>${EVENT_TYPES[e.type] || e.type} · ${relDay(e.date)}${e.time ? ', ' + e.time : ''}</small></span></a></li>`)}</ul>`
-            : html`<p class="empty">Nada agendado. <a href="#/agenda?novo=outro">Agendar</a></p>`}
-        </section>
-        <section class="panel">
-          <div class="panel-head"><h2>Remédios em uso</h2><a href="#/medicamentos" class="small">Todos</a></div>
-          ${d.medications.length ? html`<ul class="med-list">${d.medications.map((m) => html`<li><a href="#/medicamentos/${m.id}">
-            <span class="med-time">${m.schedule || '—'}</span><span><b>${m.name}</b> ${m.dosage || ''}<small>${m.frequency || ''}${m.end_date ? ' · até ' + fmtDate(m.end_date) : ''}</small></span></a></li>`)}</ul>`
-            : html`<p class="empty">Nenhum remédio ativo. <a href="#/medicamentos/novo">Cadastrar</a></p>`}
-        </section>
+      <section class="glass-panel">
+        <h2>Acesso rápido</h2>
+        <div class="quick">${quick.map(([t, d, c, href]) => html`<a href="${href}"><i style="background:${c}"></i><span><b>${t}</b><small>${d}</small></span><em aria-hidden="true">›</em></a>`)}</div>
+      </section>
+
+      <aside class="summary">
+        <span class="eyebrow">Resumo</span>
+        <h2>${headline}</h2>
+        <p>${h.exams.tracked ? html`Você acompanha <b class="hl">${plural(h.exams.tracked, 'exame', 'exames')}</b>` : 'Nenhum exame lançado ainda'}${h.medications.active ? html` e tem <b>${plural(h.medications.active, 'remédio', 'remédios')} em uso</b>` : ''}.
+          ${h.next ? html` O próximo compromisso é <b>${relText(h.next.date)}</b>.` : ''}</p>
+        <a class="focus f1" href="#/agenda"><span>Foco 1 · Agenda</span>${h.next
+          ? `Compromisso ${WEEKDAYS[nd.getDay()]}${h.next.time ? ' às ' + h.next.time : ''}${h.next.more ? `. Mais ${h.next.more} nos próximos 30 dias.` : '.'}`
+          : 'Nenhum compromisso marcado.'}</a>
+        <a class="focus f2" href="#/exames"><span>Foco 2 · Pendências</span>${h.pending.count ? `${plural(h.pending.count, 'item aguarda', 'itens aguardam')} revisão em ${h.pending.areas.join(', ')}.` : 'Nada aguardando revisão.'}</a>
+        <a class="focus f3" href="#/configuracoes/backup"><span>Foco 3 · Backup</span>${h.backup.last_auto ? `Cópia automática em ${fmtDate(h.backup.last_auto)}.` : 'Nenhuma cópia automática ainda.'} ${h.backup.last_file ? `Último backup em arquivo ${ago(h.backup.last_file)}.` : 'Nenhum backup em arquivo — faça um.'}</a>
       </aside>
     </div>
-
-    <section class="panel ind-panel">
-      <div class="panel-head"><h2>Medições</h2><a href="#/saude" class="small">Registrar</a></div>
-      ${d.indicators.length ? html`<div class="ind-row">${d.indicators.map(indicator)}</div>`
-        : html`<p class="empty">Registre pressão, peso ou glicemia para acompanhar aqui. <a href="#/saude">Registrar medição</a></p>`}
-    </section>
+    ${h.empty ? html`<p class="muted" style="margin-top:1rem">Use o botão <b>Lançar</b> no menu para cadastrar exames, consultas, remédios ou documentos.</p>` : ''}
   </div>`;
 }

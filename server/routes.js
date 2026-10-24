@@ -117,6 +117,7 @@ r.get('/api/documents/:id/file', A, (ctx) => {
 
 // ---------- Visões integradas
 r.get('/api/dashboard', A, (ctx) => ov.dashboard(uid(ctx)));
+r.get('/api/home', A, (ctx) => ov.home(uid(ctx)));
 r.get('/api/timeline', A, (ctx) => ov.timeline(uid(ctx), ctx.query));
 r.get('/api/agenda', A, (ctx) => ov.agenda(uid(ctx), ctx.query.from, ctx.query.to));
 r.get('/api/search', A, (ctx) => ov.search(uid(ctx), ctx.query.q));

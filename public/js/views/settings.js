@@ -16,7 +16,7 @@ export async function render({ params, query }) {
   if (tab === 'seguranca') return security(head);
   if (tab === 'backup') return backupView(head);
   let cur = 'auto'; try { cur = localStorage.getItem('tema') || 'auto'; } catch { /* */ }
-  return view(html`${head}<div class="card"><h2>Tema</h2><div class="seg">${[['auto', 'Automático'], ['light', 'Claro'], ['dark', 'Escuro']].map(([v, l]) => html`<button class="${cur === v ? 'on' : ''}" data-t="${v}">${l}</button>`)}</div></div>`, (el) => {
+  return view(html`${head}<div class="card"><h2>Tema</h2><div class="seg">${[['auto', 'Escuro (padrão)'], ['light', 'Claro']].map(([v, l]) => html`<button class="${cur === v ? 'on' : ''}" data-t="${v}">${l}</button>`)}</div></div>`, (el) => {
     el.querySelectorAll('[data-t]').forEach((b) => b.onclick = () => { try { localStorage.setItem('tema', b.dataset.t); } catch { /* */ } applyTheme(); go('#/configuracoes/aparencia'); });
   });
 }
