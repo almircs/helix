@@ -51,7 +51,8 @@
       "!node_modules/@tesseract.js-data/por/4.0.0/**",
       "!node_modules/tesseract.js-core/tesseract-core{,-simd,-relaxedsimd}.{js,wasm,wasm.js}",
       "!node_modules/tesseract.js-core/tesseract-core*-lstm.{js,wasm}",
-      "!node_modules/tesseract.js/{src,docs,benchmarks,scripts,tests,examples}/**"
+      "!node_modules/tesseract.js/{src,docs,benchmarks,scripts,tests,examples}/**",
+      "!node_modules/@napi-rs/**"
     ],
     "asar": true,
     "asarUnpack": ["**/*.node"],
