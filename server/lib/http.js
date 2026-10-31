@@ -20,7 +20,8 @@ function pkgDir(name, sub = '') {
   try { return path.join(path.dirname(require.resolve(`${name}/package.json`)), sub); } catch { return null; }
 }
 const VENDOR = {
-  pdfjs: () => pkgDir('pdfjs-dist', 'build'),
+  // versão "legacy": funciona no motor do Electron, que é mais antigo que os navegadores atuais
+  pdfjs: () => pkgDir('pdfjs-dist', 'legacy/build'),
   'pdfjs-wasm': () => pkgDir('pdfjs-dist', 'wasm'),
   'pdfjs-cmaps': () => pkgDir('pdfjs-dist', 'cmaps'),
   'pdfjs-fonts': () => pkgDir('pdfjs-dist', 'standard_fonts'),

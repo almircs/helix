@@ -15,6 +15,10 @@ Isso só é preciso na primeira vez.
 
 Não sabe qual é o seu Mac? Menu  → **Sobre este Mac**: se aparecer "Chip Apple M…", use o primeiro; se aparecer "Processador Intel", use o segundo.
 
+## Correção da 1.4.1
+- **Ler arquivo:** no programa instalado, ler um PDF dava o erro "getOrInsertComputed is not a function". O leitor de PDF agora usa a versão compatível com o motor do programa.
+- Instalador menor (sem uma biblioteca de desenho que não era usada).
+
 ## Novidades da 1.4.0
 - **Ler arquivo:** o Helyx lê **PDF, foto, Word (.doc e .docx), Excel (.xls e .xlsx), CSV e TXT** e mostra os dados encontrados para você conferir antes de salvar. Fica em *Lançar → Ler arquivo*, e também nos botões **Ler laudo** (Exames), **Ler receita** (Medicamentos), **Ler pedido ou relatório** (Consultas) e **Extrair dados** (em cada documento guardado).
   - **Laudos de exame:** reconhece cada exame, o resultado, a unidade e a faixa de referência, a data da coleta, o laboratório e o médico solicitante. Planilhas com várias datas viram vários exames de uma vez.
