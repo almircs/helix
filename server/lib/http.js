@@ -12,6 +12,21 @@ const MIME = {
   '.css': 'text/css; charset=utf-8', '.json': 'application/json; charset=utf-8',
   '.svg': 'image/svg+xml', '.png': 'image/png', '.ico': 'image/x-icon',
   '.webmanifest': 'application/manifest+json', '.woff2': 'font/woff2',
+  '.mjs': 'text/javascript; charset=utf-8', '.wasm': 'application/wasm', '.gz': 'application/octet-stream',
+};
+
+// Bibliotecas de leitura de PDF e de reconhecimento de texto, servidas do próprio programa (sem internet)
+function pkgDir(name, sub = '') {
+  try { return path.join(path.dirname(require.resolve(`${name}/package.json`)), sub); } catch { return null; }
+}
+const VENDOR = {
+  pdfjs: () => pkgDir('pdfjs-dist', 'build'),
+  'pdfjs-wasm': () => pkgDir('pdfjs-dist', 'wasm'),
+  'pdfjs-cmaps': () => pkgDir('pdfjs-dist', 'cmaps'),
+  'pdfjs-fonts': () => pkgDir('pdfjs-dist', 'standard_fonts'),
+  tesseract: () => pkgDir('tesseract.js', 'dist'),
+  'tesseract-core': () => pkgDir('tesseract.js-core'),
+  'tesseract-lang': () => pkgDir('@tesseract.js-data/por', '4.0.0_best_int'),
 };
 
 const SECURITY_HEADERS = {
@@ -21,7 +36,7 @@ const SECURITY_HEADERS = {
   'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
   'Content-Security-Policy':
     "default-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; " +
-    "script-src 'self'; connect-src 'self'; frame-src 'self' blob:; object-src 'self' blob:; frame-ancestors 'self'; base-uri 'self'; form-action 'self'",
+    "script-src 'self' 'wasm-unsafe-eval'; worker-src 'self'; connect-src 'self' blob: data:; frame-src 'self' blob:; object-src 'self' blob:; frame-ancestors 'self'; base-uri 'self'; form-action 'self'",
 };
 
 function parseCookies(header = '') {
@@ -100,7 +115,7 @@ function createServer({ router, staticDir, onError }) {
         if (['POST', 'PUT', 'DELETE'].includes(req.method)) {
           // Proteção CSRF: só aceita JSON da própria origem
           const ct = req.headers['content-type'] || '';
-          const raw = await readBody(req, (url.pathname.startsWith('/api/backup/') || url.pathname === '/api/documents') ? 200 * 1024 * 1024 : undefined);
+          const raw = await readBody(req, (url.pathname.startsWith('/api/backup/') || url.pathname === '/api/documents' || url.pathname === '/api/extract') ? 200 * 1024 * 1024 : undefined);
           if (raw.length) {
             if (!ct.includes('application/json')) throw new HttpError(415, 'Envie JSON');
             try { ctx.body = JSON.parse(raw.toString('utf8')); } catch { throw new HttpError(400, 'JSON inválido'); }
@@ -128,9 +143,14 @@ function createServer({ router, staticDir, onError }) {
 
 function serveStatic(root, pathname, res) {
   let rel = decodeURIComponent(pathname);
-  if (rel === '/' || !path.extname(rel)) rel = '/index.html'; // SPA
+  const vendor = rel.match(/^\/vendor\/([\w-]+)(\/.+)$/);
+  if (vendor) {
+    const base = VENDOR[vendor[1]]?.();
+    if (!base) { res.statusCode = 404; res.end('Não encontrado'); return; }
+    root = base; rel = vendor[2];
+  } else if (rel === '/' || !path.extname(rel)) rel = '/index.html'; // SPA
   const file = path.normalize(path.join(root, rel));
-  if (!file.startsWith(root)) { res.statusCode = 403; res.end(); return; }
+  if (!file.startsWith(path.normalize(root) + path.sep)) { res.statusCode = 403; res.end(); return; }
   fs.stat(file, (err, st) => {
     if (err || !st.isFile()) { res.statusCode = 404; res.end('Não encontrado'); return; }
     res.setHeader('Content-Type', MIME[path.extname(file)] || 'application/octet-stream');

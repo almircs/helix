@@ -130,6 +130,7 @@ Busca global no topo de todas as telas.
 | Interface | HTML + CSS + JavaScript (módulos ES), sem etapa de build | Fácil de manter e de abrir em qualquer navegador |
 | Gráficos | SVG próprio (`chart.js` do projeto) | Funciona offline, acessível, sem biblioteca |
 | Testes | `node:test` | Nativo |
+| Leitura de arquivos | pdf.js (texto de PDF), Tesseract.js com dados em português (fotos e PDFs escaneados), leitores próprios de .docx/.xlsx/.doc/.xls | Tudo roda no computador, sem internet; as bibliotecas são servidas pelo próprio programa em `/vendor/` |
 
 ## 6. Estrutura de pastas
 
@@ -161,7 +162,8 @@ prontuario-pessoal/
 | Etapa | Conteúdo | Situação |
 |---|---|---|
 | **1 — MVP** | Cadastro do usuário, exames + resultados, evolução e comparação, consultas com exames solicitados, medicamentos com histórico e exames acompanhados, agenda (dia/semana/mês/ano) com lembretes na tela, linha do tempo, dashboard, medições, busca global, resumo para consulta (imprimir/PDF), segurança (login, criptografia, auditoria, exportação, exclusão) | **Entregue** |
-| 2 — Documentos | Upload de PDFs/fotos criptografados, vinculados a consulta/exame/médico/medicamento; visualizador | Tabela pronta |
+| 2 — Documentos | Upload de PDFs/fotos criptografados, vinculados a consulta/exame/médico/medicamento; visualizador | **Entregue** (1.2.0) |
+| 2b — Ler arquivo | Extração por regras (sem IA) de laudos, receitas, pedidos e relatórios em PDF, foto, Word, Excel, CSV e TXT; revisão antes de salvar; comparação com o exame anterior e alterações em quadro separado (`server/lib/extract/`, `server/services/extract.js`, `public/js/reader.js`, `public/js/views/importar.js`) | **Entregue** (1.4.0) |
 | 3 — Relatórios e notificações | PDF gerado no servidor (completo e para consulta), lembretes em segundo plano (e-mail/push), tabelas de diagnósticos, vacinas e procedimentos | |
 | 4 — IA | Assistente que usa `/api/ai/context`, com consentimento explícito, regras de não-diagnóstico e respostas citando os dados | Contexto e regras prontos |
 | 5 — Mobilidade | Acesso pela rede de casa/celular com HTTPS, instalador para Windows/Mac, sincronização opcional | |

@@ -51,4 +51,23 @@ function analyzeSeries(points) {
   return { points: out, summary };
 }
 
-module.exports = { situation, trend, analyzeSeries, refLabel };
+// Alterações de um exame em relação ao anterior de cada marcador, separadas por tipo.
+// Cada resultado precisa de { marker_name, situation, previous?: { situation, direction, relevant } }.
+function summarizeChanges(results) {
+  const out = { novos_fora: [], continuam_fora: [], voltaram_ao_normal: [], aumentos: [], reducoes: [], primeiros: [] };
+  for (const r of results) {
+    const fora = r.situation === 'acima' || r.situation === 'abaixo';
+    const p = r.previous;
+    if (!p) { out.primeiros.push(r); if (fora) out.novos_fora.push(r); continue; }
+    const antesFora = p.situation === 'acima' || p.situation === 'abaixo';
+    if (fora && !antesFora) out.novos_fora.push(r);
+    else if (fora && antesFora) out.continuam_fora.push(r);
+    else if (!fora && antesFora && r.situation === 'dentro') out.voltaram_ao_normal.push(r);
+    if (p.relevant && p.direction === 'aumento') out.aumentos.push(r);
+    if (p.relevant && p.direction === 'reducao') out.reducoes.push(r);
+  }
+  const total = out.novos_fora.length + out.continuam_fora.length + out.voltaram_ao_normal.length + out.aumentos.length + out.reducoes.length;
+  return { ...out, total, compared: results.filter((r) => r.previous).length };
+}
+
+module.exports = { situation, trend, analyzeSeries, refLabel, summarizeChanges };

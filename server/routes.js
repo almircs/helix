@@ -115,6 +115,9 @@ r.get('/api/documents/:id/file', A, (ctx) => {
   res.end(f.buffer);
 });
 
+// ---------- Leitura de dados de arquivos (laudos, receitas, pedidos, planilhas)
+r.post('/api/extract', A, (ctx) => require('./services/extract').analyze(uid(ctx), ctx.body));
+
 // ---------- Visões integradas
 r.get('/api/dashboard', A, (ctx) => ov.dashboard(uid(ctx)));
 r.get('/api/home', A, (ctx) => ov.home(uid(ctx)));

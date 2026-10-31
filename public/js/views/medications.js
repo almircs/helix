@@ -7,7 +7,7 @@ export async function list({ query }) {
   const shown = meds.filter((m) => st === 'todos' || m.status === st);
   const count = (s) => meds.filter((m) => m.status === s).length;
   return view(html`
-    <div class="page-head"><h1>Medicamentos</h1><a class="btn primary" href="#/medicamentos/novo">${icon('plus')}Novo medicamento</a></div>
+    <div class="page-head"><h1>Medicamentos</h1><div class="actions"><a class="btn" href="#/importar?para=receita&voltar=${encodeURIComponent('#/medicamentos')}">${icon('documentos')}Ler receita</a><a class="btn primary" href="#/medicamentos/novo">${icon('plus')}Novo medicamento</a></div></div>
     <div class="chips" style="margin-bottom:1rem">${[['ativo', `Em uso (${count('ativo')})`], ['suspenso', `Suspensos (${count('suspenso')})`], ['encerrado', `Encerrados (${count('encerrado')})`], ['todos', 'Todos']].map(([v, l]) => html`<button class="chip ${st === v ? 'on' : ''}" data-s="${v}">${l}</button>`)}</div>
     <div class="card"><ul class="list">${shown.map((m) => html`<li><a class="row-link grow" href="#/medicamentos/${m.id}">
       <div class="title">${m.name} ${m.dosage || ''}</div>

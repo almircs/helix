@@ -14,7 +14,7 @@ export async function list({ query }) {
       <div class="meta">${[c.doctor_name, c.location, c.diagnoses].filter(Boolean).join(' · ') || '—'}</div></a>
       <div>${c.requests_total ? html`<span class="tag ${c.requests_pending ? 'pendente' : 'realizado'}">${c.requests_total - c.requests_pending}/${c.requests_total} exames feitos</span>` : ''} ${c.status !== 'realizada' ? statusTag(c.status) : ''}</div></li>`;
   return view(html`
-    <div class="page-head"><h1>Consultas</h1><a class="btn primary" href="#/consultas/nova">${icon('plus')}Nova consulta</a></div>
+    <div class="page-head"><h1>Consultas</h1><div class="actions"><a class="btn" href="#/importar?para=consulta&voltar=${encodeURIComponent('#/consultas')}">${icon('documentos')}Ler pedido ou relatório</a><a class="btn primary" href="#/consultas/nova">${icon('plus')}Nova consulta</a></div></div>
     ${upcoming.length ? html`<div class="card" style="margin-bottom:1rem"><h2>Agendadas</h2><ul class="list">${upcoming.map(row)}</ul></div>` : ''}
     <div class="card"><h2>Histórico</h2>
       ${specs.length > 1 ? html`<div class="chips" style="margin-bottom:.5rem"><button class="chip ${!spec ? 'on' : ''}" data-e="">Todas</button>${specs.map((s) => html`<button class="chip ${spec === s ? 'on' : ''}" data-e="${s}">${s}</button>`)}</div>` : ''}
@@ -103,7 +103,7 @@ export async function detail({ params }) {
     <a class="back" href="#/consultas">${icon('back')}Consultas</a>
     <div class="page-head"><div><h1>${c.is_return ? 'Retorno' : 'Consulta'}${c.specialty ? ' — ' + c.specialty : ''}</h1>
       <p class="muted" style="margin:0">${fmtLongDate(c.date)}${c.time ? ' às ' + c.time : ''} ${c.status !== 'realizada' ? statusTag(c.status) : ''} ${c.status === 'agendada' ? '(' + relDay(c.date) + ')' : ''}</p></div>
-      <div class="actions"><a class="btn" href="#/consultas/${c.id}/editar">${icon('edit')}Editar</a><a class="btn" href="#/consultas/nova?retorno=${c.id}">${icon('plus')}Agendar retorno</a><button class="btn danger" id="del">${icon('trash')}</button></div></div>
+      <div class="actions"><a class="btn" href="#/importar?para=pedido&consulta=${c.id}&voltar=${encodeURIComponent('#/consultas/' + c.id)}">${icon('documentos')}Ler arquivo</a><a class="btn" href="#/consultas/${c.id}/editar">${icon('edit')}Editar</a><a class="btn" href="#/consultas/nova?retorno=${c.id}">${icon('plus')}Agendar retorno</a><button class="btn danger" id="del">${icon('trash')}</button></div></div>
 
     <div class="card" style="margin-bottom:1rem"><h2>Sequência desta consulta</h2>
       <div class="flow">

@@ -1,4 +1,5 @@
 import { api, html, icon, fields, readForm, options, toast, view, go, cached, fmtDate, today, confirmDialog } from '../lib.js';
+import { ACCEPT, kindOf, mimeOf } from '../reader.js';
 
 export const KINDS = { laudo: 'Laudo / resultado', receita: 'Receita', pedido: 'Pedido de exame', relatorio: 'Relatório médico', imagem: 'Imagem de exame', outro: 'Outro' };
 const fmtSize = (b) => (b > 1048576 ? `${(b / 1048576).toFixed(1).replace('.', ',')} MB` : `${Math.max(1, Math.round(b / 1024))} KB`);
@@ -21,6 +22,9 @@ function linksText(d) {
     d.medication && d.medication.name,
   ].filter(Boolean);
 }
+
+const OFFICE_LABEL = { docx: 'Word', doc: 'Word', xlsx: 'Excel', xls: 'Excel', csv: 'CSV', txt: 'TXT' };
+const badgeOf = (d) => (d.is_pdf ? 'PDF' : d.is_image ? 'foto' : OFFICE_LABEL[(d.original_name || '').toLowerCase().split('.').pop()] || 'arquivo');
 
 function fileToBase64(file) {
   return new Promise((resolve, reject) => {
@@ -59,9 +63,9 @@ export async function list({ query }) {
     <div class="page-head"><div><h1>Documentos</h1><p class="muted" style="margin:0">Laudos, receitas, pedidos e imagens, guardados criptografados neste computador.</p></div></div>
 
     <div class="drop" id="drop" tabindex="0" role="button" aria-label="Adicionar documento">
-      ${icon('documentos')}<div><b>Arraste um PDF ou foto aqui</b><span class="muted"> ou clique para escolher</span>
-      <div class="small muted">PDF, JPG, PNG ou WEBP · até 25 MB cada</div></div>
-      <input type="file" id="file" accept="application/pdf,image/jpeg,image/png,image/webp" multiple hidden>
+      ${icon('documentos')}<div><b>Arraste um arquivo aqui</b><span class="muted"> ou clique para escolher</span>
+      <div class="small muted">PDF, foto, Word, Excel, CSV ou TXT · até 25 MB cada</div></div>
+      <input type="file" id="file" accept="${ACCEPT}" multiple hidden>
     </div>
 
     <form id="upForm" class="card" hidden style="margin-bottom:1rem">
@@ -85,7 +89,7 @@ export async function list({ query }) {
       ${Object.entries(KINDS).filter(([k]) => docs.some((d) => d.kind === k)).map(([k, l]) => html`<button class="chip ${filter === k ? 'on' : ''}" data-k="${k}">${l} (${docs.filter((d) => d.kind === k).length})</button>`)}
     </div>
     ${shown.length ? html`<div class="doc-grid">${shown.map((d) => html`<a class="doc-card" href="#/documentos/${d.id}">
-        <span class="doc-thumb" data-thumb="${d.is_image ? d.id : ''}">${d.is_pdf ? html`<span class="pdf-badge">PDF</span>` : ''}</span>
+        <span class="doc-thumb" data-thumb="${d.is_image ? d.id : ''}">${d.is_image ? '' : html`<span class="pdf-badge">${badgeOf(d)}</span>`}</span>
         <span class="doc-info"><b>${d.title}</b><small>${KINDS[d.kind] || d.kind} · ${fmtDate(d.doc_date)}</small>
         ${linksText(d).length ? html`<small class="doc-links">${linksText(d).join(' · ')}</small>` : ''}</span></a>`)}</div>`
       : html`<div class="card"><p class="empty">${docs.length ? 'Nenhum documento deste tipo.' : 'Nenhum documento ainda. Comece guardando o último laudo de exame ou a receita atual.'}</p></div>`}
@@ -93,8 +97,8 @@ export async function list({ query }) {
     const drop = el.querySelector('#drop'); const input = el.querySelector('#file'); const form = el.querySelector('#upForm');
     let files = [];
     const pick = (list) => {
-      files = [...list].filter((f) => /^(application\/pdf|image\/(jpeg|png|webp))$/.test(f.type));
-      if (!files.length) { toast('Escolha um PDF ou uma foto (JPG, PNG, WEBP).', true); return; }
+      files = [...list].filter((f) => kindOf(f) && kindOf(f) !== 'heic' && /^(application|image\/(jpeg|png|webp|gif)|text\/)/.test(mimeOf(f)));
+      if (!files.length) { toast('Escolha um PDF, uma foto (JPG, PNG, WEBP), um arquivo do Word ou do Excel, CSV ou TXT.', true); return; }
       const big = files.find((f) => f.size > 25 * 1048576); if (big) { toast(`${big.name} passa de 25 MB.`, true); return; }
       form.hidden = false; drop.hidden = true;
       el.querySelector('#picked').textContent = files.map((f) => `${f.name} (${fmtSize(f.size)})`).join(' · ');
@@ -117,7 +121,7 @@ export async function list({ query }) {
         let last;
         for (const f of files) {
           last = await api('/documents', { method: 'POST', body: { ...meta, title: files.length > 1 && !meta.title ? f.name.replace(/\.[^.]+$/, '') : meta.title || f.name,
-            original_name: f.name, mime_type: f.type, data_base64: await fileToBase64(f) } });
+            original_name: f.name, mime_type: mimeOf(f), data_base64: await fileToBase64(f) } });
         }
         toast(files.length > 1 ? `${files.length} documentos guardados` : 'Documento guardado');
         go(back ? decodeURIComponent(back) : files.length === 1 ? `#/documentos/${last.id}` : '#/documentos');
@@ -138,7 +142,7 @@ export async function detail({ params }) {
   return view(html`
     <a class="back" href="#/documentos">${icon('back')}Documentos</a>
     <div class="page-head"><div><h1>${d.title}</h1><p class="muted" style="margin:0">${KINDS[d.kind] || d.kind} · ${fmtDate(d.doc_date)} · ${fmtSize(d.size_bytes || 0)}</p></div>
-      <div class="actions"><a class="btn" href="/api/documents/${d.id}/file?baixar=1" download>Baixar</a><button class="btn danger" id="del">${icon('trash')}Excluir</button></div></div>
+      <div class="actions"><a class="btn primary" href="#/importar?doc=${d.id}">${icon('documentos')}Extrair dados</a><a class="btn" href="/api/documents/${d.id}/file?baixar=1" download>Baixar</a><button class="btn danger" id="del">${icon('trash')}Excluir</button></div></div>
     <div class="doc-detail">
       <div class="card doc-view" id="viewer"><p class="muted">Abrindo…</p></div>
       <form class="card" id="meta"><h2>Informações</h2>
@@ -168,7 +172,8 @@ export async function detail({ params }) {
     const box = el.querySelector('#viewer');
     try {
       const url = await fileUrl(d.id);
-      box.innerHTML = d.is_pdf ? html`<iframe src="${url}" title="${d.title}"></iframe>`.__raw : html`<img src="${url}" alt="${d.title}">`.__raw;
+      box.innerHTML = d.is_pdf ? html`<iframe src="${url}" title="${d.title}"></iframe>`.__raw : d.is_image ? html`<img src="${url}" alt="${d.title}">`.__raw
+        : html`<div class="empty"><p>Arquivo ${badgeOf(d)} — a visualização não está disponível aqui.</p><p>Use <b>Baixar</b> para abrir no programa do computador, ou <b>Extrair dados</b> para ler o conteúdo.</p></div>`.__raw;
     } catch (err) { box.innerHTML = html`<p class="empty">${err.message}</p>`.__raw; }
   });
 }
@@ -179,6 +184,6 @@ export async function linkedBlock(field, id, label) {
   const here = encodeURIComponent(location.hash);
   return html`<div class="card"><h2>Documentos <a href="#/documentos?novo=1&${field}=${id}&voltar=${here}">${icon('plus')} anexar</a></h2>
     ${docs.length ? html`<ul class="list">${docs.map((d) => html`<li><a class="row-link grow" href="#/documentos/${d.id}"><div class="title">${d.title}</div>
-      <div class="meta">${KINDS[d.kind] || d.kind} · ${fmtDate(d.doc_date)}</div></a>${d.is_pdf ? html`<span class="tag">PDF</span>` : html`<span class="tag">foto</span>`}</li>`)}</ul>`
+      <div class="meta">${KINDS[d.kind] || d.kind} · ${fmtDate(d.doc_date)}</div></a><span class="tag">${badgeOf(d)}</span></li>`)}</ul>`
       : html`<p class="empty">Nenhum documento ${label}.</p>`}</div>`;
 }

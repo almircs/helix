@@ -9,7 +9,12 @@ const { HttpError } = require('../lib/http');
 const audit = require('../lib/audit');
 
 const KINDS = ['laudo', 'receita', 'pedido', 'relatorio', 'imagem', 'outro'];
-const MIME_OK = { 'application/pdf': 'pdf', 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'image/gif': 'gif' };
+const MIME_OK = {
+  'application/pdf': 'pdf', 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'image/gif': 'gif',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'docx', 'application/msword': 'doc',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'xlsx', 'application/vnd.ms-excel': 'xls',
+  'text/csv': 'csv', 'text/plain': 'txt',
+};
 const MAX_BYTES = 25 * 1024 * 1024;
 const dir = () => path.join(config.dataDir, 'documentos');
 const REFS = { consultation_id: 'consultations', exam_id: 'exams', doctor_id: 'doctors', medication_id: 'medications' };
@@ -48,7 +53,7 @@ function saveFile(buf) {
 
 function create(userId, body) {
   const mime = String(body.mime_type || '').toLowerCase();
-  if (!MIME_OK[mime]) throw new HttpError(400, 'Envie um PDF ou uma foto (JPG, PNG, WEBP).');
+  if (!MIME_OK[mime]) throw new HttpError(400, 'Envie um PDF, uma foto (JPG, PNG, WEBP), um documento do Word, uma planilha do Excel, CSV ou TXT.');
   const buf = Buffer.from(String(body.data_base64 || ''), 'base64');
   if (!buf.length) throw new HttpError(400, 'Arquivo vazio.');
   if (buf.length > MAX_BYTES) throw new HttpError(413, 'Arquivo muito grande (máximo 25 MB).');

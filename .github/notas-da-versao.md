@@ -15,6 +15,15 @@ Isso só é preciso na primeira vez.
 
 Não sabe qual é o seu Mac? Menu  → **Sobre este Mac**: se aparecer "Chip Apple M…", use o primeiro; se aparecer "Processador Intel", use o segundo.
 
+## Novidades da 1.4.0
+- **Ler arquivo:** o Helyx lê **PDF, foto, Word (.doc e .docx), Excel (.xls e .xlsx), CSV e TXT** e mostra os dados encontrados para você conferir antes de salvar. Fica em *Lançar → Ler arquivo*, e também nos botões **Ler laudo** (Exames), **Ler receita** (Medicamentos), **Ler pedido ou relatório** (Consultas) e **Extrair dados** (em cada documento guardado).
+  - **Laudos de exame:** reconhece cada exame, o resultado, a unidade e a faixa de referência, a data da coleta, o laboratório e o médico solicitante. Planilhas com várias datas viram vários exames de uma vez.
+  - **Receitas:** cadastra os remédios com dose, forma, frequência e horários.
+  - **Pedidos de exame e relatórios:** ligam os exames pedidos e as anotações a uma consulta nova ou existente.
+  - **Comparação com os anteriores:** cada resultado aparece ao lado do anterior do mesmo exame, com a variação. As **alterações ficam em um quadro separado**: o que passou a ficar fora da referência, o que continua fora, o que voltou ao normal, o que aumentou ou diminuiu de forma relevante e o que é registrado pela primeira vez. O mesmo quadro aparece na página de cada exame.
+  - **Tudo neste computador, sem internet.** Fotos e PDFs escaneados são lidos por reconhecimento de texto, que pode trocar letras e números: confira com o documento, que aparece ao lado durante a revisão.
+- **Documentos** agora aceita também arquivos do Word, do Excel, CSV e TXT.
+
 ## Novidades da 1.3.0
 - **Visual escuro em todo o programa**, em verde-petróleo, com o menu no alto da tela e o botão **Lançar** para cadastrar exame, consulta, medicamento, medição, documento ou compromisso. O tema claro continua disponível em *Configurações → Aparência*.
 - **Página inicial discreta:** mostra só datas, horários e contagens (próximo compromisso, remédios do dia, pendências, exames, medições, a semana e o resumo). Nomes de exames, remédios, médicos, especialidades e valores aparecem só dentro de cada seção — dá para abrir o Helyx em público.

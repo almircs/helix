@@ -17,6 +17,7 @@ Na primeira abertura no Mac: no macOS 15 Sequoia ou mais novo, tente abrir uma v
 
 ### Sem instalar (versão no navegador)
 Com o Node.js 22.13+ instalado, dê dois cliques em `iniciar-windows.bat` ou `iniciar-mac.command`, ou rode `npm start`.
+Na primeira vez, os scripts instalam os leitores de PDF e de fotos (`npm install --omit=dev`); sem eles, só a leitura de Word, Excel, CSV e TXT funciona.
 O programa abre direto, **sem login** (versão de testes). Para exigir e-mail e senha, defina `SAUDE_EXIGIR_LOGIN=1`.
 Para dados fictícios de demonstração, rode `npm run demo` numa pasta de dados vazia.
 
@@ -25,7 +26,8 @@ Para dados fictícios de demonstração, rode `npm run demo` numa pasta de dados
 - No programa instalado: Windows `%APPDATA%\Helyx\dados`, Mac `~/Library/Application Support/Helyx/dados` (menu *Arquivo → Abrir pasta dos dados*). Na versão de navegador, na pasta `data/`: `saude.db` (banco) e `chave.key` (chave de criptografia).
 - **Backup:** *Configurações → Backup* (ou menu *Arquivo → Fazer backup…*) salva um arquivo `.helyx` com todos os dados, que pode ser restaurado neste ou em outro computador. O programa também guarda uma cópia automática por dia (últimas 30), que pode ser restaurada pela mesma tela.
   O arquivo `.helyx` contém os dados legíveis: guarde-o em local seguro.
-- **Documentos:** PDFs e fotos ficam na subpasta `documentos`, criptografados; entram no arquivo de backup `.helyx`.
+- **Documentos:** PDFs, fotos, arquivos do Word e do Excel ficam na subpasta `documentos`, criptografados; entram no arquivo de backup `.helyx`.
+- **Ler arquivo:** *Lançar → Ler arquivo* (ou os botões “Ler laudo”, “Ler receita”, “Ler pedido ou relatório” e “Extrair dados” nos documentos) lê PDF, foto, Word (.doc/.docx), Excel (.xls/.xlsx), CSV e TXT **neste computador**, sem internet: texto de PDF com pdf.js, fotos e PDFs escaneados com reconhecimento de texto (Tesseract, português), Word/Excel pelo servidor local. Mostra os dados para revisar, compara cada exame com o anterior e separa as alterações. Nada é salvo sem confirmação.
 - **Exportar:** Configurações → Segurança e dados → Exportar meus dados (arquivo JSON legível).
 - **Excluir tudo:** Configurações → Segurança e dados.
 

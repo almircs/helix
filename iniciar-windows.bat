@@ -12,6 +12,11 @@ if errorlevel 1 (
   pause
   exit /b 1
 )
+rem Leitores de PDF e de fotos (so na primeira vez)
+if not exist node_modules\pdfjs-dist (
+  echo  Preparando a leitura de arquivos, so na primeira vez...
+  call npm install --omit=dev --no-audit --no-fund
+)
 set SAUDE_ABRIR_NAVEGADOR=1
 echo  Iniciando o Helyx... (feche esta janela para encerrar)
 node --disable-warning=ExperimentalWarning server\index.js

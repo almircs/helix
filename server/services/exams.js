@@ -5,7 +5,7 @@ const { encrypt, decrypt } = require('../lib/crypto');
 const { toNumber } = require('../lib/resource');
 const { HttpError } = require('../lib/http');
 const audit = require('../lib/audit');
-const { analyzeSeries, situation, refLabel } = require('./analysis');
+const { analyzeSeries, situation, refLabel, trend, summarizeChanges } = require('./analysis');
 
 function findOrCreateMarker(userId, name, defaults = {}) {
   name = String(name || '').trim();
@@ -92,12 +92,21 @@ function getExam(userId, id) {
   e.fulfilled_requests = all('SELECT id, description, consultation_id FROM exam_requests WHERE fulfilled_exam_id = ?', e.id);
   // compara cada resultado com o anterior do mesmo marcador
   for (const r of e.results) {
-    const prev = get(`SELECT r.value_num, x.collection_date FROM exam_results r JOIN exams x ON x.id = r.exam_id
-      WHERE r.user_id = ? AND r.marker_id = ? AND x.collection_date < ? AND r.value_num IS NOT NULL
-      ORDER BY x.collection_date DESC LIMIT 1`, userId, r.marker_id, e.collection_date);
-    if (prev && r.value_num != null) r.previous = { value: prev.value_num, date: prev.collection_date, ...require('./analysis').trend(prev.value_num, r.value_num) };
+    const prev = previousResult(userId, r.marker_id, e.collection_date);
+    if (prev && r.value_num != null) r.previous = { ...prev, ...trend(prev.value, r.value_num) };
   }
+  e.changes = summarizeChanges(e.results);
   return e;
+}
+
+// Último resultado numérico do marcador antes da data, com a situação em relação à referência da época
+function previousResult(userId, markerId, beforeDate) {
+  const p = get(`SELECT r.value_num, r.unit, COALESCE(r.ref_min, m.ref_min) ref_min, COALESCE(r.ref_max, m.ref_max) ref_max, x.collection_date, x.id exam_id
+    FROM exam_results r JOIN exams x ON x.id = r.exam_id JOIN markers m ON m.id = r.marker_id
+    WHERE r.user_id = ? AND r.marker_id = ? AND x.collection_date < ? AND r.value_num IS NOT NULL
+    ORDER BY x.collection_date DESC LIMIT 1`, userId, markerId, beforeDate || '9999-12-31');
+  if (!p) return null;
+  return { value: p.value_num, date: p.collection_date, unit: p.unit, exam_id: p.exam_id, situation: situation(p.value_num, p.ref_min, p.ref_max) };
 }
 
 function listExams(userId, q = {}) {
@@ -146,4 +155,4 @@ function mergeMarker(userId, fromId, intoId) {
   });
 }
 
-module.exports = { saveExam, getExam, listExams, removeExam, markerHistory, listMarkers, findOrCreateMarker, mergeMarker, resultsOf };
+module.exports = { saveExam, getExam, listExams, removeExam, markerHistory, listMarkers, findOrCreateMarker, mergeMarker, resultsOf, previousResult };

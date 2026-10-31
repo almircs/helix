@@ -13,6 +13,7 @@ export async function list({ query }) {
   return view(html`
     <div class="page-head"><h1>Exames</h1><div class="actions">
       ${withData.length > 1 ? html`<a class="btn" href="#/exames/comparar">Comparar</a>` : ''}
+      <a class="btn" href="#/importar?para=exame&voltar=${encodeURIComponent('#/exames')}">${icon('documentos')}Ler laudo</a>
       <a class="btn primary" href="#/exames/novo">${icon('plus')}Novo exame</a></div></div>
     <div class="tabs"><a href="#/exames" class="${tab === 'marcadores' ? 'on' : ''}">Por exame (${withData.length})</a><a href="#/exames?ver=datas" class="${tab === 'datas' ? 'on' : ''}">Por data de coleta (${exams.length})</a></div>
     ${tab === 'marcadores' ? html`
@@ -73,7 +74,7 @@ export async function form({ params, query }) {
   if (!exam.results.length) exam.results = [{}];
   return view(html`
     <a class="back" href="${id ? '#/exames/' + id : '#/exames'}">${icon('back')}Voltar</a>
-    <h1>${id ? 'Editar exame' : 'Novo exame'}</h1>
+    <div class="page-head"><h1>${id ? 'Editar exame' : 'Novo exame'}</h1>${id ? '' : html`<a class="btn" href="#/importar?para=exame${query.consulta ? '&consulta=' + query.consulta : ''}">${icon('documentos')}Preencher a partir de um arquivo</a>`}</div>
     <form id="examForm">
       <fieldset><legend>Dados da coleta</legend><div class="form-grid">
         ${fields([
@@ -122,6 +123,24 @@ export async function form({ params, query }) {
 }
 
 // ---------------------------------------------------------------- Detalhe
+// Alterações em relação ao exame anterior de cada marcador, em quadro separado
+const CHANGE_GROUPS = [
+  ['novos_fora', 'Passaram a ficar fora da referência', 'acima'], ['continuam_fora', 'Continuam fora da referência', 'pendente'],
+  ['voltaram_ao_normal', 'Voltaram para dentro da referência', 'dentro'], ['aumentos', 'Aumentaram (variação relevante)', 'relevante'],
+  ['reducoes', 'Diminuíram (variação relevante)', 'relevante'],
+];
+function changesBlock(e) {
+  const ch = e.changes;
+  if (!ch || !ch.compared) return '';
+  const groups = CHANGE_GROUPS.filter(([k]) => ch[k]?.length);
+  const item = (r) => html`<li><a href="#/exames/marcador/${r.marker_id}"><b>${r.marker_name}</b></a> ${valueOf(r)} ${r.unit || ''}
+    ${r.previous ? html`<span class="meta">· antes ${fmtNum(r.previous.value, 3)} em ${fmtDate(r.previous.date)}${r.previous.direction && r.previous.direction !== 'estavel' ? ` (${r.previous.pct > 0 ? '+' : ''}${fmtNum(r.previous.pct, 1)}%)` : ''}</span>` : html`<span class="meta">· primeiro registro</span>`}</li>`;
+  return html`<div class="card changes-card" style="margin-top:1rem"><h2>Alterações em relação aos exames anteriores</h2>
+    <p class="small muted">${ch.compared} resultado(s) comparado(s) com o exame anterior do mesmo tipo.</p>
+    ${groups.length ? html`<div class="imp-groups">${groups.map(([k, label, cls]) => html`<div class="imp-group ${k}"><h3><span class="tag ${cls}">${ch[k].length}</span> ${label}</h3><ul>${ch[k].map(item)}</ul></div>`)}</div>`
+      : html`<p class="empty">Sem alterações: os resultados comparados estão dentro da referência e sem variações relevantes.</p>`}</div>`;
+}
+
 export async function detail({ params }) {
   const e = await api(`/exams/${params[0]}`);
   const docBlock = await (await import('./documents.js')).linkedBlock('exam_id', e.id, 'ligado a este exame (anexe o PDF do laudo)');
@@ -141,6 +160,7 @@ export async function detail({ params }) {
         <td>${r.ref_label || '—'}</td><td>${sitTag(r.situation) || '—'}</td>
         <td>${r.previous ? html`${trendTag(r.previous)} <div class="meta">antes: ${fmtNum(r.previous.value, 3)} em ${fmtDate(r.previous.date)}</div>` : html`<span class="meta">primeiro registro</span>`}</td></tr>`)}
       </tbody></table></div></div>
+    ${changesBlock(e)}
     <div class="grid g2" style="margin-top:1rem"><div class="card"><h2>Informações</h2><dl class="kv">
       <dt>Médico solicitante</dt><dd>${e.doctor ? e.doctor.name : '—'}</dd>
       <dt>Motivo</dt><dd>${e.reason || '—'}</dd><dt>Observação</dt><dd>${e.notes || '—'}</dd></dl></div>${docBlock}</div>

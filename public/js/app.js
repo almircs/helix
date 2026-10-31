@@ -10,6 +10,7 @@ import * as timeline from './views/timeline.js';
 import * as settings from './views/settings.js';
 import * as misc from './views/misc.js';
 import * as docs from './views/documents.js';
+import * as importar from './views/importar.js';
 import { startReminders } from './reminders.js';
 
 const app = document.getElementById('app');
@@ -50,6 +51,7 @@ const ROUTES = [
   [/^\/linha-do-tempo$/, timeline.render, '#/linha-do-tempo'],
   [/^\/saude$/, health.render, '#/saude'],
   [/^\/busca$/, misc.search, null],
+  [/^\/importar$/, importar.render, null],
   [/^\/documentos$/, docs.list, '#/documentos'],
   [/^\/documentos\/(\d+)$/, docs.detail, '#/documentos'],
   [/^\/relatorios$/, misc.reports, '#/relatorios'],
@@ -79,6 +81,7 @@ function shell() {
         <details class="launch" id="launch">
           <summary class="btn primary">${icon('plus')}Lançar</summary>
           <div class="launch-menu">
+            <a href="#/importar" class="launch-read">Ler arquivo (PDF, foto, Word, Excel)</a>
             <a href="#/exames/novo">Exame</a><a href="#/consultas/nova">Consulta</a><a href="#/medicamentos/novo">Medicamento</a>
             <a href="#/saude">Medição</a><a href="#/documentos?novo=1">Documento</a><a href="#/agenda?novo=outro">Compromisso</a>
           </div>
