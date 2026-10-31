@@ -84,10 +84,10 @@ function countUnitOf(line) {
   const all = String(line).match(/(?:milh[õo]es|mil|x?\s*10\s*\^?\s*[³36])?\s*\/\s*(?:mm[³3]|µl|ul|mcl)(?![a-z])/gi);
   return all ? all[all.length - 1].replace(/\s+/g, '') : null;
 }
-// Cabeçalho de colunas "%  /µL" nas linhas anteriores (até 12 linhas acima)
+// Cabeçalho de colunas "%  /µL" nas linhas anteriores (até 12 linhas acima); pode vir grudado no texto do método
 function headerCountUnit(lines, i) {
   for (let k = i - 1; k >= Math.max(0, i - 12); k--) {
-    if (/^%\s+(?:x?\s*10\s*\^?\s*[³36])?\s*\/\s*(mm[³3]|µl|ul|mcl)\s*$/i.test(lines[k])) return countUnitOf(lines[k]);
+    if (/(^|\s)%\s+(?:x?\s*10\s*\^?\s*[³36])?\s*\/\s*(mm[³3]|µl|ul|mcl)\s*$/i.test(lines[k])) return countUnitOf(lines[k]);
   }
   return null;
 }
@@ -184,7 +184,9 @@ function readValue(rest, nextLines = [], ctx = {}) {
   // referência: na mesma linha ou em "Valores de referência" logo abaixo
   let refSrc = after.replace(/^[\s\t]+/, '');
   let ref = readRef(refSrc);
-  if (ref.ref_min === undefined && ref.ref_max === undefined) {
+  // linha de referência vizinha já identificada (PDFs que separam a referência, em letra menor, da linha do valor)
+  if (ref.ref_min === undefined && ref.ref_max === undefined && ctx.refLine) { ref = readRef(ctx.refLine); refSrc = ctx.refLine; }
+  if (ref.ref_min === undefined && ref.ref_max === undefined && !ctx.refLine && ctx.refOrient !== 'before') {
     for (const l of nextLines.slice(0, 4)) {
       if (/refer[êe]ncia|vr\s*:|desej[áa]vel|normal\s*:|adultos?\s*:|homens?\s*:|mulheres?\s*:|^\(?\s*\d+(?:[.,]\d+)?\s*(a|-|–)\s*\d/i.test(l)) {
         const rr = readRef(l);
@@ -200,6 +202,9 @@ function readValue(rest, nextLines = [], ctx = {}) {
 // ---------------------------------------------------------------- Resultados de exame
 function parseResults(lines, keys) {
   const results = []; const seen = new Set();
+  // Linha só com a faixa de referência e a unidade de contagem ("100 % 4.000 a 10.000 /µL")
+  const isRefLine = (l) => !!l && !matchMarker(l, keys) && !!countUnitOf(l) && new RegExp(`(${NUM_SRC})\\s*(?:a|at[ée]|-|–)\\s*(${NUM_SRC})`, 'i').test(l) && !/^[A-Za-zÀ-ú]{3}/.test(l);
+  let refOrient = null; // a referência separada vem antes ou depois da linha do exame (decidido no primeiro caso do bloco)
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
     let found = matchMarker(line, keys);
@@ -215,6 +220,13 @@ function parseResults(lines, keys) {
     }
     // unidade de contagem da linha ou do cabeçalho da tabela logo acima ("%   /µL")
     const ctx = { countUnit: countUnitOf(line) || headerCountUnit(lines, i) };
+    // "Leucócitos 100 5.340" sozinho na linha: a referência e a unidade estão numa linha vizinha
+    if (new RegExp(`^[\\s:]*(${NUM_SRC})\\s+(${NUM_SRC})\\s*$`).test(found.rest)) {
+      if (refOrient === null) refOrient = isRefLine(lines[i - 1]) && !(i >= 2 && matchMarker(lines[i - 2], keys)) ? 'before' : 'after';
+      const neighbor = refOrient === 'before' ? lines[i - 1] : lines[i + 1];
+      if (isRefLine(neighbor)) { ctx.refLine = neighbor; ctx.countUnit ||= countUnitOf(neighbor); }
+      ctx.refOrient = refOrient;
+    } else if (!isRefLine(line)) refOrient = null;
     // valor na mesma linha ou nas próximas (laudos com "Resultado:" embaixo do nome)
     let val = readValue(found.rest, lines.slice(i + 1), ctx);
     if (!val && !generic) {

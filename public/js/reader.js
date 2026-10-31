@@ -41,8 +41,10 @@ function pageLines(items) {
   for (const it of items) {
     if (!it.str || !it.str.trim()) continue;
     const x = it.transform[4]; const y = it.transform[5]; const h = Math.abs(it.transform[3]) || it.height || 10;
-    let row = rows.find((r) => Math.abs(r.y - y) <= Math.max(2, h * 0.45));
+    // mesma linha: texto menor alinhado pelo meio do maior tem a base um pouco acima — usa a maior letra da linha
+    let row = rows.find((r) => Math.abs(r.y - y) <= Math.max(2, Math.max(r.h, h) * 0.5));
     if (!row) { row = { y, h, parts: [] }; rows.push(row); }
+    else if (h > row.h) { row.y = y; row.h = h; }
     row.parts.push({ x, w: it.width || it.str.length * h * 0.5, s: it.str, h });
   }
   rows.sort((a, b) => b.y - a.y);

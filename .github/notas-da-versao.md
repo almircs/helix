@@ -15,6 +15,10 @@ Isso só é preciso na primeira vez.
 
 Não sabe qual é o seu Mac? Menu  → **Sobre este Mac**: se aparecer "Chip Apple M…", use o primeiro; se aparecer "Processador Intel", use o segundo.
 
+## Correção da 1.5.2
+- **Ler arquivo — leucograma:** também funciona quando o PDF separa a referência (em letra menor) da linha do valor. Leucócitos, neutrófilos, eosinófilos, basófilos, linfócitos e monócitos vêm sempre pelo **valor absoluto (/µL)** com a **referência da contagem**.
+- Exames lidos e salvos antes desta versão **não mudam sozinhos**: corrija em *Exames → abrir o exame → Editar*, ou exclua e leia o laudo de novo.
+
 ## Correção da 1.5.1
 - **Ler arquivo — leucograma:** em laudos em que a porcentagem e o valor absoluto aparecem lado a lado, sem unidade ao lado dos números (por exemplo "Leucócitos 100 5.340 … 4.000 a 10.000 /µL"), agora vale o **valor absoluto** e a **faixa da contagem** para leucócitos, neutrófilos, eosinófilos, basófilos, linfócitos e monócitos.
 - **Comparação:** /µL e /mm³ são tratados como a mesma unidade. Se o resultado anterior for mais de 20 vezes diferente (por exemplo, um leucócito salvo antes como "100"), aparece **"confira"** com o link para o exame anterior, em vez de uma variação falsa.

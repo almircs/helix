@@ -76,6 +76,16 @@ test('leucograma com as unidades só no cabeçalho ("%  /µL") e no fim da linha
   assert.deepEqual([r.Hemoglobina.value, r.Ureia.value, r.Ureia.ref_max], [16.5, 57, 43], 'linhas comuns não mudam');
 });
 
+test('leucograma com a referência numa linha separada (antes ou depois do valor)', () => {
+  const depois = 'Avaliação Microscópica)\t%\t/µL\nLeucócitos\t100\t5.340\n100\t%\t4.000 a 10.000\t/µL\nNeutrófilos\t60,8\t3.247\n40,0 a 80,0\t%\t1.800 a 7.800\t/µL';
+  const antes = '%\t/µL\n100\t%\t4.000 a 10.000\t/µL\nLeucócitos\t100\t5.340\n40,0 a 80,0\t%\t1.800 a 7.800\t/µL\nNeutrófilos\t60,8\t3.247';
+  for (const text of [depois, antes]) {
+    const r = byName(parseDocument({ text }).exams[0].results);
+    assert.deepEqual([r['Leucócitos'].value, r['Leucócitos'].unit, r['Leucócitos'].ref_min, r['Leucócitos'].ref_max], [5340, '/µL', 4000, 10000]);
+    assert.deepEqual([r['Neutrófilos'].value, r['Neutrófilos'].ref_min, r['Neutrófilos'].ref_max], [3247, 1800, 7800]);
+  }
+});
+
 test('usa o nome que a pessoa já tem para o mesmo exame', () => {
   const p = parseDocument({ text: 'Vitamina D (25-OH)  18,5 ng/mL  Suficiente: > 20', userMarkers: [{ name: 'Vitamina D 25 hidroxi' }] });
   assert.equal(p.exams[0].results[0].marker_name, 'Vitamina D 25 hidroxi');
