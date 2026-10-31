@@ -502,3 +502,6 @@ legend { font-weight: 700; padding: 0 .4rem; }
 /* Nome de quem está usando, ao lado do botão Sair */
 .who { color: var(--muted); font-size: .9rem; white-space: nowrap; }
 .who:empty { display: none; }
+
+/* Campo que impediu salvar (o Electron não mostra o balão do navegador) */
+input.invalid, select.invalid, textarea.invalid { border-color: var(--danger) !important; box-shadow: 0 0 0 2px color-mix(in srgb, var(--danger) 35%, transparent); }

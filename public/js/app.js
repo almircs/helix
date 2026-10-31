@@ -186,5 +186,19 @@ async function route() {
 }
 
 settings.applyTheme();
+
+// O programa instalado (Electron) não mostra o balão de aviso dos formulários: sem isto, um campo
+// obrigatório vazio ou um e-mail sem "@" faz o botão Salvar parecer não funcionar. Mostra o motivo.
+let invalidShown = false;
+document.addEventListener('invalid', (e) => {
+  const el = e.target;
+  el.classList.add('invalid');
+  el.addEventListener('input', () => el.classList.remove('invalid'), { once: true });
+  if (invalidShown) return;
+  invalidShown = true; setTimeout(() => { invalidShown = false; }, 400);
+  const label = (el.labels?.[0]?.childNodes[0]?.textContent || el.getAttribute('aria-label') || el.name || 'Campo').replace(/\s*\*\s*$/, '').trim();
+  toast(el.validity.valueMissing ? `Preencha o campo “${label}”.` : `${label}: ${el.validationMessage}`, true);
+  el.focus();
+}, true);
 window.addEventListener('hashchange', route);
 route();

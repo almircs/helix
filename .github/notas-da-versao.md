@@ -15,6 +15,9 @@ Isso só é preciso na primeira vez.
 
 Não sabe qual é o seu Mac? Menu  → **Sobre este Mac**: se aparecer "Chip Apple M…", use o primeiro; se aparecer "Processador Intel", use o segundo.
 
+## Correção da 1.5.3
+- **Botão Salvar que "não fazia nada"** (por exemplo, ao cadastrar médico): quando falta um campo obrigatório ou um campo está em formato inválido (como um e-mail sem "@"), agora aparece um aviso em vermelho dizendo qual campo corrigir, e o campo fica destacado. Vale para todos os formulários do programa.
+
 ## Correção da 1.5.2
 - **Ler arquivo — leucograma:** também funciona quando o PDF separa a referência (em letra menor) da linha do valor. Leucócitos, neutrófilos, eosinófilos, basófilos, linfócitos e monócitos vêm sempre pelo **valor absoluto (/µL)** com a **referência da contagem**.
 - Exames lidos e salvos antes desta versão **não mudam sozinhos**: corrija em *Exames → abrir o exame → Editar*, ou exclua e leia o laudo de novo.
