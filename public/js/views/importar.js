@@ -62,7 +62,7 @@ function derive() {
       r.num = toNum(r.value_input);
       r.situation = situation(r.num, toNum(r.ref_min_input), toNum(r.ref_max_input));
       // anterior: o mais recente entre o histórico salvo e os exames anteriores deste arquivo
-      let prev = r.previous && !r.previous.unit_differs ? { value: r.previous.value, date: r.previous.date, situation: r.previous.situation, unit: r.previous.unit } : null;
+      let prev = r.previous && !r.previous.unit_differs && !r.previous.mismatch ? { value: r.previous.value, date: r.previous.date, situation: r.previous.situation, unit: r.previous.unit } : null;
       for (const { e: o } of exams) {
         if (o === e || !(String(o.collection_date) < String(e.collection_date))) continue;
         const same = o.results.find((x) => x.include && norm(x.marker_input) === norm(r.marker_input) && x.num != null);
@@ -90,7 +90,11 @@ function sourceBox() {
 }
 
 function prevCell(r) {
-  if (!r.prev) return r.previous?.unit_differs ? html`<span class="meta">anterior em outra unidade (${r.previous.unit})</span>` : html`<span class="meta">primeiro registro</span>`;
+  if (!r.prev) {
+    if (r.previous?.unit_differs) return html`<span class="meta">anterior em outra unidade (${r.previous.unit})</span>`;
+    if (r.previous?.mismatch) return html`<span class="tag pendente">confira</span><div class="meta">anterior muito diferente: ${fmtNum(r.previous.value, 3)} ${r.previous.unit || ''} em ${fmtDate(r.previous.date)} — <a href="#/exames/${r.previous.exam_id}">abrir</a></div>`;
+    return html`<span class="meta">primeiro registro</span>`;
+  }
   return html`${r.trend ? trendTag(r.trend) : ''}<div class="meta">antes: ${fmtNum(r.prev.value, 3)} ${r.prev.unit || ''} em ${fmtDate(r.prev.date)}${r.prev.here ? ' (neste arquivo)' : ''}</div>`;
 }
 

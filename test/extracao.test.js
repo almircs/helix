@@ -59,6 +59,23 @@ Hemoglobina glicada  6,1 %  43 mmol/mol  4,0 a 5,6 %` });
   assert.deepEqual([r['Hemoglobina glicada'].value, r['Hemoglobina glicada'].unit], [6.1, '%'], 'porcentagem sem contagem continua em %');
 });
 
+test('leucograma com as unidades só no cabeçalho ("%  /µL") e no fim da linha', () => {
+  const p = parseDocument({ text: [
+    'Hemoglobina\t16,5\tg/dL\t13,0 a 17,0\tg/dL',
+    'Série Branca', '%\t/µL',
+    'Leucócitos\t100\t5.340\t100\t%\t4.000 a 10.000\t/µL',
+    'Neutrófilos\t60,8\t3.247\t40,0 a 80,0\t%\t1.800 a 7.800\t/µL',
+    'Basófilos\t0,3\t16\t0,0 a 2,0\t%\t20 a 100\t/µL',
+    'Contagem de Plaquetas\t254.000\t/µL\t150.000 a 450.000\t/µL',
+    'Uréia\t57\tmg/dL\t13 a 43\tmg/dL'].join('\n') });
+  const r = byName(p.exams[0].results);
+  assert.deepEqual([r['Leucócitos'].value, r['Leucócitos'].unit, r['Leucócitos'].ref_min, r['Leucócitos'].ref_max], [5340, '/µL', 4000, 10000]);
+  assert.deepEqual([r['Neutrófilos'].value, r['Neutrófilos'].ref_min, r['Neutrófilos'].ref_max], [3247, 1800, 7800]);
+  assert.deepEqual([r['Basófilos'].value, r['Basófilos'].ref_min], [16, 20]);
+  assert.deepEqual([r.Plaquetas.value, r.Plaquetas.ref_max], [254000, 450000]);
+  assert.deepEqual([r.Hemoglobina.value, r.Ureia.value, r.Ureia.ref_max], [16.5, 57, 43], 'linhas comuns não mudam');
+});
+
 test('usa o nome que a pessoa já tem para o mesmo exame', () => {
   const p = parseDocument({ text: 'Vitamina D (25-OH)  18,5 ng/mL  Suficiente: > 20', userMarkers: [{ name: 'Vitamina D 25 hidroxi' }] });
   assert.equal(p.exams[0].results[0].marker_name, 'Vitamina D 25 hidroxi');

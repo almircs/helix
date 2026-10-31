@@ -93,7 +93,10 @@ function getExam(userId, id) {
   // compara cada resultado com o anterior do mesmo marcador
   for (const r of e.results) {
     const prev = previousResult(userId, r.marker_id, e.collection_date);
-    if (prev && r.value_num != null) r.previous = { ...prev, ...trend(prev.value, r.value_num) };
+    if (!prev || r.value_num == null) continue;
+    // mais de 20 vezes de diferença: um dos dois valores provavelmente está errado; não calcula variação
+    const ratio = prev.value && r.value_num ? Math.max(r.value_num / prev.value, prev.value / r.value_num) : 1;
+    r.previous = ratio > 20 ? { ...prev, mismatch: true } : { ...prev, ...trend(prev.value, r.value_num) };
   }
   e.changes = summarizeChanges(e.results);
   return e;

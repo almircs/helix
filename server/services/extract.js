@@ -63,7 +63,8 @@ function readFileContent(buf, kind) {
   throw new HttpError(400, 'Formato não suportado. Use PDF, foto, Word (.doc/.docx), Excel (.xls/.xlsx), CSV ou TXT.');
 }
 
-const unitKey = (u) => normalize(u).replace(/\s|µ|u(?=[gimn])|mc(?=g)/g, '').replace(/³/g, '3');
+// Unidades equivalentes ficam iguais: /µL = /mm³, µg = mcg, µUI = uUI
+const unitKey = (u) => String(u || '').toLowerCase().replace(/\s+/g, '').replace(/µ|\u03bc|mc(?=g)/g, 'u').replace(/³/g, '3').replace(/\/mm3$/, '/ul');
 
 function enrichExam(userId, exam) {
   for (const r of exam.results) {
@@ -80,6 +81,8 @@ function enrichExam(userId, exam) {
     if (prev) {
       r.previous = prev;
       if (prev.unit && r.unit && unitKey(prev.unit) !== unitKey(r.unit)) prev.unit_differs = true;
+      // diferença de mais de 20 vezes: quase sempre um dos dois foi lido ou digitado errado (ex.: % no lugar de /µL)
+      else if (r.value && prev.value && (r.value / prev.value > 20 || prev.value / r.value > 20)) prev.mismatch = true;
       else if (r.value != null) Object.assign(prev, trend(prev.value, r.value));
     }
   }

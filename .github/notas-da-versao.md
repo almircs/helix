@@ -15,6 +15,10 @@ Isso só é preciso na primeira vez.
 
 Não sabe qual é o seu Mac? Menu  → **Sobre este Mac**: se aparecer "Chip Apple M…", use o primeiro; se aparecer "Processador Intel", use o segundo.
 
+## Correção da 1.5.1
+- **Ler arquivo — leucograma:** em laudos em que a porcentagem e o valor absoluto aparecem lado a lado, sem unidade ao lado dos números (por exemplo "Leucócitos 100 5.340 … 4.000 a 10.000 /µL"), agora vale o **valor absoluto** e a **faixa da contagem** para leucócitos, neutrófilos, eosinófilos, basófilos, linfócitos e monócitos.
+- **Comparação:** /µL e /mm³ são tratados como a mesma unidade. Se o resultado anterior for mais de 20 vezes diferente (por exemplo, um leucócito salvo antes como "100"), aparece **"confira"** com o link para o exame anterior, em vez de uma variação falsa.
+
 ## Novidades da 1.5.0
 - **Contas com usuário e senha:** cada pessoa tem a própria conta e vê só os próprios exames, consultas, remédios e documentos.
   - **Na primeira abertura**, o Helyx pede para você criar seu usuário e sua senha. **Tudo o que já estava cadastrado fica na sua conta.**

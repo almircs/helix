@@ -158,7 +158,7 @@ export async function detail({ params }) {
         <td><a href="#/exames/marcador/${r.marker_id}"><b>${r.marker_name}</b></a>${r.notes ? html`<div class="meta">${r.notes}</div>` : ''}</td>
         <td class="num"><b>${valueOf(r)}</b> <span class="meta">${r.unit || ''}</span></td>
         <td>${r.ref_label || '—'}</td><td>${sitTag(r.situation) || '—'}</td>
-        <td>${r.previous ? html`${trendTag(r.previous)} <div class="meta">antes: ${fmtNum(r.previous.value, 3)} em ${fmtDate(r.previous.date)}</div>` : html`<span class="meta">primeiro registro</span>`}</td></tr>`)}
+        <td>${r.previous ? html`${r.previous.mismatch ? html`<span class="tag pendente" title="Diferença de mais de 20 vezes: confira se um dos dois foi digitado ou lido errado">confira</span>` : trendTag(r.previous)} <div class="meta">antes: ${fmtNum(r.previous.value, 3)} em <a href="#/exames/${r.previous.exam_id}">${fmtDate(r.previous.date)}</a></div>` : html`<span class="meta">primeiro registro</span>`}</td></tr>`)}
       </tbody></table></div></div>
     ${changesBlock(e)}
     <div class="grid g2" style="margin-top:1rem"><div class="card"><h2>Informações</h2><dl class="kv">

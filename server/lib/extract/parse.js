@@ -79,9 +79,23 @@ function countRef(s, value) {
   return pick ? { ref_min: pick.ref_min, ref_max: pick.ref_max } : {};
 }
 
+// Unidade de contagem citada na linha (a última, que costuma ser a da referência)
+function countUnitOf(line) {
+  const all = String(line).match(/(?:milh[õo]es|mil|x?\s*10\s*\^?\s*[³36])?\s*\/\s*(?:mm[³3]|µl|ul|mcl)(?![a-z])/gi);
+  return all ? all[all.length - 1].replace(/\s+/g, '') : null;
+}
+// Cabeçalho de colunas "%  /µL" nas linhas anteriores (até 12 linhas acima)
+function headerCountUnit(lines, i) {
+  for (let k = i - 1; k >= Math.max(0, i - 12); k--) {
+    if (/^%\s+(?:x?\s*10\s*\^?\s*[³36])?\s*\/\s*(mm[³3]|µl|ul|mcl)\s*$/i.test(lines[k])) return countUnitOf(lines[k]);
+  }
+  return null;
+}
+
 // ---------------------------------------------------------------- Preparação das linhas
 function prepLines(text) {
-  return String(text || '').replace(/\r/g, '').replace(/\u00a0/g, ' ').split('\n')
+  // \u03bc (letra grega mu, comum em PDFs) vira \u00b5 (símbolo de micro), como no resto do programa
+  return String(text || '').replace(/\r/g, '').replace(/\u00a0/g, ' ').replace(/\u03bc/g, '\u00b5').split('\n')
     .map((l) => l.replace(/[.·_]{3,}|-{3,}/g, '\t').replace(/ {3,}/g, '\t').replace(/[ \t]*\t[ \t]*/g, '\t').replace(/ {2,}/g, ' ').trim())
     .filter((l) => l && !/^[\s\-=_*.]+$/.test(l));
 }
@@ -126,7 +140,7 @@ const exactName = (s, keys) => { const n = normalize(s); return keys.find(([k]) 
 const NOT_MARKER = /\b(data|nasc|idade|crm|telefone|fone|cpf|rg|paciente|p[áa]gina|protocolo|pedido|cep|endere|rua|avenida|conv[êe]nio|sexo|hora|coleta|liberad|assinad|cnpj|registro|vers[ãa]o|lote|amostra|material|m[ée]todo|valores?\s+de\s+refer|refer[êe]ncia|resultado|unidade|exame|laborat|cnes|atendimento|m[ée]dico|dr\.?a?\b|solicitante|emiss|impress|n[ºo°]\.?\s*\d|total\s+de|kit)\b/i;
 
 // Lê valor, unidade e referência no texto que vem depois do nome do exame
-function readValue(rest, nextLines = []) {
+function readValue(rest, nextLines = [], ctx = {}) {
   let r = String(rest).replace(/^[\s\t:=\-–—.]+/, '').replace(/^\([^)]{0,60}\)\s*/, '');
   // ignora algumas palavras antes do valor ("sérico", "em jejum", "Resultado:")
   for (let k = 0; k < 4; k++) {
@@ -150,6 +164,19 @@ function readValue(rest, nextLines = []) {
     const abs = after.replace(/^[\s\t]+/, '').match(new RegExp(`^(${NUM_SRC})\\s*(${UNIT_SRC})`, 'i'));
     if (abs && isCount(abs[2])) {
       value = parseNum(abs[1]); unit = abs[2].replace(/\s+/g, ''); after = after.replace(/^[\s\t]+/, '').slice(abs[0].length);
+      absolute = true;
+    }
+  }
+  // Mesma coisa sem unidade ao lado dos números ("Leucócitos 100 5.340 … /µL"), quando a unidade de
+  // contagem aparece no cabeçalho da tabela ("% /µL") ou no fim da linha: o segundo número é o absoluto
+  if (!absolute && !unit && value !== null && ctx.countUnit) {
+    const t2 = after.replace(/^\s+/, '');
+    const abs = t2.match(new RegExp(`^(${NUM_SRC})(?![\d/])`, 'i'));
+    if (abs && !/^\s*(?:a|at[ée]|-|–|—|à)\s*\d/i.test(t2.slice(abs[0].length))) {
+      value = parseNum(abs[1]); after = t2.slice(abs[0].length);
+      const u2 = after.replace(/^\s+/, '').match(UNIT_RE);
+      unit = u2 && isCount(u2[0]) ? u2[0].replace(/\s+/g, '') : ctx.countUnit;
+      if (u2 && isCount(u2[0])) after = after.replace(/^\s+/, '').slice(u2[0].length);
       absolute = true;
     }
   }
@@ -186,8 +213,10 @@ function parseResults(lines, keys) {
       found = { info: { name: g[1].trim().replace(/\s*[(:\-]+$/, ''), unit: '', known: false }, rest: line.slice(g[0].length) };
       generic = true;
     }
+    // unidade de contagem da linha ou do cabeçalho da tabela logo acima ("%   /µL")
+    const ctx = { countUnit: countUnitOf(line) || headerCountUnit(lines, i) };
     // valor na mesma linha ou nas próximas (laudos com "Resultado:" embaixo do nome)
-    let val = readValue(found.rest, lines.slice(i + 1));
+    let val = readValue(found.rest, lines.slice(i + 1), ctx);
     if (!val && !generic) {
       for (let j = i + 1; j < Math.min(lines.length, i + 4); j++) {
         if (matchMarker(lines[j], keys)) break;
