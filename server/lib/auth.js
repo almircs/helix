@@ -33,13 +33,20 @@ function createSession(ctx, userId) {
   ctx.setCookie(COOKIE, token, { maxAge: config.sessionHours * 3600, secure: config.secureCookies });
 }
 
+// Usuário: um nome curto (ex.: carlos) ou um e-mail, sem espaços
+function validateUsername(u) {
+  u = String(u || '').trim();
+  if (!/^[^\s]{3,60}$/.test(u)) throw new HttpError(400, 'Escolha um usuário com 3 a 60 caracteres, sem espaços (pode ser um nome curto ou um e-mail).');
+  return u;
+}
+
 function register(ctx) {
   if (!config.allowRegistration) throw new HttpError(403, 'Cadastro desativado neste servidor.');
-  const { email, password, full_name } = ctx.body;
-  if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) throw new HttpError(400, 'Informe um e-mail válido.');
+  const { password, full_name } = ctx.body;
+  const email = validateUsername(ctx.body.email);
   validatePassword(password);
-  if (get('SELECT id FROM users WHERE email = ?', email)) throw new HttpError(409, 'Este e-mail já está cadastrado.');
-  const r = run('INSERT INTO users (email, password_hash) VALUES (?, ?)', email.trim(), hashPassword(password));
+  if (get('SELECT id FROM users WHERE email = ?', email)) throw new HttpError(409, 'Este usuário já existe. Escolha outro.');
+  const r = run('INSERT INTO users (email, password_hash) VALUES (?, ?)', email, hashPassword(password));
   const userId = Number(r.lastInsertRowid);
   run('INSERT INTO profiles (user_id, full_name) VALUES (?, ?)', userId, full_name || null);
   audit.log(userId, 'usuario', userId, 'criar', null, { email });
@@ -51,10 +58,10 @@ function login(ctx) {
   const { email, password } = ctx.body;
   const key = `${String(email).toLowerCase()}|${ctx.req.socket.remoteAddress}`;
   const a = checkRate(key);
-  const user = email && get('SELECT * FROM users WHERE email = ?', String(email).trim());
+  const user = email && get('SELECT * FROM users WHERE email = ? AND password_set = 1', String(email).trim());
   if (!user || !verifyPassword(String(password || ''), user.password_hash)) {
     failRate(key, a);
-    throw new HttpError(401, 'E-mail ou senha incorretos.');
+    throw new HttpError(401, 'Usuário ou senha incorretos.');
   }
   attempts.delete(key);
   createSession(ctx, user.id);
@@ -69,11 +76,39 @@ function logout(ctx) {
   return { ok: true };
 }
 
+// Situação do acesso, sem dados pessoais: se o login está ligado, se os dados já existentes
+// ainda esperam o primeiro acesso (criar usuário e senha) e se já há alguma conta
+function state() {
+  return {
+    login: config.requireLogin,
+    setup: config.requireLogin && !!get('SELECT 1 FROM users WHERE password_set = 0 LIMIT 1'),
+    has_users: !!get('SELECT 1 FROM users LIMIT 1'),
+  };
+}
+
+// Primeiro acesso: os dados usados até agora sem senha passam a ser da conta criada aqui
+function setup(ctx) {
+  const u = get('SELECT id FROM users WHERE password_set = 0 ORDER BY id LIMIT 1');
+  if (!u) throw new HttpError(409, 'O primeiro acesso já foi feito. Entre com seu usuário e senha.');
+  const email = validateUsername(ctx.body.email);
+  validatePassword(ctx.body.password);
+  if (get('SELECT id FROM users WHERE email = ? AND id != ?', email, u.id)) throw new HttpError(409, 'Este usuário já existe. Escolha outro.');
+  run('UPDATE users SET email = ?, password_hash = ?, password_set = 1 WHERE id = ?', email, hashPassword(ctx.body.password), u.id);
+  const name = String(ctx.body.full_name || '').trim();
+  if (name) {
+    if (get('SELECT 1 FROM profiles WHERE user_id = ?', u.id)) run('UPDATE profiles SET full_name = ? WHERE user_id = ?', name, u.id);
+    else run('INSERT INTO profiles (user_id, full_name) VALUES (?, ?)', u.id, name);
+  }
+  audit.log(u.id, 'usuario', u.id, 'primeiro acesso', null, { email });
+  createSession(ctx, u.id);
+  return { ok: true };
+}
+
 // Perfil local usado quando o login está desligado: o primeiro usuário do banco (criado se não existir)
 function localUser() {
   let u = get('SELECT id, email FROM users ORDER BY id LIMIT 1');
   if (!u) {
-    const r = run('INSERT INTO users (email, password_hash) VALUES (?, ?)', 'local@prontuario', hashPassword(randomToken()));
+    const r = run('INSERT INTO users (email, password_hash, password_set) VALUES (?, ?, 0)', 'local@prontuario', hashPassword(randomToken()));
     const id = Number(r.lastInsertRowid);
     run('INSERT INTO profiles (user_id) VALUES (?)', id);
     audit.log(id, 'usuario', id, 'criar', null, { modo: 'sem login' });
@@ -114,7 +149,7 @@ function changePassword(ctx) {
   return { ok: true };
 }
 
-module.exports = { register, login, logout, requireAuth, changePassword, requireLogin: () => config.requireLogin, verifyPasswordOf: (id, pw) => {
+module.exports = { register, login, logout, requireAuth, changePassword, state, setup, requireLogin: () => config.requireLogin, verifyPasswordOf: (id, pw) => {
   const u = get('SELECT password_hash FROM users WHERE id = ?', id);
   return u && verifyPassword(String(pw || ''), u.password_hash);
 } };

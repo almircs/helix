@@ -19,7 +19,10 @@ const uid = (ctx) => ctx.user.id;
 r.post('/api/auth/register', auth.register);
 r.post('/api/auth/login', auth.login);
 r.post('/api/auth/logout', auth.logout);
-r.get('/api/auth/me', A, (ctx) => ({ id: ctx.user.id, email: ctx.user.email, login: auth.requireLogin() }));
+r.get('/api/auth/state', () => auth.state());
+r.post('/api/auth/setup', auth.setup);
+r.get('/api/auth/me', A, (ctx) => ({ id: ctx.user.id, email: ctx.user.email, login: auth.requireLogin(),
+  name: get('SELECT full_name FROM profiles WHERE user_id = ?', ctx.user.id)?.full_name || null }));
 r.post('/api/auth/password', A, auth.changePassword);
 
 // ---------- Perfil

@@ -11,9 +11,9 @@ module.exports = {
   secureCookies: process.env.SAUDE_HTTPS === '1',
   sessionHours: Number(process.env.SAUDE_SESSAO_HORAS || 12),  // validade máxima da sessão
   idleMinutes: Number(process.env.SAUDE_INATIVIDADE_MIN || 60), // encerra após inatividade
-  // Sem login (padrão): o programa abre direto num perfil local deste computador.
-  // Para exigir e-mail e senha, defina SAUDE_EXIGIR_LOGIN=1.
-  requireLogin: process.env.SAUDE_EXIGIR_LOGIN === '1',
+  // Com login (padrão): cada pessoa entra com usuário e senha e vê só os próprios dados.
+  // Para abrir direto num perfil único deste computador, sem senha, defina SAUDE_EXIGIR_LOGIN=0.
+  requireLogin: process.env.SAUDE_EXIGIR_LOGIN !== '0',
   allowRegistration: process.env.SAUDE_PERMITIR_CADASTRO !== '0',
   // Variação (%) entre dois resultados a partir da qual o sistema sinaliza "alteração relevante"
   relevantChangePct: Number(process.env.SAUDE_VARIACAO_RELEVANTE || 10),

@@ -1,4 +1,4 @@
-// Modo padrão: sem login. O programa abre direto num perfil local.
+// Modo sem senha (SAUDE_EXIGIR_LOGIN=0): o programa abre direto num perfil único deste computador.
 const { test, before, after } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -10,7 +10,7 @@ const PORT = 5000 + Math.floor(Math.random() * 400);
 const DATA = fs.mkdtempSync(path.join(os.tmpdir(), 'saude-semlogin-'));
 let server;
 const env = { ...process.env, PORT, SAUDE_DATA_DIR: DATA };
-delete env.SAUDE_EXIGIR_LOGIN;
+env.SAUDE_EXIGIR_LOGIN = '0';
 
 async function call(method, url, body) {
   const res = await fetch(`http://127.0.0.1:${PORT}/api${url}`, { method, headers: body ? { 'Content-Type': 'application/json' } : {}, body: body ? JSON.stringify(body) : undefined });

@@ -61,6 +61,24 @@ function parseRef(s) {
   return found.sort((a, b) => a[0] - b[0])[0]?.[1] || {};
 }
 
+// Unidade de contagem de células (/mm³, mil/mm³, x10³/µL…)
+const isCount = (u) => /\/\s*(mm[³3]|µl|ul|mcl)\s*$/i.test(String(u || ''));
+
+// Referência do valor absoluto quando a linha traz as duas faixas ("40 a 70 %   1.600 a 7.700 /mm³"):
+// prefere a faixa seguida de unidade de contagem; senão, a faixa compatível com o tamanho do valor
+function countRef(s, value) {
+  const t = String(s || '').replace(/\s+/g, ' ');
+  const re = new RegExp(`(${NUM_SRC})\\s*(?:a|at[ée]|-|–|—|à)\\s*(${NUM_SRC})\\s*(${UNIT_SRC})?`, 'gi');
+  const ranges = [];
+  let m;
+  while ((m = re.exec(t))) {
+    const a = parseNum(m[1]); const b = parseNum(m[2]);
+    if (a !== null && b !== null && b >= a) ranges.push({ ref_min: a, ref_max: b, unit: m[3] || '' });
+  }
+  const pick = ranges.find((r) => isCount(r.unit)) || ranges.find((r) => r.unit !== '%' && (value <= 100 || r.ref_max > 100));
+  return pick ? { ref_min: pick.ref_min, ref_max: pick.ref_max } : {};
+}
+
 // ---------------------------------------------------------------- Preparação das linhas
 function prepLines(text) {
   return String(text || '').replace(/\r/g, '').replace(/\u00a0/g, ' ').split('\n')
@@ -126,13 +144,23 @@ function readValue(rest, nextLines = []) {
   if (m[3]) { value = null; value_text = m[3].replace(/\s+/g, ' '); }
   else if (m[1]) { value = null; value_text = `${m[1]} ${m[2]}`; }
   else value = parseNum(m[2]);
+  // Leucograma e similares: "Neutrófilos 58,0 % 3.944 /mm³" → vale o número absoluto, não a porcentagem
+  let absolute = false;
+  if (unit === '%' && value !== null) {
+    const abs = after.replace(/^[\s\t]+/, '').match(new RegExp(`^(${NUM_SRC})\\s*(${UNIT_SRC})`, 'i'));
+    if (abs && isCount(abs[2])) {
+      value = parseNum(abs[1]); unit = abs[2].replace(/\s+/g, ''); after = after.replace(/^[\s\t]+/, '').slice(abs[0].length);
+      absolute = true;
+    }
+  }
+  const readRef = (s) => (absolute ? countRef(s, value) : parseRef(s));
   // referência: na mesma linha ou em "Valores de referência" logo abaixo
   let refSrc = after.replace(/^[\s\t]+/, '');
-  let ref = parseRef(refSrc);
+  let ref = readRef(refSrc);
   if (ref.ref_min === undefined && ref.ref_max === undefined) {
     for (const l of nextLines.slice(0, 4)) {
       if (/refer[êe]ncia|vr\s*:|desej[áa]vel|normal\s*:|adultos?\s*:|homens?\s*:|mulheres?\s*:|^\(?\s*\d+(?:[.,]\d+)?\s*(a|-|–)\s*\d/i.test(l)) {
-        const rr = parseRef(l);
+        const rr = readRef(l);
         if (rr.ref_min !== undefined || rr.ref_max !== undefined) { ref = rr; refSrc = l; break; }
       }
     }

@@ -18,7 +18,7 @@ Na primeira abertura no Mac: no macOS 15 Sequoia ou mais novo, tente abrir uma v
 ### Sem instalar (versão no navegador)
 Com o Node.js 22.13+ instalado, dê dois cliques em `iniciar-windows.bat` ou `iniciar-mac.command`, ou rode `npm start`.
 Na primeira vez, os scripts instalam os leitores de PDF e de fotos (`npm install --omit=dev`); sem eles, só a leitura de Word, Excel, CSV e TXT funciona.
-O programa abre direto, **sem login** (versão de testes). Para exigir e-mail e senha, defina `SAUDE_EXIGIR_LOGIN=1`.
+O programa pede **usuário e senha**; cada pessoa tem a própria conta. Na primeira abertura de quem já usava sem senha, os dados existentes ficam na conta criada. Para abrir sem senha, num perfil único, defina `SAUDE_EXIGIR_LOGIN=0`.
 Para dados fictícios de demonstração, rode `npm run demo` numa pasta de dados vazia.
 
 ## Seus dados

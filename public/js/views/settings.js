@@ -92,11 +92,14 @@ async function security(head) {
   const [me, log, sys] = await Promise.all([api('/auth/me'), api('/audit?limit=60'), api('/system')]);
   return view(html`${head}
     <div class="grid g2">
-      ${me.login ? html`<div class="card"><h2>Trocar senha</h2><p class="meta">Conta: ${me.email}</p>
+      ${me.login ? html`<div class="card"><h2>Conta</h2><p>Você entrou como <b>${me.email}</b>.</p>
+        <div class="actions" style="display:flex;gap:.6rem;flex-wrap:wrap"><button class="btn" id="switchUser">Trocar de usuário</button><button class="btn" id="newUser">Criar conta para outra pessoa</button></div>
+        <p class="small muted">Cada conta tem os próprios exames, consultas, remédios e documentos.</p></div>
+        <div class="card"><h2>Trocar senha</h2>
         <form id="pw" class="stack">${fields([{ name: 'current', label: 'Senha atual', type: 'password', required: true }, { name: 'password', label: 'Nova senha', type: 'password', required: true, hint: 'mín. 8, letras e números' }])}
         <button class="btn primary">Trocar senha</button></form></div>` : html`<div class="card"><h2>Acesso</h2>
         <p>O programa está abrindo <b>sem senha</b>, direto no seu perfil deste computador.</p>
-        <p class="small muted">Quem usar este computador consegue ver os dados. Os campos sensíveis continuam gravados criptografados no disco. A proteção por senha poderá ser ligada numa próxima versão.</p></div>`}
+        <p class="small muted">Quem usar este computador consegue ver os dados. Os campos sensíveis continuam gravados criptografados no disco. Para pedir usuário e senha, deixe de definir SAUDE_EXIGIR_LOGIN=0.</p></div>`}
       <div class="card"><h2>Seus dados</h2>
         <p>Para salvar ou restaurar seus dados, use a aba <a href="#/configuracoes/backup">Backup</a>.</p>
         <p class="small muted">Pasta dos dados neste computador: <code>${sys.data_dir}</code></p>
@@ -110,6 +113,9 @@ async function security(head) {
       <p>Apaga definitivamente seu cadastro, exames, consultas, medicamentos, agenda e histórico. Faça um <a href="#/configuracoes/backup">backup</a> antes, se quiser guardar uma cópia.</p>
       <form id="delacc" class="form-grid">${fields([...(me.login ? [{ name: 'password', label: 'Sua senha', type: 'password', required: true }] : []), { name: 'confirm', label: 'Digite EXCLUIR', required: true }])}
         <div class="full"><button class="btn danger">Excluir tudo definitivamente</button></div></form></div>`, (el) => {
+    const leave = async (to) => { await api('/auth/logout', { method: 'POST' }); location.hash = to; location.reload(); };
+    el.querySelector('#switchUser')?.addEventListener('click', () => leave('#/entrar'));
+    el.querySelector('#newUser')?.addEventListener('click', () => leave('#/cadastro'));
     el.querySelector('#pw')?.addEventListener('submit', async (e) => {
       e.preventDefault();
       try { await api('/auth/password', { method: 'POST', body: readForm(e.target) }); toast('Senha alterada'); e.target.reset(); } catch (err) { toast(err.message, true); }

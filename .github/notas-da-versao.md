@@ -15,6 +15,14 @@ Isso só é preciso na primeira vez.
 
 Não sabe qual é o seu Mac? Menu  → **Sobre este Mac**: se aparecer "Chip Apple M…", use o primeiro; se aparecer "Processador Intel", use o segundo.
 
+## Novidades da 1.5.0
+- **Contas com usuário e senha:** cada pessoa tem a própria conta e vê só os próprios exames, consultas, remédios e documentos.
+  - **Na primeira abertura**, o Helyx pede para você criar seu usuário e sua senha. **Tudo o que já estava cadastrado fica na sua conta.**
+  - Para outra pessoa usar (por exemplo, a esposa): *Configurações → Segurança e dados → Criar conta para outra pessoa*, ou **Criar conta** na tela de entrada.
+  - Para trocar de pessoa: botão **Sair** no alto da tela, ou *Trocar de usuário* nas Configurações.
+  - Guarde bem a senha: por segurança, não há como recuperá-la pelo programa.
+- **Ler arquivo:** no leucograma (leucócitos, neutrófilos, linfócitos etc.), agora vale o **número absoluto** (/mm³) e a faixa de referência dele, e não a porcentagem.
+
 ## Correção da 1.4.1
 - **Ler arquivo:** no programa instalado, ler um PDF dava o erro "getOrInsertComputed is not a function". O leitor de PDF agora usa a versão compatível com o motor do programa.
 - Instalador menor (sem uma biblioteca de desenho que não era usada).

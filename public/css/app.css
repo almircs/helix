@@ -498,3 +498,7 @@ legend { font-weight: 700; padding: 0 .4rem; }
 .imp-text { white-space: pre-wrap; font-size: .85rem; max-height: 420px; overflow: auto; background: var(--surface-2); padding: .8rem; border-radius: 10px; }
 .imp-textbox summary { cursor: pointer; font-weight: 600; }
 .changes-card .imp-groups { margin-bottom: 0; }
+
+/* Nome de quem está usando, ao lado do botão Sair */
+.who { color: var(--muted); font-size: .9rem; white-space: nowrap; }
+.who:empty { display: none; }

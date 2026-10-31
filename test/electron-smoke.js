@@ -6,6 +6,7 @@ const path = require('node:path');
 const assert = require('node:assert/strict');
 
 process.env.SAUDE_DATA_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'saude-smoke-'));
+process.env.SAUDE_EXIGIR_LOGIN = '0'; // o teste usa o perfil único, sem senha
 
 (async () => {
   let driver = 'node:sqlite';

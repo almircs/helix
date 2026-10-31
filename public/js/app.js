@@ -72,7 +72,8 @@ function shell() {
           <input type="search" name="q" id="searchInput" placeholder="Buscar em exames, remédios, consultas…" aria-label="Busca">
         </form>
         <span class="safe-pill"><i></i>Dados só neste computador</span>
-        <button class="btn icon ghost" id="logoutBtn" title="Sair" aria-label="Sair">${icon('logout')}</button>
+        <span class="who" id="who"></span>
+        <button class="btn icon ghost" id="logoutBtn" title="Sair / trocar de usuário" aria-label="Sair">${icon('logout')}</button>
       </header>
       <nav class="topnav" aria-label="Menu principal">
         <div class="topnav-links">
@@ -100,27 +101,44 @@ function shell() {
   document.getElementById('logoutBtn').onclick = async () => { await api('/auth/logout', { method: 'POST' }); location.hash = '#/entrar'; location.reload(); };
 }
 
-function authView(mode) {
+// Telas de acesso: entrar, criar conta e primeiro acesso (dar usuário e senha aos dados já existentes)
+const AUTH = {
+  login: { title: 'Entrar', button: 'Entrar', text: 'Cada pessoa tem a própria conta. Os dados ficam guardados neste computador, protegidos por senha e criptografia.' },
+  register: { title: 'Criar conta', button: 'Criar conta', text: 'Uma conta nova começa vazia. Cada pessoa vê só os próprios exames, consultas e remédios.' },
+  setup: { title: 'Proteja seus dados com senha', button: 'Criar meu acesso', text: 'A partir desta versão, o Helyx pede usuário e senha. Os exames, consultas, remédios e documentos que já estão no programa ficam na sua conta.' },
+};
+function authView(mode, state = {}) {
+  const c = AUTH[mode];
   const isLogin = mode === 'login';
   app.innerHTML = html`
     <div class="auth"><div class="card">
       <div class="brand"><img src="/icon.png" alt="">Helyx</div>
-      <h1 style="text-align:center">${isLogin ? 'Entrar' : 'Criar conta'}</h1>
-      <p class="muted small" style="text-align:center">Seus dados de saúde ficam guardados neste computador, protegidos por senha e criptografia.</p>
+      <h1 style="text-align:center">${c.title}</h1>
+      <p class="muted small" style="text-align:center">${c.text}</p>
       <form id="authForm" class="stack" style="margin-top:1rem">
         ${!isLogin ? fields([{ name: 'full_name', label: 'Seu nome' }]) : ''}
-        ${fields([{ name: 'email', label: 'E-mail', type: 'email', required: true }, { name: 'password', label: 'Senha', type: 'password', required: true, hint: isLogin ? '' : 'mín. 8 caracteres, com letras e números' }])}
-        <button class="btn primary" style="width:100%">${isLogin ? 'Entrar' : 'Criar conta'}</button>
+        ${fields([{ name: 'email', label: 'Usuário ou e-mail', required: true, hint: isLogin ? '' : 'ex.: carlos' },
+          { name: 'password', label: 'Senha', type: 'password', required: true, hint: isLogin ? '' : 'mín. 8 caracteres, com letras e números' }])}
+        ${!isLogin ? fields([{ name: 'password2', label: 'Repita a senha', type: 'password', required: true }]) : ''}
+        <button class="btn primary" style="width:100%">${c.button}</button>
       </form>
-      <p class="small" style="text-align:center;margin-top:1rem">${isLogin ? html`Primeira vez? <a href="#/cadastro">Criar conta</a>` : html`Já tem conta? <a href="#/entrar">Entrar</a>`}</p>
+      ${mode === 'setup' ? '' : html`<p class="small" style="text-align:center;margin-top:1rem">${isLogin
+        ? html`Outra pessoa vai usar o Helyx? <a href="#/cadastro">Criar conta</a>`
+        : state.has_users ? html`Já tem conta? <a href="#/entrar">Entrar</a>` : ''}</p>`}
     </div></div>`.__raw;
   const form = document.getElementById('authForm');
+  form.querySelector('[name=email]').autocomplete = 'username';
+  form.querySelector('[name=email]').autocapitalize = 'none';
   form.querySelector('[name=password]').autocomplete = isLogin ? 'current-password' : 'new-password';
+  form.querySelector('[name=email]').focus();
   form.onsubmit = async (e) => {
     e.preventDefault();
+    const body = readForm(form);
+    if (!isLogin && body.password !== body.password2) { toast('As duas senhas não são iguais.', true); return; }
+    delete body.password2;
     try {
-      await api(isLogin ? '/auth/login' : '/auth/register', { method: 'POST', body: readForm(form) });
-      me = await api('/auth/me'); location.hash = '#/'; route();
+      await api(isLogin ? '/auth/login' : mode === 'setup' ? '/auth/setup' : '/auth/register', { method: 'POST', body });
+      location.hash = '#/'; location.reload(); // recomeça limpo, já na conta certa
     } catch (err) { toast(err.message, true); }
   };
 }
@@ -131,14 +149,22 @@ async function route() {
   const [path, qs] = hash.split('?');
   const query = Object.fromEntries(new URLSearchParams(qs || ''));
   if (path === '/entrar' || path === '/cadastro') {
+    const state = await api('/auth/state').catch(() => ({ login: true }));
+    if (!state.login) { location.hash = '#/'; return; } // login desligado
     const info = await api('/auth/me').catch(() => null);
-    if (info && !info.login) { me = info; location.hash = '#/'; return; } // login desligado
-    me = null; return authView(path === '/entrar' ? 'login' : 'register');
+    if (info && path === '/entrar') { location.hash = '#/'; return; } // já entrou
+    me = null;
+    if (state.setup) return authView('setup', state);
+    return authView(path === '/cadastro' || !state.has_users ? 'register' : 'login', state);
   }
   if (!me) {
     try { me = await api('/auth/me'); } catch { location.hash = '#/entrar'; return; }
   }
-  if (!document.getElementById('content')) { shell(); startReminders(); if (!me.login) document.getElementById('logoutBtn').style.display = 'none'; }
+  if (!document.getElementById('content')) {
+    shell(); startReminders();
+    if (!me.login) document.getElementById('logoutBtn').style.display = 'none';
+    else document.getElementById('who').textContent = (me.name || me.email || '').split(' ')[0];
+  }
   const content = document.getElementById('content');
   const found = ROUTES.find(([re]) => re.test(path));
   document.querySelectorAll('[data-nav]').forEach((a) => { const on = found && a.dataset.nav === found[2]; a.classList.toggle('active', on); if (on) a.scrollIntoView({ block: 'nearest', inline: 'nearest' }); });

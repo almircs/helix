@@ -47,6 +47,18 @@ test('interpreta um laudo de laboratório em texto', () => {
   assert.equal(p.exams[0].results.filter((x) => x.marker_name === 'Creatinina').length, 1, 'ignora o "resultado anterior" do laudo');
 });
 
+test('leucograma: lê o valor absoluto e a faixa da contagem, não a porcentagem', () => {
+  const p = parseDocument({ text: `Leucócitos   100 %   6.800 /mm³   3.500 a 10.500 /mm³
+Neutrófilos  58,0 %  3.944 /mm³   40 a 70 %   1.600 a 7.700 /mm³
+Linfócitos   30,0 %  2.040 /mm³   20 a 50     900 a 3.400
+Hemoglobina glicada  6,1 %  43 mmol/mol  4,0 a 5,6 %` });
+  const r = byName(p.exams[0].results);
+  assert.deepEqual([r['Leucócitos'].value, r['Leucócitos'].unit, r['Leucócitos'].ref_min, r['Leucócitos'].ref_max], [6800, '/mm³', 3500, 10500]);
+  assert.deepEqual([r['Neutrófilos'].value, r['Neutrófilos'].ref_min, r['Neutrófilos'].ref_max], [3944, 1600, 7700]);
+  assert.deepEqual([r['Linfócitos'].value, r['Linfócitos'].ref_min, r['Linfócitos'].ref_max], [2040, 900, 3400]);
+  assert.deepEqual([r['Hemoglobina glicada'].value, r['Hemoglobina glicada'].unit], [6.1, '%'], 'porcentagem sem contagem continua em %');
+});
+
 test('usa o nome que a pessoa já tem para o mesmo exame', () => {
   const p = parseDocument({ text: 'Vitamina D (25-OH)  18,5 ng/mL  Suficiente: > 20', userMarkers: [{ name: 'Vitamina D 25 hidroxi' }] });
   assert.equal(p.exams[0].results[0].marker_name, 'Vitamina D 25 hidroxi');
@@ -88,7 +100,7 @@ after(async () => {
 test('compara com os exames anteriores e separa as alterações', async () => {
   const PORT = 6500 + Math.floor(Math.random() * 400);
   DATA = fs.mkdtempSync(path.join(os.tmpdir(), 'helyx-ext-'));
-  const env = { ...process.env, PORT, SAUDE_DATA_DIR: DATA }; delete env.SAUDE_EXIGIR_LOGIN;
+  const env = { ...process.env, PORT, SAUDE_DATA_DIR: DATA }; env.SAUDE_EXIGIR_LOGIN = '0';
   server = spawn(process.execPath, ['--disable-warning=ExperimentalWarning', path.join(__dirname, '..', 'server', 'index.js')], { env, stdio: 'pipe' });
   for (let i = 0; i < 50; i++) { try { await fetch(`http://127.0.0.1:${PORT}/`); break; } catch { await new Promise((r) => setTimeout(r, 100)); } }
   const call = async (method, url, body) => {
