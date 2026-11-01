@@ -530,3 +530,17 @@ input.invalid, select.invalid, textarea.invalid { border-color: var(--danger) !i
 .cat-new input { flex: 1; }
 .cat-inline { display: flex; align-items: center; gap: .4rem; margin: 0; font-weight: 400; }
 .cat-inline select { width: auto; max-width: 14rem; }
+
+.tl-item .kind.vacina { color: var(--chart-5); }
+
+/* Pendências */
+.pend-new { display: flex; gap: .6rem; flex-wrap: wrap; align-items: center; margin-bottom: 1rem; }
+.pend-new input[name=title] { flex: 1; min-width: 14rem; }
+.pend-new input[type=date] { width: auto; }
+.pend-list > li.pend { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr) auto; gap: .8rem 1.2rem; align-items: start; }
+@media (max-width: 900px) { .pend-list > li.pend { grid-template-columns: 1fr; } }
+.pend-head { display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; margin-bottom: .2rem; }
+.pend-edit { gap: .5rem .8rem; }
+/* Vacinas */
+.vac-groups { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); }
+.vac-group h3 { margin: 0 0 .3rem; font-size: 1rem; color: var(--primary); }

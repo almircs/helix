@@ -60,6 +60,12 @@ const events = new Resource({
   refs: { consultation_id: 'consultations', exam_id: 'exams', medication_id: 'medications' },
 });
 
+const vaccines = new Resource({
+  table: 'vaccines', entity: 'vacina',
+  fields: { name: 'text', dose: 'text', applied_date: 'date', next_date: 'date', lot: 'text', place: 'text', notes: 'text' },
+  encrypted: ['notes'], required: ['name'],
+});
+
 const PROFILE_FIELDS = ['full_name', 'birth_date', 'sex', 'weight_kg', 'height_cm', 'blood_type', 'allergies', 'conditions', 'emergency_contacts', 'notes'];
 const PROFILE_ENCRYPTED = ['allergies', 'conditions', 'emergency_contacts', 'notes'];
 
@@ -73,4 +79,4 @@ const MEASUREMENT_TYPES = {
   outro: { label: 'Outro', unit: '' },
 };
 
-module.exports = { doctors, consultations, exams, markers, medications, measurements, events, PROFILE_FIELDS, PROFILE_ENCRYPTED, MEASUREMENT_TYPES };
+module.exports = { doctors, consultations, exams, markers, medications, measurements, events, vaccines, PROFILE_FIELDS, PROFILE_ENCRYPTED, MEASUREMENT_TYPES };

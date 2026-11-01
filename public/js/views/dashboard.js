@@ -44,8 +44,8 @@ export async function render() {
     kpi({ label: 'Hoje', color: '#38bdf8', grad: 'linear-gradient(90deg,#38bdf8,#6366f1)', ic: I.clock, href: '#/medicamentos',
       value: h.today_meds.count ? plural(h.today_meds.count, 'remédio', 'remédios') : '—',
       sub: h.today_meds.times.length ? `Horários: ${h.today_meds.times.join(', ')}` : 'Sem horários cadastrados' }),
-    kpi({ label: 'Pendências', color: '#f87171', grad: 'linear-gradient(90deg,#fbbf24,#f87171)', ic: I.alert, href: '#/exames',
-      value: String(h.pending.count), sub: h.pending.count ? 'Itens para revisar' : 'Nada para revisar' }),
+    kpi({ label: 'Pendências', color: '#f87171', grad: 'linear-gradient(90deg,#fbbf24,#f87171)', ic: I.alert, href: '#/pendencias',
+      value: String(h.pending.count), sub: h.pending.count ? 'Clique para ver e acompanhar' : 'Nada pendente' }),
     kpi({ label: 'Exames', color: '#a78bfa', grad: 'linear-gradient(90deg,#8b5cf6,#ec4899)', ic: I.flask, href: '#/exames',
       value: String(h.exams.tracked), sub: h.exams.last ? `Acompanhados · último ${fmtDate(h.exams.last).slice(0, 5)}` : 'Nenhum lançado' }),
     kpi({ label: 'Medições', color: '#34d399', grad: 'linear-gradient(90deg,#34d399,#22c7b0)', ic: I.pulse, href: '#/saude',
@@ -59,6 +59,9 @@ export async function render() {
     ['Exames', h.exams.tracked ? `${plural(h.exams.tracked, 'acompanhado', 'acompanhados')}${h.exams.last ? ' · último ' + fmtDate(h.exams.last).slice(0, 5) : ''}` : 'Lançar o primeiro', '#a78bfa', '#/exames'],
     ['Consultas', `${plural(h.consultations.total, 'registrada', 'registradas')}${h.consultations.next ? ' · próxima ' + fmtDate(h.consultations.next).slice(0, 5) : ''}`, '#22c7b0', '#/consultas'],
     ['Medicamentos', h.medications.active ? `${h.medications.active} em uso` : 'Nenhum em uso', '#38bdf8', '#/medicamentos'],
+    ['Laudos de imagem', h.imaging.total ? plural(h.imaging.total, 'laudo guardado', 'laudos guardados') : 'Tomografia, ultrassom…', '#60a5fa', '#/exames?ver=laudos'],
+    ['Vacinas', h.vaccines.total ? `${plural(h.vaccines.total, 'dose registrada', 'doses registradas')}${h.vaccines.next ? ' · próxima ' + fmtDate(h.vaccines.next).slice(0, 5) : ''}` : 'Registrar a primeira', '#a8e063', '#/vacinas'],
+    ['Pendências', h.pending.count ? `${plural(h.pending.count, 'aberta', 'abertas')}` : 'Nenhuma aberta', '#fb923c', '#/pendencias'],
     ['Documentos', plural(h.documents.total, 'guardado', 'guardados'), '#fbbf24', '#/documentos'],
     ['Medições', h.measurements.last ? `última ${ago(h.measurements.last)}, ${h.measurements.last.slice(11, 16)}` : 'Registrar a primeira', '#34d399', '#/saude'],
     ['Relatórios', 'Resumo para levar à consulta', '#f87171', '#/relatorios'],
@@ -102,7 +105,7 @@ export async function render() {
         <a class="focus f1" href="#/agenda"><span>Foco 1 · Agenda</span>${h.next
           ? `Compromisso ${WEEKDAYS[nd.getDay()]}${h.next.time ? ' às ' + h.next.time : ''}${h.next.more ? `. Mais ${h.next.more} nos próximos 30 dias.` : '.'}`
           : 'Nenhum compromisso marcado.'}</a>
-        <a class="focus f2" href="#/exames"><span>Foco 2 · Pendências</span>${h.pending.count ? `${plural(h.pending.count, 'item aguarda', 'itens aguardam')} revisão em ${h.pending.areas.join(', ')}.` : 'Nada aguardando revisão.'}</a>
+        <a class="focus f2" href="#/pendencias"><span>Foco 2 · Pendências</span>${h.pending.count ? `${plural(h.pending.count, 'item aguarda', 'itens aguardam')} providência em ${h.pending.areas.join(', ')}. Clique para ver.` : 'Nada pendente.'}</a>
         <a class="focus f3" href="#/configuracoes/backup"><span>Foco 3 · Backup</span>${h.backup.last_auto ? `Cópia automática em ${fmtDate(h.backup.last_auto)}.` : 'Nenhuma cópia automática ainda.'} ${h.backup.last_file ? `Último backup em arquivo ${ago(h.backup.last_file)}.` : 'Nenhum backup em arquivo — faça um.'}</a>
       </aside>
     </div>

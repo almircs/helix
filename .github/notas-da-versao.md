@@ -15,6 +15,15 @@ Isso só é preciso na primeira vez.
 
 Não sabe qual é o seu Mac? Menu  → **Sobre este Mac**: se aparecer "Chip Apple M…", use o primeiro; se aparecer "Processador Intel", use o segundo.
 
+## Novidades da 1.9.0
+- **Página de Pendências** (clique no quadro "Pendências" da página inicial): mostra **quais** são as pendências e deixa editar cada uma:
+  - **Ação em andamento** (ex.: "coleta marcada para dia 12"), **status** (pendente, em andamento, concluída, cancelada) e **prazo**, com aviso de prazo vencido.
+  - As automáticas vêm dos seus dados: exame pedido e ainda não feito, exame fora da referência, receita perto do fim e vacina com dose vencendo. Elas somem sozinhas quando o problema se resolve, por exemplo quando o exame pedido é lançado.
+  - Dá para criar pendências suas (ex.: "marcar retorno com o cardiologista").
+  - A página inicial continua discreta: mostra só a quantidade e os tipos.
+- **Acesso rápido** ganhou **Laudos de imagem**, **Vacinas** e **Pendências**.
+- **Vacinas** (novo item no menu e em *Lançar → Vacina*): registre vacina, dose, data, local, lote e a **próxima dose**. A próxima dose aparece na agenda e vira pendência perto da data. Também entram na linha do tempo e no backup.
+
 ## Novidades da 1.8.0
 - **Laudos de imagem por categoria** (Coração, Rins, Próstata, Tireoide…): nova aba **Exames → Laudos de imagem**, com os laudos agrupados por categoria e um filtro para ver só uma.
   - **Mover:** escolha a categoria ao lado de cada laudo, ou marque vários e use **Mover selecionados**. Também dá para trocar na página do exame e no formulário de edição.

@@ -88,6 +88,16 @@ r.post('/api/exams', A, (ctx) => examsSvc.saveExam(uid(ctx), ctx.body));
 r.put('/api/exams/:id', A, (ctx) => examsSvc.saveExam(uid(ctx), ctx.body, ctx.params.id));
 r.delete('/api/exams/:id', A, (ctx) => examsSvc.removeExam(uid(ctx), ctx.params.id));
 
+// ---------- Pendências (automáticas + criadas pela pessoa)
+const pend = require('./services/pendencias');
+r.get('/api/pendencias', A, (ctx) => pend.list(uid(ctx)));
+r.post('/api/pendencias', A, (ctx) => pend.create(uid(ctx), ctx.body));
+r.put('/api/pendencias/:key', A, (ctx) => pend.update(uid(ctx), ctx.params.key, ctx.body));
+r.delete('/api/pendencias/:key', A, (ctx) => pend.remove(uid(ctx), ctx.params.key));
+
+// ---------- Vacinas
+crud('vaccines', M.vaccines, { list: (ctx) => M.vaccines.list(uid(ctx), '', [], 'name COLLATE NOCASE, COALESCE(applied_date, next_date) DESC') });
+
 // ---------- Categorias dos exames
 const cats = require('./services/categories');
 r.get('/api/exam-categories', A, (ctx) => cats.list(uid(ctx)));

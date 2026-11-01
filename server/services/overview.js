@@ -1,7 +1,7 @@
 // Linha do tempo, agenda, dashboard, busca e exportação.
 const { all, get } = require('../db');
 const { decrypt } = require('../lib/crypto');
-const { consultations, exams, medications, measurements, events, doctors, markers, PROFILE_ENCRYPTED, MEASUREMENT_TYPES } = require('../models');
+const { consultations, exams, medications, measurements, events, doctors, markers, vaccines, PROFILE_ENCRYPTED, MEASUREMENT_TYPES } = require('../models');
 const { resultsOf, listMarkers, markerHistory } = require('./exams');
 const { listMedications } = require('./medications');
 
@@ -18,6 +18,8 @@ function timeline(userId, q = {}) {
   const want = (k) => !kinds || kinds.has(k);
   const items = [];
 
+  if (want('vacina')) for (const v of all('SELECT * FROM vaccines WHERE user_id = ? AND applied_date BETWEEN ? AND ?', userId, from, to))
+    items.push({ date: v.applied_date, kind: 'vacina', id: v.id, link: '#/vacinas', title: `Vacina: ${v.name}${v.dose ? ' — ' + v.dose : ''}`, lines: v.place ? [{ text: v.place }] : [] });
   if (want('exame')) for (const e of all('SELECT * FROM exams WHERE user_id = ? AND collection_date BETWEEN ? AND ?', userId, from, to)) {
     const res = resultsOf(userId, e.id);
     items.push({ date: e.collection_date, kind: 'exame', id: e.id, link: `#/exames/${e.id}`,
@@ -84,6 +86,9 @@ function agenda(userId, from, to) {
   }
   for (const m of all("SELECT * FROM medications WHERE user_id = ? AND status = 'ativo' AND end_date BETWEEN ? AND ?", userId, from, to)) {
     out.push({ source: 'medicamento', id: m.id, type: 'receita', date: m.end_date, title: `Término previsto: ${m.name}`, status: 'agendado' });
+  }
+  for (const v of all(`SELECT * FROM vaccines v WHERE v.user_id = ? AND v.next_date BETWEEN ? AND ? AND NOT EXISTS (SELECT 1 FROM vaccines w WHERE w.user_id = v.user_id AND w.name = v.name COLLATE NOCASE AND w.id != v.id AND COALESCE(w.applied_date, '') > COALESCE(v.applied_date, ''))`, userId, from, to)) {
+    out.push({ source: 'vacina', id: v.id, type: 'vacina', date: v.next_date, title: `Vacina: ${v.name}${v.dose ? ' (próxima dose)' : ''}`, status: 'agendado', location: v.place });
   }
   out.sort((a, b) => (a.date + (a.time || '99')).localeCompare(b.date + (b.time || '99')));
   return out;
@@ -177,7 +182,10 @@ function home(userId) {
     today,
     next: n ? { date: n.date, time: n.time || null, more: appts.filter((e) => e !== n && e.date <= addDays(today, 30)).length } : null,
     today_meds: { count: meds.filter((m) => medTimes(m).length).length, times },
-    pending: { count: (outOfRange ? 1 : 0) + (pendingReq ? 1 : 0) + ending, areas: pend },
+    pending: require('./pendencias').summary(userId),
+    imaging: { total: get('SELECT COUNT(*) n FROM exams WHERE user_id = ? AND title IS NOT NULL', userId).n },
+    vaccines: { total: get('SELECT COUNT(*) n FROM vaccines WHERE user_id = ? AND applied_date IS NOT NULL', userId).n,
+      next: get('SELECT MIN(next_date) d FROM vaccines WHERE user_id = ? AND next_date >= ?', userId, today).d },
     exams: { tracked: mk.length, last: lastExam },
     consultations: { total: get('SELECT COUNT(*) n FROM consultations WHERE user_id = ?', userId).n, next: nextCons },
     medications: { active: meds.length },
@@ -246,6 +254,8 @@ function exportAll(userId) {
     consultas: consultations.list(userId, '', [], 'date'),
     exames_solicitados: all('SELECT * FROM exam_requests WHERE user_id = ?', userId).map(({ user_id, ...r }) => r),
     marcadores: markers.list(userId, '', [], 'name'),
+    vacinas: vaccines.list(userId, '', [], 'id'),
+    pendencias: all('SELECT * FROM pendencias WHERE user_id = ?', userId).map(({ user_id, ...p }) => ({ ...p, title: decrypt(p.title), action: decrypt(p.action) })),
     categorias_exames: all('SELECT id, name, position, created_at FROM exam_categories WHERE user_id = ?', userId),
     exames: exams.list(userId, '', [], 'collection_date'),
     resultados: dec(all('SELECT * FROM exam_results WHERE user_id = ?', userId), ['notes']),

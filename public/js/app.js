@@ -11,6 +11,8 @@ import * as settings from './views/settings.js';
 import * as misc from './views/misc.js';
 import * as docs from './views/documents.js';
 import * as importar from './views/importar.js';
+import * as pendencias from './views/pendencias.js';
+import * as vacinas from './views/vacinas.js';
 import { startReminders } from './reminders.js';
 
 const app = document.getElementById('app');
@@ -24,6 +26,7 @@ const NAV = [
   ['#/medicamentos', 'Medicamentos', 'medicamentos'],
   ['#/linha-do-tempo', 'Linha do tempo', 'tempo'],
   ['#/saude', 'Saúde', 'saude'],
+  ['#/vacinas', 'Vacinas', 'vacinas'],
   ['#/documentos', 'Documentos', 'documentos'],
   ['#/relatorios', 'Relatórios', 'relatorios'],
   ['#/ia', 'IA', 'ia', true],
@@ -53,6 +56,8 @@ const ROUTES = [
   [/^\/saude$/, health.render, '#/saude'],
   [/^\/busca$/, misc.search, null],
   [/^\/importar$/, importar.render, null],
+  [/^\/pendencias$/, pendencias.render, null],
+  [/^\/vacinas$/, vacinas.render, '#/vacinas'],
   [/^\/documentos$/, docs.list, '#/documentos'],
   [/^\/documentos\/(\d+)$/, docs.detail, '#/documentos'],
   [/^\/relatorios$/, misc.reports, '#/relatorios'],
@@ -85,7 +90,7 @@ function shell() {
           <div class="launch-menu">
             <a href="#/importar" class="launch-read">Ler arquivo (PDF, foto, Word, Excel)</a>
             <a href="#/exames/novo">Exame</a><a href="#/consultas/nova">Consulta</a><a href="#/medicamentos/novo">Medicamento</a>
-            <a href="#/saude">Medição</a><a href="#/documentos?novo=1">Documento</a><a href="#/agenda?novo=outro">Compromisso</a>
+            <a href="#/saude">Medição</a><a href="#/vacinas?editar=nova">Vacina</a><a href="#/documentos?novo=1">Documento</a><a href="#/agenda?novo=outro">Compromisso</a><a href="#/pendencias">Pendência</a>
           </div>
         </details>
       </nav>

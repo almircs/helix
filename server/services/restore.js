@@ -26,6 +26,8 @@ const keepDates = (cols) => [...cols, 'created_at', 'updated_at'];
 
 function wipe(userId) {
   // Ordem respeita as chaves estrangeiras
+  run('DELETE FROM pendencias WHERE user_id = ?', userId);
+  run('DELETE FROM vaccines WHERE user_id = ?', userId);
   run('DELETE FROM exam_results WHERE user_id = ?', userId);
   run('DELETE FROM exam_requests WHERE user_id = ?', userId);
   run('DELETE FROM events WHERE user_id = ?', userId);
@@ -60,7 +62,7 @@ function restore(userId, d) {
   docs.wipeFiles(userId);
   tx(() => {
     wipe(userId);
-    const map = { doc: new Map(), con: new Map(), mk: new Map(), ex: new Map(), med: new Map(), cat: new Map() };
+    const map = { doc: new Map(), con: new Map(), mk: new Map(), ex: new Map(), med: new Map(), cat: new Map(), req: new Map(), vac: new Map() };
     const m = (k, id) => (id == null ? null : map[k].get(Number(id)) ?? null);
 
     if (d.perfil) {
@@ -82,7 +84,7 @@ function restore(userId, d) {
     }
     for (const r of d.exames_solicitados || []) {
       if (!m('con', r.consultation_id)) continue;
-      insert('exam_requests', userId, { ...r, consultation_id: m('con', r.consultation_id), marker_id: m('mk', r.marker_id), fulfilled_exam_id: m('ex', r.fulfilled_exam_id) }, ['consultation_id', 'marker_id', 'description', 'status', 'fulfilled_exam_id']);
+      map.req.set(r.id, insert('exam_requests', userId, { ...r, consultation_id: m('con', r.consultation_id), marker_id: m('mk', r.marker_id), fulfilled_exam_id: m('ex', r.fulfilled_exam_id) }, ['consultation_id', 'marker_id', 'description', 'status', 'fulfilled_exam_id']));
     }
     for (const r of d.medicamentos || []) map.med.set(r.id, insert('medications', userId, { ...r, doctor_id: m('doc', r.doctor_id), consultation_id: m('con', r.consultation_id) }, keepDates(fieldsOf(M.medications)), M.medications.encrypted));
     for (const r of d.medicamentos_versoes || []) {
@@ -94,6 +96,14 @@ function restore(userId, d) {
       run('INSERT OR IGNORE INTO medication_markers (medication_id, marker_id) VALUES (?, ?)', m('med', r.medication_id), m('mk', r.marker_id));
     for (const r of d.medicoes || []) insert('measurements', userId, r, [...fieldsOf(M.measurements), 'created_at'], M.measurements.encrypted);
     for (const r of d.documentos || []) docs.importOne(userId, r, { consultation_id: m('con', r.consultation_id), exam_id: m('ex', r.exam_id), doctor_id: m('doc', r.doctor_id), medication_id: m('med', r.medication_id) });
+    for (const r of d.vacinas || []) map.vac.set(r.id, insert('vaccines', userId, r, keepDates(fieldsOf(M.vaccines)), M.vaccines.encrypted));
+    // pendências: as manuais e o que foi anotado nas automáticas (com a origem apontando para os novos ids)
+    const SRC = { pedido: 'req', fora: 'mk', receita: 'med', vacina: 'vac' };
+    for (const p of d.pendencias || []) {
+      let source = null;
+      if (p.source) { const [k, id] = String(p.source).split(':'); const nid = SRC[k] ? m(SRC[k], id) : null; if (!nid) continue; source = `${k}:${nid}`; }
+      insert('pendencias', userId, { ...p, source }, ['source', 'title', 'action', 'status', 'due_date', 'created_at', 'updated_at'], ['title', 'action']);
+    }
     for (const r of d.agenda || []) insert('events', userId, { ...r, consultation_id: m('con', r.consultation_id), exam_id: m('ex', r.exam_id), medication_id: m('med', r.medication_id) }, keepDates(fieldsOf(M.events)), M.events.encrypted);
   });
   const s = summary(d);
