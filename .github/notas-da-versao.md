@@ -15,6 +15,13 @@ Isso só é preciso na primeira vez.
 
 Não sabe qual é o seu Mac? Menu  → **Sobre este Mac**: se aparecer "Chip Apple M…", use o primeiro; se aparecer "Processador Intel", use o segundo.
 
+## Novidades da 1.6.0
+- **Laudos de imagem:** tomografia, ultrassom, ressonância, raio-X, ecocardiograma, mamografia e outros exames descritivos agora são lidos por *Lançar → Ler arquivo* (ou **Ler laudo**, em Exames).
+  - O Helyx separa o **nome do exame**, a **data**, a **data do laudo**, o **médico solicitante**, a **indicação**, a **técnica**, os **achados** e a **conclusão**, sem o cabeçalho e o rodapé repetidos de cada página. Você confere tudo antes de salvar, e o PDF fica guardado junto do exame.
+  - **Comparação com o anterior:** a conclusão é comparada item por item com a do último laudo do mesmo tipo (por exemplo, outra tomografia do abdômen), separando o que é **novo**, o que **também estava no anterior** (com aviso quando uma medida mudou, como 5,0 mm → 6,2 mm) e o que **não aparece mais**.
+  - Os laudos aparecem em *Exames* (quadro "Exames de imagem e outros laudos"), na linha do tempo e na busca. Também dá para lançar um laudo à mão em *Novo exame*, no quadro "Laudo descritivo".
+- **Ler arquivo:** a data do exame não é mais confundida com a data de nascimento em laudos com "Data Entrada", e o médico "Solicitante" é reconhecido.
+
 ## Correção da 1.5.3
 - **Botão Salvar que "não fazia nada"** (por exemplo, ao cadastrar médico): quando falta um campo obrigatório ou um campo está em formato inválido (como um e-mail sem "@"), agora aparece um aviso em vermelho dizendo qual campo corrigir, e o campo fica destacado. Vale para todos os formulários do programa.
 

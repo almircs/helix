@@ -505,3 +505,9 @@ legend { font-weight: 700; padding: 0 .4rem; }
 
 /* Campo que impediu salvar (o Electron não mostra o balão do navegador) */
 input.invalid, select.invalid, textarea.invalid { border-color: var(--danger) !important; box-shadow: 0 0 0 2px color-mix(in srgb, var(--danger) 35%, transparent); }
+
+/* Laudo descritivo */
+.report-items { margin: 0; padding-left: 1.2rem; }
+.report-items li { margin: .3rem 0; }
+.report-text { white-space: pre-line; line-height: 1.55; }
+.imp-group.novos { border-color: var(--high); }

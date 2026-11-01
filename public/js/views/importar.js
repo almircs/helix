@@ -2,9 +2,10 @@
 // e mostra para revisar, já comparando os exames com os anteriores. Nada é salvo sem confirmação.
 import { api, html, raw, icon, toast, view, go, cached, invalidate, options, fmtDate, fmtNum, numInput, today, sitTag, trendTag } from '../lib.js';
 import { ACCEPT, readForExtraction, kindOf, mimeOf, fileToBase64 } from '../reader.js';
+import { imagingCompareBlock } from './exams.js';
 
-const KIND_LABEL = { exame: 'Resultado de exame', receita: 'Receita (remédios)', pedido: 'Pedido de exames', consulta: 'Relatório de consulta' };
-const DOC_KIND = { exame: 'laudo', receita: 'receita', pedido: 'pedido', consulta: 'relatorio' };
+const KIND_LABEL = { exame: 'Resultado de exame', imagem: 'Laudo de imagem', receita: 'Receita (remédios)', pedido: 'Pedido de exames', consulta: 'Relatório de consulta' };
+const DOC_KIND = { exame: 'laudo', imagem: 'laudo', receita: 'receita', pedido: 'pedido', consulta: 'relatorio' };
 const CHANGE_GROUPS = [
   ['novos_fora', 'Passaram a ficar fora da referência', 'acima'],
   ['continuam_fora', 'Continuam fora da referência', 'pendente'],
@@ -192,8 +193,23 @@ function consultFields(withDetails) {
     ${withDetails ? html`${f('reason', 'Motivo', 'textarea')}${f('symptoms', 'Sintomas / história', 'textarea')}${f('diagnoses', 'Diagnósticos', 'textarea')}${f('conduct', 'Conduta', 'textarea')}${f('recommendations', 'Orientações', 'textarea')}` : ''}</div>`;
 }
 
+// Laudo de imagem (tomografia, ultrassom…): nome do exame, datas, indicação, achados e conclusão
+function imagingReview() {
+  const im = S.imaging;
+  const f = (k, label, type = 'text', extra = '') => html`<div class="${type === 'textarea' ? 'full' : ''}"><label>${label}</label>${type === 'textarea'
+    ? html`<textarea data-im="${k}" rows="${k === 'findings' ? 10 : 4}">${im[k] || ''}</textarea>` : html`<input type="${type}" data-im="${k}" value="${im[k] || ''}" ${raw(extra)}>`}</div>`;
+  return html`<div class="card"><h2>Ligações</h2><div class="form-grid">${linkFields()}</div></div>
+    <div class="card"><h2>Laudo</h2>
+      <div class="form-grid">${f('title', 'Nome do exame *', 'text', 'required')}${f('collection_date', 'Data do exame *', 'date', 'required')}${f('result_date', 'Data do laudo', 'date')}${f('lab', 'Clínica / laboratório')}
+        ${f('reason', 'Indicação', 'textarea')}${f('conclusion', 'Conclusão / impressão (um item por linha)', 'textarea')}${f('findings', 'Achados', 'textarea')}${f('technique', 'Técnica', 'textarea')}</div>
+      ${im.existing_exam_id ? html`<div class="note" style="margin-top:.6rem">Já existe um laudo deste exame nesta data (<a href="#/exames/${im.existing_exam_id}">abrir</a>). Salvar criará outro registro.</div>` : ''}
+    </div>
+    ${imagingCompareBlock(im.compare)}`;
+}
+
 function reviewBody() {
   if (S.kind === 'exame') return examReview();
+  if (S.kind === 'imagem') return imagingReview();
   if (S.kind === 'receita') return html`<div class="card"><h2>Ligações</h2><div class="form-grid">${linkFields()}</div></div>${medsReview()}`;
   if (S.kind === 'pedido') {
     return html`<div class="card"><h2>De qual consulta é este pedido?</h2>
@@ -231,12 +247,13 @@ function blankExam() { return { collection_date: S.parsed?.date || today(), resu
 function buildState(parsed, extra) {
   const date = parsed.date || today();
   return {
-    ...extra, parsed, kind: extra.forceKind || parsed.kind,
+    ...extra, parsed, kind: extra.forceKind && !(extra.forceKind === 'exame' && parsed.kind === 'imagem') ? extra.forceKind : parsed.kind, // "Ler laudo" também aceita laudo de imagem
     exams: parsed.exams.map((e) => ({ ...e, collection_date: e.collection_date || date, results: e.results.map(blankResult) })),
     // remédios e pedidos só vêm marcados quando o arquivo parece mesmo uma receita, pedido ou relatório
     meds: parsed.medications.map((m) => ({ ...m, include: !m.existing && ['receita', 'consulta'].includes(parsed.kind), start_date: date })),
     requests: parsed.requests.map((d) => ({ description: d, include: ['pedido', 'consulta'].includes(parsed.kind) })),
     consult: { date, specialty: parsed.specialty || '', ...parsed.sections },
+    imaging: { title: '', ...(parsed.imaging || {}), collection_date: date, result_date: parsed.result_date || '', lab: parsed.lab || '' },
     common: { doctor: parsed.doctor?.id || (parsed.doctor?.name ? '__novo' : ''), consultation: extra.consultationId || '' },
   };
 }
@@ -269,6 +286,18 @@ async function saveMeds(base) {
 async function save() {
   const doctor_id = await doctorId();
   const consultation_id = S.common.consultation || null;
+  if (S.kind === 'imagem') {
+    const im = S.imaging;
+    if (!String(im.title || '').trim()) throw new Error('Informe o nome do exame.');
+    if (!im.collection_date) throw new Error('Informe a data do exame.');
+    const findings = [im.technique ? `Técnica: ${im.technique}` : null, im.findings].filter(Boolean).join('\n\n') || null;
+    const saved = await api('/exams', { method: 'POST', body: { collection_date: im.collection_date, result_date: im.result_date || null, lab: im.lab || null,
+      exam_type: 'Imagem', title: im.title.trim(), reason: im.reason || null, findings, conclusion: im.conclusion || null,
+      requested_by_doctor_id: doctor_id, consultation_id, results: [] } });
+    await attachFile({ exam_id: saved.id, consultation_id }, `Laudo ${im.title.trim()} ${fmtDate(im.collection_date)}`, im.collection_date);
+    toast('Laudo salvo');
+    return `#/exames/${saved.id}`;
+  }
   if (S.kind === 'exame') {
     const exams = S.exams.filter((e) => resultsOf(e).length);
     if (!exams.length) throw new Error('Inclua pelo menos um resultado.');
@@ -391,6 +420,7 @@ export async function render({ query }) {
           return;
         }
         if (t.dataset.c) { S.consult[t.dataset.c] = t.value; return; }
+        if (t.dataset.im) { S.imaging[t.dataset.im] = t.value; return; }
         const md = t.closest('[data-m]');
         if (md && t.dataset.mk) { const m = S.meds[md.dataset.m]; m[t.dataset.mk] = t.type === 'checkbox' ? t.checked : t.value; md.classList.toggle('off', !m.include); return; }
         const q = t.closest('[data-q]');
@@ -400,6 +430,7 @@ export async function render({ query }) {
         const t = ev.target; const tr = t.closest('tr[data-x]');
         if (tr && t.dataset.k && t.type !== 'checkbox') S.exams[tr.dataset.x].results[tr.dataset.i][t.dataset.k] = t.value;
         else if (t.dataset.c) S.consult[t.dataset.c] = t.value;
+        else if (t.dataset.im) S.imaging[t.dataset.im] = t.value;
         else if (t.dataset.mk && t.type !== 'checkbox') S.meds[t.closest('[data-m]').dataset.m][t.dataset.mk] = t.value;
         else if (t.dataset.qk && t.type !== 'checkbox') S.requests[t.closest('[data-q]').dataset.q][t.dataset.qk] = t.value;
       });

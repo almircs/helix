@@ -20,8 +20,9 @@ const consultations = new Resource({
 
 const exams = new Resource({
   table: 'exams', entity: 'exame',
-  fields: { collection_date: 'date', result_date: 'date', lab: 'text', exam_type: 'text', requested_by_doctor_id: 'int', consultation_id: 'int', reason: 'text', notes: 'text' },
-  encrypted: ['reason', 'notes'], required: ['collection_date'],
+  fields: { collection_date: 'date', result_date: 'date', lab: 'text', exam_type: 'text', title: 'text', requested_by_doctor_id: 'int', consultation_id: 'int',
+    reason: 'text', findings: 'text', conclusion: 'text', notes: 'text' },
+  encrypted: ['reason', 'findings', 'conclusion', 'notes'], required: ['collection_date'],
   refs: { requested_by_doctor_id: 'doctors', consultation_id: 'consultations' },
 });
 

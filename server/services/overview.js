@@ -21,8 +21,9 @@ function timeline(userId, q = {}) {
   if (want('exame')) for (const e of all('SELECT * FROM exams WHERE user_id = ? AND collection_date BETWEEN ? AND ?', userId, from, to)) {
     const res = resultsOf(userId, e.id);
     items.push({ date: e.collection_date, kind: 'exame', id: e.id, link: `#/exames/${e.id}`,
-      title: `Exames${e.lab ? ' — ' + e.lab : ''}${e.exam_type ? ' (' + e.exam_type + ')' : ''}`,
-      lines: res.map((r) => ({ text: `${r.marker_name}: ${r.value_num != null ? fmtNum(r.value_num) : (r.value_text || '—')} ${r.unit || ''}`.trim(), flag: r.situation === 'acima' || r.situation === 'abaixo' ? r.situation : null })),
+      title: e.title ? `${e.title}${e.lab ? ' — ' + e.lab : ''}` : `Exames${e.lab ? ' — ' + e.lab : ''}${e.exam_type ? ' (' + e.exam_type + ')' : ''}`,
+      lines: res.length ? res.map((r) => ({ text: `${r.marker_name}: ${r.value_num != null ? fmtNum(r.value_num) : (r.value_text || '—')} ${r.unit || ''}`.trim(), flag: r.situation === 'acima' || r.situation === 'abaixo' ? r.situation : null }))
+        : String(decrypt(e.conclusion) || '').split('\n').filter(Boolean).slice(0, 4).map((text) => ({ text })),
       flag: res.some((r) => r.situation === 'acima' || r.situation === 'abaixo') ? 'alerta' : null });
   }
   if (want('consulta')) for (const c of all('SELECT * FROM consultations WHERE user_id = ? AND date BETWEEN ? AND ?', userId, from, to)) {
@@ -222,8 +223,8 @@ function search(userId, q) {
   });
   if (cons.length && words.length) groups.push({ title: 'Consultas', items: cons.map((c) => ({ title: `Consulta${c.specialty ? ' — ' + c.specialty : ''}`, date: c.date, extra: c.diagnoses || c.reason, link: `#/consultas/${c.id}` })) });
 
-  const ex = exams.list(userId, '', [], 'collection_date DESC').filter((e) => inYears(e.collection_date) && words.length && match(e.lab, e.exam_type, e.reason, e.notes));
-  if (ex.length) groups.push({ title: 'Exames (laboratório/tipo)', items: ex.map((e) => ({ title: `Exames${e.lab ? ' — ' + e.lab : ''}`, date: e.collection_date, link: `#/exames/${e.id}` })) });
+  const ex = exams.list(userId, '', [], 'collection_date DESC').filter((e) => inYears(e.collection_date) && words.length && match(e.title, e.lab, e.exam_type, e.reason, e.findings, e.conclusion, e.notes));
+  if (ex.length) groups.push({ title: 'Exames (laboratório/tipo)', items: ex.map((e) => ({ title: e.title || `Exames${e.lab ? ' — ' + e.lab : ''}`, date: e.collection_date, extra: e.conclusion ? e.conclusion.split('\n')[0] : null, link: `#/exames/${e.id}` })) });
 
   const ev = events.list(userId, '', [], 'starts_at DESC').filter((e) => inYears(e.starts_at) && words.length && match(e.title, e.location, e.notes, e.type));
   if (ev.length) groups.push({ title: 'Agenda', items: ev.map((e) => ({ title: e.title, date: e.starts_at.slice(0, 10), extra: e.status, link: '#/agenda' })) });

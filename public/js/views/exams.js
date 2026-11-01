@@ -24,11 +24,13 @@ export async function list({ query }) {
         <td><a href="#/exames/marcador/${m.id}"><b>${m.name}</b></a></td>
         <td class="num"><b>${typeof m.last_value === 'number' ? fmtNum(m.last_value, 3) : m.last_value}</b> <span class="meta">${m.unit || ''}</span></td>
         <td>${fmtDate(m.last_date)}</td><td>${sitTag(m.last_situation)}</td><td>${trendTag(m.overall)}</td><td class="num">${m.count}</td></tr>`)}
-      </tbody></table></div>${withData.length ? '' : html`<p class="empty">Nenhum resultado ainda. <a href="#/exames/novo">Cadastre o primeiro exame</a>.</p>`}</div>`
+      </tbody></table></div>${withData.length ? '' : html`<p class="empty">Nenhum resultado ainda. <a href="#/exames/novo">Cadastre o primeiro exame</a>.</p>`}</div>
+      ${exams.some((e) => e.title) ? html`<div class="card" style="margin-top:1rem"><h2>Exames de imagem e outros laudos</h2><ul class="list">${exams.filter((e) => e.title).map((e) => html`<li><a class="row-link grow" href="#/exames/${e.id}">
+        <div class="title">${e.title}</div><div class="meta">${fmtDate(e.collection_date)}${e.lab ? ' · ' + e.lab : ''}</div></a></li>`)}</ul></div>` : ''}`
     : html`<div class="card"><ul class="list">${exams.map((e) => html`<li><a class="row-link grow" href="#/exames/${e.id}">
-        <div class="title">${fmtDate(e.collection_date)} — ${e.lab || 'Laboratório não informado'}</div>
-        <div class="meta">${e.exam_type ? e.exam_type + ' · ' : ''}${e.markers.join(', ') || 'sem resultados'}</div></a>
-        <div>${e.out_of_range ? html`<span class="tag acima">${e.out_of_range} fora da ref.</span>` : ''} <span class="tag">${e.results_count} resultado(s)</span></div></li>`)}</ul>
+        <div class="title">${fmtDate(e.collection_date)} — ${e.title || e.lab || 'Laboratório não informado'}</div>
+        <div class="meta">${e.title && e.lab ? e.lab + ' · ' : ''}${e.exam_type ? e.exam_type + ' · ' : ''}${e.markers.join(', ') || (e.title ? 'laudo descritivo' : 'sem resultados')}</div></a>
+        <div>${e.out_of_range ? html`<span class="tag acima">${e.out_of_range} fora da ref.</span>` : ''} ${e.results_count ? html`<span class="tag">${e.results_count} resultado(s)</span>` : e.title ? html`<span class="tag">laudo</span>` : ''}</div></li>`)}</ul>
         ${exams.length ? '' : html`<p class="empty">Nenhum exame cadastrado.</p>`}</div>`}
     ${DISCLAIMER}`, (el) => {
     const f = el.querySelector('#filter'); if (!f) return;
@@ -46,7 +48,7 @@ export async function list({ query }) {
 // ---------------------------------------------------------------- Formulário
 function resultRow(r = {}) {
   return html`<div class="row">
-    <div class="marker"><label>Exame / marcador</label><input data-k="marker_name" list="markerList" value="${r.marker_name || ''}" placeholder="Ex.: Creatinina" required></div>
+    <div class="marker"><label>Exame / marcador</label><input data-k="marker_name" list="markerList" value="${r.marker_name || ''}" placeholder="Ex.: Creatinina"></div>
     <div><label>Resultado</label><input data-k="value" inputmode="decimal" value="${r.value_num != null ? numInput(r.value_num) : r.value_text || ''}" placeholder="1,57"></div>
     <div><label>Unidade</label><input data-k="unit" value="${r.unit || ''}" placeholder="mg/dL"></div>
     <div><label>Ref. mínima</label><input data-k="ref_min" inputmode="decimal" value="${numInput(r.ref_min)}"></div>
@@ -81,6 +83,7 @@ export async function form({ params, query }) {
           { name: 'collection_date', label: 'Data da coleta', type: 'date', required: true },
           { name: 'result_date', label: 'Data do resultado', type: 'date' },
           { name: 'lab', label: 'Laboratório', placeholder: 'Nome do laboratório' },
+          { name: 'title', label: 'Nome do exame', placeholder: 'Ex.: Tomografia do abdômen total', hint: 'para laudos de imagem' },
           { name: 'exam_type', label: 'Tipo de exame', type: 'select', options: [['', '—'], ...['Sangue', 'Urina', 'Fezes', 'Imagem', 'Cardiológico', 'Outro'].map((x) => [x, x])] },
           { name: 'requested_by_doctor_id', label: 'Médico solicitante', type: 'select', options: options(doctors, 'id', (d) => `${d.name}${d.specialty ? ' — ' + d.specialty : ''}`, '— não informado —') },
           { name: 'consultation_id', label: 'Pedido na consulta de', type: 'select', hint: 'liga o exame à consulta', options: options(consultations.filter((c) => c.status !== 'cancelada'), 'id', (c) => `${fmtDate(c.date)} — ${c.specialty || 'consulta'}${c.requests_pending ? ` (${c.requests_pending} pendente)` : ''}`, '— automático / nenhuma —') },
@@ -93,6 +96,8 @@ export async function form({ params, query }) {
         <button type="button" class="btn small" id="addRow">${icon('plus')}Adicionar resultado</button>
         <datalist id="markerList">${markers.map((m) => html`<option value="${m.name}">`)}</datalist>
       </fieldset>
+      <fieldset><legend>Laudo descritivo (imagem, ultrassom, tomografia…)</legend><div class="form-grid">
+        ${fields([{ name: 'findings', label: 'Achados', type: 'textarea', full: true }, { name: 'conclusion', label: 'Conclusão / impressão', type: 'textarea', full: true, hint: 'um item por linha' }], exam)}</div></fieldset>
       <fieldset><legend>Observações</legend>${fields([{ name: 'notes', label: 'Observação', type: 'textarea', full: true }], exam)}
         <p class="small muted">Depois de salvar, anexe o PDF ou a foto do laudo na página do exame.</p></fieldset>
       <div class="form-actions"><button class="btn primary">Salvar exame</button><a class="btn" href="${id ? '#/exames/' + id : '#/exames'}">Cancelar</a></div>
@@ -114,6 +119,7 @@ export async function form({ params, query }) {
     el.querySelector('#examForm').onsubmit = async (e) => {
       e.preventDefault();
       const body = { ...readForm(e.target), results: readRows(rows).filter((r) => r.marker_name.trim()) };
+      if (!body.results.length && !body.title && !body.conclusion && !body.findings) { toast('Informe pelo menos um resultado ou o laudo descritivo.', true); return; }
       try {
         const saved = await api(id ? `/exams/${id}` : '/exams', { method: id ? 'PUT' : 'POST', body });
         invalidate('markers'); toast('Exame salvo'); go(`#/exames/${saved.id}`);
@@ -141,29 +147,55 @@ function changesBlock(e) {
       : html`<p class="empty">Sem alterações: os resultados comparados estão dentro da referência e sem variações relevantes.</p>`}</div>`;
 }
 
+// Laudo descritivo: conclusão em itens e achados completos
+function reportBlock(e) {
+  const items = String(e.conclusion || '').split('\n').filter(Boolean);
+  return html`<div class="grid g2" style="margin-bottom:1rem">
+    ${items.length ? html`<div class="card"><h2>Conclusão do laudo</h2><ul class="report-items">${items.map((x) => html`<li>${x}</li>`)}</ul></div>` : ''}
+    ${e.findings ? html`<div class="card"><h2>Achados</h2><div class="report-text">${e.findings}</div></div>` : ''}</div>`;
+}
+
+// Comparação da conclusão com o laudo anterior do mesmo tipo (usado também na tela de leitura)
+export function imagingCompareBlock(cmp) {
+  if (!cmp) return html`<div class="card" style="margin-top:1rem"><h2>Comparação com o exame anterior</h2><p class="empty">Não há outro laudo deste tipo antes desta data para comparar.</p></div>`;
+  const same = (a, b) => String(a).toLowerCase().replace(/\W+/g, '') === String(b).toLowerCase().replace(/\W+/g, '');
+  const group = (cls, label, list, render) => (list.length ? html`<div class="imp-group ${cls}"><h3><span class="tag ${cls === 'novos' ? 'acima' : cls === 'nao_citados' ? 'dentro' : ''}">${list.length}</span> ${label}</h3><ul>${list.map(render)}</ul></div>` : '');
+  return html`<div class="card changes-card" style="margin-top:1rem"><h2>Comparação com o exame anterior</h2>
+    <p class="small muted">Conclusão comparada com <a href="#/exames/${cmp.previous.id}">${cmp.previous.title} de ${fmtDate(cmp.previous.date)}</a>, item por item, pelas palavras usadas no laudo.</p>
+    <div class="imp-groups">
+      ${group('novos', 'Novos neste laudo', cmp.novos, (x) => html`<li>${x.text}</li>`)}
+      ${group('mantidos', 'Também no laudo anterior', cmp.mantidos, (x) => html`<li>${x.text}${x.changed ? html` <span class="tag relevante">medida mudou: ${x.measures_before} → ${x.measures_now}</span>` : ''}
+        ${!same(x.text, x.before) ? html`<div class="meta">antes: ${x.before}</div>` : ''}</li>`)}
+      ${group('nao_citados', 'Não citados neste laudo', cmp.nao_citados, (x) => html`<li>${x.text}</li>`)}
+    </div>
+    <p class="small muted">Comparação apenas do texto dos laudos. Não é diagnóstico — leve as dúvidas ao seu médico.</p></div>`;
+}
+
 export async function detail({ params }) {
   const e = await api(`/exams/${params[0]}`);
   const docBlock = await (await import('./documents.js')).linkedBlock('exam_id', e.id, 'ligado a este exame (anexe o PDF do laudo)');
   return view(html`
     <a class="back" href="#/exames?ver=datas">${icon('back')}Exames</a>
-    <div class="page-head"><div><h1>Exames de ${fmtDate(e.collection_date)}</h1>
+    <div class="page-head"><div><h1>${e.title ? html`${e.title} <span class="muted" style="font-weight:400">— ${fmtDate(e.collection_date)}</span>` : html`Exames de ${fmtDate(e.collection_date)}`}</h1>
       <p class="muted" style="margin:0">${[e.lab, e.exam_type, e.result_date ? 'resultado em ' + fmtDate(e.result_date) : null].filter(Boolean).join(' · ')}</p></div>
       <div class="actions"><a class="btn" href="#/exames/${e.id}/editar">${icon('edit')}Editar</a><button class="btn danger" id="del">${icon('trash')}Excluir</button></div></div>
     ${e.consultation || e.fulfilled_requests.length ? html`<div class="note" style="margin-bottom:1rem">
       ${e.consultation ? html`Solicitado na <a href="#/consultas/${e.consultation.id}">consulta de ${fmtDate(e.consultation.date)}${e.consultation.specialty ? ' (' + e.consultation.specialty + ')' : ''}</a>. ` : ''}
       ${e.fulfilled_requests.length ? html`Atende ao(s) pedido(s): ${e.fulfilled_requests.map((r) => r.description).join(', ')}.` : ''}</div>` : ''}
-    <div class="card"><div class="table-wrap"><table>
+    ${e.conclusion || e.findings ? reportBlock(e) : ''}
+    ${e.results.length ? html`<div class="card"><div class="table-wrap"><table>
       <thead><tr><th>Exame</th><th class="num">Resultado</th><th>Referência</th><th>Situação</th><th>Comparado ao anterior</th></tr></thead>
       <tbody>${e.results.map((r) => html`<tr>
         <td><a href="#/exames/marcador/${r.marker_id}"><b>${r.marker_name}</b></a>${r.notes ? html`<div class="meta">${r.notes}</div>` : ''}</td>
         <td class="num"><b>${valueOf(r)}</b> <span class="meta">${r.unit || ''}</span></td>
         <td>${r.ref_label || '—'}</td><td>${sitTag(r.situation) || '—'}</td>
         <td>${r.previous ? html`${r.previous.mismatch ? html`<span class="tag pendente" title="Diferença de mais de 20 vezes: confira se um dos dois foi digitado ou lido errado">confira</span>` : trendTag(r.previous)} <div class="meta">antes: ${fmtNum(r.previous.value, 3)} em <a href="#/exames/${r.previous.exam_id}">${fmtDate(r.previous.date)}</a></div>` : html`<span class="meta">primeiro registro</span>`}</td></tr>`)}
-      </tbody></table></div></div>
+      </tbody></table></div></div>` : ''}
     ${changesBlock(e)}
+    ${e.title && e.conclusion ? imagingCompareBlock(e.imaging_compare) : ''}
     <div class="grid g2" style="margin-top:1rem"><div class="card"><h2>Informações</h2><dl class="kv">
       <dt>Médico solicitante</dt><dd>${e.doctor ? e.doctor.name : '—'}</dd>
-      <dt>Motivo</dt><dd>${e.reason || '—'}</dd><dt>Observação</dt><dd>${e.notes || '—'}</dd></dl></div>${docBlock}</div>
+      <dt>${e.title ? 'Indicação' : 'Motivo'}</dt><dd>${e.reason || '—'}</dd><dt>Observação</dt><dd>${e.notes || '—'}</dd></dl></div>${docBlock}</div>
     ${DISCLAIMER}`, (el) => {
     el.querySelector('#del').onclick = async () => {
       if (!confirmDialog('Excluir este exame e todos os seus resultados? Esta ação fica registrada no histórico de alterações.')) return;

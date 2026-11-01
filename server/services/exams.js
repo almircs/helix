@@ -99,7 +99,17 @@ function getExam(userId, id) {
     r.previous = ratio > 20 ? { ...prev, mismatch: true } : { ...prev, ...trend(prev.value, r.value_num) };
   }
   e.changes = summarizeChanges(e.results);
+  if (e.title && e.conclusion) e.imaging_compare = imagingCompare(userId, e);
   return e;
+}
+
+// Laudo de imagem: conclusão comparada com a do último exame do mesmo tipo antes desta data
+function imagingCompare(userId, { id = null, title, conclusion, collection_date }) {
+  const { sameKind, compareConclusions } = require('../lib/extract/imaging');
+  const prev = exams.list(userId, 'collection_date < ? AND title IS NOT NULL', [collection_date || '9999-12-31'], 'collection_date DESC, id DESC')
+    .find((x) => x.id !== id && x.conclusion && sameKind(x.title, title));
+  if (!prev) return null;
+  return { previous: { id: prev.id, date: prev.collection_date, title: prev.title, conclusion: prev.conclusion }, ...compareConclusions(conclusion, prev.conclusion) };
 }
 
 // Último resultado numérico do marcador antes da data, com a situação em relação à referência da época
@@ -158,4 +168,4 @@ function mergeMarker(userId, fromId, intoId) {
   });
 }
 
-module.exports = { saveExam, getExam, listExams, removeExam, markerHistory, listMarkers, findOrCreateMarker, mergeMarker, resultsOf, previousResult };
+module.exports = { saveExam, getExam, listExams, removeExam, markerHistory, listMarkers, findOrCreateMarker, mergeMarker, resultsOf, previousResult, imagingCompare };

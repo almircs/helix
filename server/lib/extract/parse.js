@@ -1,6 +1,7 @@
 // Interpreta o texto de um laudo, receita, pedido ou relatório e devolve os dados estruturados.
 // Tudo é feito por regras (sem IA): o resultado é uma sugestão que a pessoa revisa antes de salvar.
 const { CATALOG, BY_KEY, normalize } = require('./catalog');
+const { parseImaging } = require('./imaging');
 
 // ---------------------------------------------------------------- Números, datas, unidades
 const MONTHS = { jan: 1, fev: 2, mar: 3, abr: 4, mai: 5, jun: 6, jul: 7, ago: 8, set: 9, out: 10, nov: 11, dez: 12 };
@@ -303,7 +304,7 @@ function parseSheets(sheets, keys) {
 }
 
 // ---------------------------------------------------------------- Cabeçalho: datas, laboratório, médico
-const COLLECT_RE = /(data\s+(da|de)\s+coleta|coletad[oa]\s+em|\bcoleta\b|data\s+do\s+exame|realizad[oa]\s+em|data\s+da\s+amostra|recebid[oa]\s+em|data\s+do\s+atendimento|atendimento\s+em|data\s+de\s+entrada)/i;
+const COLLECT_RE = /(data\s+(da|de)\s+coleta|coletad[oa]\s+em|\bcoleta\b|data\s+do\s+exame|realizad[oa]\s+em|data\s+da\s+amostra|recebid[oa]\s+em|data\s+do\s+atendimento|atendimento\s+em|data\s+(de\s+)?entrada|data\s+do\s+procedimento)/i;
 const RESULT_RE = /(liberad[oa]|libera[çc][ãa]o|data\s+do\s+(laudo|resultado)|emitid[oa]\s+em|assinad[oa]\s+(eletronicamente\s+)?em|impresso\s+em)/i;
 const BIRTH_RE = /(nasc|nascimento|d\.?\s*n\.?\s*:)/i;
 
@@ -321,7 +322,19 @@ function headerInfo(lines) {
   }
 
   let doctor = null;
-  for (const l of lines) {
+  // "Solicitante: NOME - CRM-MG 68598", ou o rótulo numa linha e o nome na linha de baixo (tabela de cabeçalho)
+  for (let i = 0; i < lines.length && !doctor; i++) {
+    const m = lines[i].match(/(?:m[ée]dico\s+)?solicitante\s*:?\s*(.*)$/i);
+    if (!m) continue;
+    const col = lines[i].split('\t').findIndex((c) => /solicitante/i.test(c));
+    let src = m[1].replace(/^\s*(data\s+entrada|pedido|\t)+/i, '').trim();
+    if (!/[A-Za-zÀ-ú]{3}/.test(src) || /^(data|pedido)/i.test(src)) src = (lines[i + 1] || '').split('\t')[Math.max(0, col)] || '';
+    const crm = src.match(/\bCRM\s*[-/:]?\s*([A-Z]{2})?\s*[-/:]?\s*(\d{3,7})(?:\s*[-/]\s*([A-Z]{2}))?/i);
+    let name = src.replace(/\s*[-–,]?\s*CRM\b.*$/i, '').replace(/^(?:dr\.?a?|dra\.?)\s+/i, '').trim();
+    if (name && name === name.toUpperCase()) name = name.toLowerCase().replace(/(^|\s)([a-zà-ú])/g, (x, s, c) => s + c.toUpperCase()).replace(/\s(D[aeo]s?|E)\s/g, (x) => x.toLowerCase());
+    if (name && /^[A-Za-zÀ-ú'. ]{5,80}$/.test(name)) doctor = { name, crm: crm ? `${crm[2]}${crm[1] || crm[3] ? '/' + (crm[1] || crm[3]).toUpperCase() : ''}` : null };
+  }
+  for (const l of doctor ? [] : lines) {
     const m = l.match(/\b(?:[Dd][Rr][Aa]?\.?|[Dd]outora?)\s+([A-ZÀ-Ú][\wÀ-ú'.]+(?:\s+(?:d[aeo]s?\s+)?[A-ZÀ-Ú][\wÀ-ú'.]+){0,5})/);
     const crm = l.match(/\bCRM\s*[-/:]?\s*([A-Z]{2})?\s*[-/:]?\s*(\d{3,7})(?:\s*[-/]\s*([A-Z]{2}))?/i);
     if (m || crm) {
@@ -445,13 +458,15 @@ function parseSections(lines) {
 }
 
 // ---------------------------------------------------------------- Tipo do documento
-function detectKind(text, { results, meds, requests }) {
+function detectKind(text, { results, meds, requests, imaging }) {
   const t = text.toLowerCase();
   const count = (re) => (t.match(re) || []).length;
   const score = {
     exame: results * 2 + count(/valores?\s+de\s+refer|refer[êe]ncia|resultado|laudo|material\s*:|m[ée]todo\s*:|coleta/g),
     receita: meds * 3 + count(/receitu[áa]rio|receita|uso\s+oral|uso\s+cont[íi]nuo|posologia|\btomar\b/g) * 2,
     pedido: count(/solicito|solicita[çc][ãa]o\s+de\s+exames?|pedido\s+de\s+exames?|requisi[çc][ãa]o|sp\/sadt|guia\s+sadt|favor\s+realizar/g) * 4 + (results ? 0 : requests),
+    // laudo de imagem (tomografia, ultrassom…): tem modalidade e achados ou conclusão, e quase nenhum valor numérico
+    imagem: imaging && (imaging.findings || imaging.conclusion) && results < 2 ? 20 + (imaging.conclusion ? 5 : 0) : 0,
     consulta: count(/relat[óo]rio\s+m[ée]dico|atestado|evolu[çc][ãa]o|anamnese|hip[óo]tese\s+diagn|conduta|queixa|encaminhamento|retorno\s+em/g) * 3,
   };
   const best = Object.entries(score).sort((a, b) => b[1] - a[1])[0];
@@ -473,13 +488,14 @@ function parseDocument({ text = '', sheets = null, userMarkers = [] }) {
   const meds = parseMedications(lines);
   const requests = parseRequests(lines, keys);
   const nResults = exams.reduce((n, e) => n + e.results.length, 0);
-  const { kind, score } = detectKind(fullText, { results: nResults, meds: meds.length, requests: requests.length });
+  const imaging = sheets ? null : parseImaging(lines);
+  const { kind, score } = detectKind(fullText, { results: nResults, meds: meds.length, requests: requests.length, imaging });
   return {
     kind, score, text: fullText, lines: lines.length,
     date: head.collection_date || head.any_date, result_date: head.result_date, lab: head.lab,
     doctor: head.doctor, specialty: specialtyOf(fullText),
     exams, medications: meds, requests,
-    sections: parseSections(lines),
+    sections: parseSections(lines), imaging,
   };
 }
 

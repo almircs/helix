@@ -8,7 +8,7 @@ const { docText, xlsRows } = require('../lib/extract/legacy');
 const { parseDocument } = require('../lib/extract/parse');
 const { normalize } = require('../lib/extract/catalog');
 const { situation, trend, refLabel, summarizeChanges } = require('./analysis');
-const { previousResult } = require('./exams');
+const { previousResult, imagingCompare } = require('./exams');
 const docs = require('./documents');
 
 const MAX_BYTES = 25 * 1024 * 1024;
@@ -118,6 +118,13 @@ function analyze(userId, body = {}) {
   const parsed = parseDocument({ text: String(text).slice(0, 400000), sheets, userMarkers });
   parsed.exams = parsed.exams.sort((a, b) => String(a.collection_date).localeCompare(String(b.collection_date))).map((e) => enrichExam(userId, e));
 
+  // laudo de imagem: compara a conclusão com a do exame anterior do mesmo tipo
+  if (parsed.imaging) {
+    const im = parsed.imaging;
+    im.compare = im.conclusion ? imagingCompare(userId, { title: im.title, conclusion: im.conclusion, collection_date: parsed.date }) : null;
+    const same = parsed.date && all('SELECT id, title FROM exams WHERE user_id = ? AND collection_date = ? AND title IS NOT NULL', userId, parsed.date).find((x) => x.title === im.title);
+    if (same) im.existing_exam_id = same.id;
+  }
   // médico já cadastrado com o mesmo nome
   if (parsed.doctor?.name) {
     const n = normalize(parsed.doctor.name);
