@@ -163,10 +163,11 @@ async function backupView(head) {
         <div style="display:flex;gap:.5rem;flex-wrap:wrap"><a class="btn primary" href="/api/backup/download" download id="dl">Salvar arquivo de backup</a>
         <button class="btn" id="bk">Guardar cópia neste computador</button></div></div>
       <div class="card"><h2>Restaurar de um arquivo</h2>
-        <p>Escolha um arquivo <b>.helyx</b>. Os dados atuais serão <b>substituídos</b> pelos do arquivo.</p>
+        <p>Escolha o arquivo de backup (<b>.helyx</b>). Os dados atuais serão <b>substituídos</b> pelos do arquivo.</p>
+        ${window.HELYX_MOBILE ? html`<p class="small muted">No celular: se o arquivo veio pelo WhatsApp ou e-mail, salve-o antes (iPhone: tocar no arquivo → Compartilhar → <b>Salvar em Arquivos</b>; Android: <b>Baixar</b>). Depois, aqui, procure em <b>Arquivos</b> / <b>Downloads</b>.</p>` : ''}
         <p class="small muted">Antes de restaurar, o Helyx guarda automaticamente uma cópia do que existe hoje, para você poder voltar atrás.</p>
         <label class="btn" for="file" style="width:auto">Escolher arquivo…</label>
-        <input type="file" id="file" accept=".helyx,.json,application/json" style="display:none">
+        <input type="file" id="file" style="display:none">
         <div id="preview"></div></div>
     </div>
     <div class="card" style="margin-top:1rem"><h2>Cópias guardadas neste computador <span class="small muted">${list.length}</span></h2>
@@ -194,7 +195,8 @@ async function backupView(head) {
       const f = e.target.files[0]; if (!f) return;
       const box = el.querySelector('#preview');
       let data;
-      try { data = JSON.parse(await f.text()); } catch { box.innerHTML = html`<p class="alert atencao" style="margin-top:.75rem">Não foi possível ler este arquivo.</p>`.__raw; return; }
+      // qualquer arquivo pode ser escolhido (o celular não reconhece ".helyx" e o WhatsApp/e-mail às vezes muda o nome); vale o conteúdo
+      try { data = JSON.parse((await f.text()).replace(/^﻿/, '')); } catch { box.innerHTML = html`<p class="alert atencao" style="margin-top:.75rem">Este arquivo não é um backup do Helyx. Escolha o arquivo baixado em <b>Baixar backup</b> (nome parecido com helyx-backup-2026-11-01.helyx).</p>`.__raw; e.target.value = ''; return; }
       try {
         const p = await api('/backup/preview', { method: 'POST', body: { data } });
         box.innerHTML = html`<div class="note" style="margin-top:.75rem"><b>${f.name}</b><br>Backup de ${fmtWhen(p.exportado_em)}<br><span class="small">${countsText(p)}</span></div>
