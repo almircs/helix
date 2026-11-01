@@ -14,7 +14,7 @@
     "app": "electron .",
     "backup": "node --disable-warning=ExperimentalWarning server/scripts/backup.js",
     "demo": "node --disable-warning=ExperimentalWarning server/scripts/demo.js",
-    "test": "node --disable-warning=ExperimentalWarning --test test/*.test.js",
+    "test": "node --disable-warning=ExperimentalWarning --test --test-concurrency=4 test/*.test.js",
     "dist:win": "electron-builder --win --publish never",
     "dist:mac": "electron-builder --mac dir --x64 --arm64 --publish never",
     "build:celular": "node mobile/build.js"

@@ -14,7 +14,7 @@ async function boot() {
   const DATA = fs.mkdtempSync(path.join(os.tmpdir(), 'helyx-doc-')); dirs.push(DATA);
   const env = { ...process.env, PORT, SAUDE_DATA_DIR: DATA }; env.SAUDE_EXIGIR_LOGIN = '0';
   servers.push(spawn(process.execPath, ['--disable-warning=ExperimentalWarning', path.join(__dirname, '..', 'server', 'index.js')], { env, stdio: 'pipe' }));
-  for (let i = 0; i < 50; i++) { try { await fetch(`http://127.0.0.1:${PORT}/`); break; } catch { await new Promise((r) => setTimeout(r, 100)); } }
+  for (let i = 0; i < 300; i++) { try { await fetch(`http://127.0.0.1:${PORT}/`); break; } catch { await new Promise((r) => setTimeout(r, 100)); } }
   const call = async (method, url, body) => {
     const res = await fetch(`http://127.0.0.1:${PORT}/api${url}`, { method, headers: body ? { 'Content-Type': 'application/json' } : {}, body: body ? JSON.stringify(body) : undefined });
     return { status: res.status, headers: res.headers, data: await res.json().catch(() => null) };

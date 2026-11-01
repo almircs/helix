@@ -19,7 +19,7 @@ async function call(method, url, body) {
 
 before(async () => {
   server = spawn(process.execPath, ['--disable-warning=ExperimentalWarning', path.join(__dirname, '..', 'server', 'index.js')], { env, stdio: 'pipe' });
-  for (let i = 0; i < 50; i++) { try { await fetch(`http://127.0.0.1:${PORT}/`); return; } catch { await new Promise((r) => setTimeout(r, 100)); } }
+  for (let i = 0; i < 300; i++) { try { await fetch(`http://127.0.0.1:${PORT}/`); return; } catch { await new Promise((r) => setTimeout(r, 100)); } }
   throw new Error('servidor não subiu');
 });
 after(() => { server.kill(); fs.rmSync(DATA, { recursive: true, force: true }); });

@@ -22,7 +22,7 @@ const day = (n) => { const d = new Date(); d.setDate(d.getDate() + n); return `$
 test('pendências editáveis e vacinas', async () => {
   server = spawn(process.execPath, ['--disable-warning=ExperimentalWarning', path.join(__dirname, '..', 'server', 'index.js')],
     { env: { ...process.env, PORT, SAUDE_DATA_DIR: DATA, SAUDE_EXIGIR_LOGIN: '0' }, stdio: 'pipe' });
-  for (let i = 0; i < 50; i++) { try { await fetch(`http://127.0.0.1:${PORT}/`); break; } catch { await new Promise((r) => setTimeout(r, 100)); } }
+  for (let i = 0; i < 300; i++) { try { await fetch(`http://127.0.0.1:${PORT}/`); break; } catch { await new Promise((r) => setTimeout(r, 100)); } }
 
   // pendência automática: exame pedido numa consulta e ainda não feito
   const c = (await call('POST', '/consultations', { date: day(-10), specialty: 'Nefrologia', requests: [{ description: 'Creatinina' }] })).data;

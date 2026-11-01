@@ -15,7 +15,7 @@ test('página inicial só tem datas, horários e contagens', async () => {
   const env = { ...process.env, SAUDE_DATA_DIR: DATA }; env.SAUDE_EXIGIR_LOGIN = '0';
   execFileSync(process.execPath, ['--disable-warning=ExperimentalWarning', path.join(__dirname, '..', 'server', 'scripts', 'demo.js')], { env });
   server = spawn(process.execPath, ['--disable-warning=ExperimentalWarning', path.join(__dirname, '..', 'server', 'index.js')], { env: { ...env, PORT }, stdio: 'pipe' });
-  for (let i = 0; i < 50; i++) { try { await fetch(`http://127.0.0.1:${PORT}/`); break; } catch { await new Promise((r) => setTimeout(r, 100)); } }
+  for (let i = 0; i < 300; i++) { try { await fetch(`http://127.0.0.1:${PORT}/`); break; } catch { await new Promise((r) => setTimeout(r, 100)); } }
   const res = await fetch(`http://127.0.0.1:${PORT}/api/home`);
   const text = await res.text();
   const h = JSON.parse(text);

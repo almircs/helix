@@ -21,7 +21,7 @@ const call = async (method, url, body) => {
 test('categorias dos exames de imagem', async () => {
   server = spawn(process.execPath, ['--disable-warning=ExperimentalWarning', path.join(__dirname, '..', 'server', 'index.js')],
     { env: { ...process.env, PORT, SAUDE_DATA_DIR: DATA, SAUDE_EXIGIR_LOGIN: '0' }, stdio: 'pipe' });
-  for (let i = 0; i < 50; i++) { try { await fetch(`http://127.0.0.1:${PORT}/`); break; } catch { await new Promise((r) => setTimeout(r, 100)); } }
+  for (let i = 0; i < 300; i++) { try { await fetch(`http://127.0.0.1:${PORT}/`); break; } catch { await new Promise((r) => setTimeout(r, 100)); } }
 
   const rins = (await call('POST', '/exam-categories', { name: 'Rins' })).data;
   const cor = (await call('POST', '/exam-categories', { name: 'Coração' })).data;
