@@ -2,6 +2,8 @@
 // fotos e PDFs escaneados (Tesseract, em português). Word, Excel, CSV e TXT vão para o servidor
 // local, que lê o conteúdo. Nada sai do computador.
 
+import './polyfills.js';
+
 export const ACCEPT = '.pdf,.jpg,.jpeg,.png,.webp,.bmp,.gif,.doc,.docx,.xls,.xlsx,.csv,.txt,application/pdf,image/*';
 const EXT_MIME = {
   pdf: 'application/pdf', jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', webp: 'image/webp', gif: 'image/gif', bmp: 'image/bmp',
@@ -31,7 +33,8 @@ export function fileToBase64(file) {
 // ---------------------------------------------------------------- PDF
 let pdfjsPromise;
 function pdfjs() {
-  pdfjsPromise ||= import('/vendor/pdfjs/pdf.min.mjs').then((m) => { m.GlobalWorkerOptions.workerSrc = '/vendor/pdfjs/pdf.worker.min.mjs'; return m; });
+  // o trabalhador passa por js/pdf-worker.mjs, que completa os recursos que faltam no Safari antigo
+  pdfjsPromise ||= import('/vendor/pdfjs/pdf.min.mjs').then((m) => { m.GlobalWorkerOptions.workerSrc = '/js/pdf-worker.mjs'; return m; });
   return pdfjsPromise;
 }
 

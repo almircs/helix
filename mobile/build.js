@@ -25,7 +25,7 @@ function copyPublic(dir = '') {
     const rel = path.join(dir, e.name); const src = path.join(ROOT, 'public', rel); const dst = path.join(OUT, rel);
     if (e.isDirectory()) { fs.mkdirSync(dst, { recursive: true }); copyPublic(rel); continue; }
     // caminhos dentro de BASE; e "neste computador" vira "neste aparelho"
-    if (/\.(js|css|html|webmanifest)$/.test(e.name)) fs.writeFileSync(dst, fs.readFileSync(src, 'utf8').replace(ABS, `$1${BASE}/$2`).replace(/neste computador/g, 'neste aparelho'));
+    if (/\.(m?js|css|html|webmanifest)$/.test(e.name)) fs.writeFileSync(dst, fs.readFileSync(src, 'utf8').replace(ABS, `$1${BASE}/$2`).replace(/neste computador/g, 'neste aparelho'));
     else fs.copyFileSync(src, dst);
   }
 }
