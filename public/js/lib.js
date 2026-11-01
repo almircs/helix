@@ -168,3 +168,38 @@ export function askConfirm({ title, message, word, button = 'Confirmar', danger 
     wrap.onkeydown = (e) => { if (e.key === 'Escape') close(null); if (e.key === 'Enter' && !ok.disabled) close(word || true); };
   });
 }
+
+// Mostra o código de recuperação uma única vez; só fecha depois de a pessoa confirmar que guardou
+export function showRecoveryCode(code, { title = 'Seu código de recuperação', intro = '' } = {}) {
+  return new Promise((resolve) => {
+    const wrap = document.createElement('div');
+    wrap.className = 'modal-wrap';
+    wrap.innerHTML = html`<div class="modal" role="dialog" aria-modal="true" aria-labelledby="rcTitle">
+      <h2 id="rcTitle">${title}</h2>
+      ${intro ? html`<p>${intro}</p>` : ''}
+      <p>Se esquecer a senha, este código permite criar uma nova. <b>Ele aparece só agora.</b> Anote num papel ou salve num lugar seguro, fora deste computador.</p>
+      <div class="recovery-code" id="rcCode">${code}</div>
+      <div class="actions" style="display:flex;gap:.5rem;flex-wrap:wrap;margin:.6rem 0"><button class="btn small" id="rcCopy">Copiar</button><button class="btn small" id="rcSave">Salvar em arquivo</button></div>
+      <label class="check"><input type="checkbox" id="rcOk"> Guardei o código</label>
+      <div class="form-actions" style="position:static;background:none;padding-bottom:0"><button class="btn primary" id="rcDone" disabled>Continuar</button></div></div>`.__raw;
+    document.body.append(wrap);
+    const done = wrap.querySelector('#rcDone');
+    wrap.querySelector('#rcOk').onchange = (e) => { done.disabled = !e.target.checked; };
+    wrap.querySelector('#rcCopy').onclick = async () => { try { await navigator.clipboard.writeText(code); toast('Código copiado'); } catch { toast('Não foi possível copiar. Anote o código.', true); } };
+    wrap.querySelector('#rcSave').onclick = () => {
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([`Helyx — código de recuperação de senha\r\n\r\n${code}\r\n\r\nGuarde fora do computador. Um código novo substitui este.\r\n`], { type: 'text/plain' }));
+      a.download = 'helyx-codigo-de-recuperacao.txt'; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+    };
+    done.onclick = () => { wrap.remove(); resolve(); };
+  });
+}
+
+// Aviso de Caps Lock nos campos de senha (causa comum de "a senha não entra")
+export function capsLockHint(input) {
+  const hint = document.createElement('div');
+  hint.className = 'small caps-hint'; hint.textContent = 'Atenção: Caps Lock (letras maiúsculas) está ligado.'; hint.hidden = true;
+  input.after(hint);
+  const check = (e) => { if (e.getModifierState) hint.hidden = !e.getModifierState('CapsLock'); };
+  input.addEventListener('keydown', check); input.addEventListener('keyup', check);
+}

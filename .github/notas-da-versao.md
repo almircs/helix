@@ -15,6 +15,14 @@ Isso só é preciso na primeira vez.
 
 Não sabe qual é o seu Mac? Menu  → **Sobre este Mac**: se aparecer "Chip Apple M…", use o primeiro; se aparecer "Processador Intel", use o segundo.
 
+## Novidades da 1.7.0
+- **Esqueci minha senha** (na tela de entrada), sem internet e sem perder dados:
+  - **Com o código de recuperação:** ao criar a conta ou redefinir a senha, o Helyx mostra um código (ex.: K7QF-9MXA-…) para anotar ou salvar em arquivo. Com ele, você cria uma nova senha.
+  - **Pelo computador:** o Helyx grava um código temporário (vale 15 minutos) no arquivo **RECUPERAR-SENHA.txt**, dentro da pasta de dados do programa. O botão **Abrir a pasta** leva até ele. Serve para quem ainda não tem código de recuperação.
+- **Redefinir senha** e **gerar novo código de recuperação** em *Configurações → Segurança e dados*, com aviso confirmando a data e a hora da troca.
+- Aviso de **Caps Lock ligado** nos campos de senha.
+- Ao redefinir a senha, os acessos abertos com a senha antiga são encerrados.
+
 ## Novidades da 1.6.0
 - **Laudos de imagem:** tomografia, ultrassom, ressonância, raio-X, ecocardiograma, mamografia e outros exames descritivos agora são lidos por *Lançar → Ler arquivo* (ou **Ler laudo**, em Exames).
   - O Helyx separa o **nome do exame**, a **data**, a **data do laudo**, o **médico solicitante**, a **indicação**, a **técnica**, os **achados** e a **conclusão**, sem o cabeçalho e o rodapé repetidos de cada página. Você confere tudo antes de salvar, e o PDF fica guardado junto do exame.

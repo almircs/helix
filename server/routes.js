@@ -21,8 +21,15 @@ r.post('/api/auth/login', auth.login);
 r.post('/api/auth/logout', auth.logout);
 r.get('/api/auth/state', () => auth.state());
 r.post('/api/auth/setup', auth.setup);
+r.post('/api/auth/recover/code', auth.recoverByCode);
+r.post('/api/auth/recover/computer/start', auth.recoverComputerStart);
+r.post('/api/auth/recover/computer/finish', auth.recoverComputerFinish);
+r.post('/api/auth/recover/open-folder', () => require('./lib/recovery').openFolder());
+r.post('/api/auth/recovery-code', A, auth.regenerateCode);
 r.get('/api/auth/me', A, (ctx) => ({ id: ctx.user.id, email: ctx.user.email, login: auth.requireLogin(),
-  name: get('SELECT full_name FROM profiles WHERE user_id = ?', ctx.user.id)?.full_name || null }));
+  name: get('SELECT full_name FROM profiles WHERE user_id = ?', ctx.user.id)?.full_name || null,
+  has_recovery: !!get('SELECT recovery_hash FROM users WHERE id = ?', ctx.user.id)?.recovery_hash,
+  recovery_created_at: get('SELECT recovery_created_at FROM users WHERE id = ?', ctx.user.id)?.recovery_created_at || null }));
 r.post('/api/auth/password', A, auth.changePassword);
 
 // ---------- Perfil

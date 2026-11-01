@@ -1,5 +1,5 @@
 // Helyx — casca da aplicação, rotas e autenticação.
-import { api, html, icon, toast, fields, readForm } from './lib.js';
+import { api, html, icon, toast, fields, readForm, showRecoveryCode, capsLockHint } from './lib.js';
 import * as dash from './views/dashboard.js';
 import * as agenda from './views/agenda.js';
 import * as exams from './views/exams.js';
@@ -123,7 +123,7 @@ function authView(mode, state = {}) {
         <button class="btn primary" style="width:100%">${c.button}</button>
       </form>
       ${mode === 'setup' ? '' : html`<p class="small" style="text-align:center;margin-top:1rem">${isLogin
-        ? html`Outra pessoa vai usar o Helyx? <a href="#/cadastro">Criar conta</a>`
+        ? html`<a href="#/recuperar">Esqueci minha senha</a> · Outra pessoa vai usar o Helyx? <a href="#/cadastro">Criar conta</a>`
         : state.has_users ? html`Já tem conta? <a href="#/entrar">Entrar</a>` : ''}</p>`}
     </div></div>`.__raw;
   const form = document.getElementById('authForm');
@@ -131,14 +131,72 @@ function authView(mode, state = {}) {
   form.querySelector('[name=email]').autocapitalize = 'none';
   form.querySelector('[name=password]').autocomplete = isLogin ? 'current-password' : 'new-password';
   form.querySelector('[name=email]').focus();
+  form.querySelectorAll('[type=password]').forEach(capsLockHint);
   form.onsubmit = async (e) => {
     e.preventDefault();
     const body = readForm(form);
     if (!isLogin && body.password !== body.password2) { toast('As duas senhas não são iguais.', true); return; }
     delete body.password2;
     try {
-      await api(isLogin ? '/auth/login' : mode === 'setup' ? '/auth/setup' : '/auth/register', { method: 'POST', body });
+      const r = await api(isLogin ? '/auth/login' : mode === 'setup' ? '/auth/setup' : '/auth/register', { method: 'POST', body });
+      if (r.recovery_code) await showRecoveryCode(r.recovery_code, { title: 'Conta criada', intro: `Usuário: ${body.email}. Sua senha foi cadastrada.` });
       location.hash = '#/'; location.reload(); // recomeça limpo, já na conta certa
+    } catch (err) { toast(err.message, true); }
+  };
+}
+
+// Esqueci minha senha: com o código de recuperação ou pelo computador (arquivo na pasta de dados)
+function recoverView(how = 'codigo') {
+  const pcStep = how === 'computador';
+  app.innerHTML = html`
+    <div class="auth"><div class="card">
+      <div class="brand"><img src="/icon.png" alt="">Helyx</div>
+      <h1 style="text-align:center">Recuperar a senha</h1>
+      <div class="tabs"><a href="#/recuperar" class="${pcStep ? '' : 'on'}">Tenho o código de recuperação</a><a href="#/recuperar?como=computador" class="${pcStep ? 'on' : ''}">Pelo computador</a></div>
+      ${pcStep ? html`<p class="muted small">O Helyx grava um código num arquivo dentro da pasta de dados dele, neste computador. Abra o arquivo, copie o código e crie a nova senha. Seus dados continuam todos lá.</p>
+        <form id="pcStart" class="stack">${fields([{ name: 'email', label: 'Usuário ou e-mail', required: true }])}<button class="btn" style="width:100%">Gerar código no computador</button></form>
+        <div id="pcInfo" class="note" hidden></div>`
+        : html`<p class="muted small">Use o código de recuperação que apareceu quando você criou a conta (ex.: K7QF-9MXA-…).</p>`}
+      <form id="recForm" class="stack" style="margin-top:1rem" ${pcStep ? 'hidden' : ''}>
+        ${pcStep ? '' : fields([{ name: 'email', label: 'Usuário ou e-mail', required: true }])}
+        ${fields([{ name: 'code', label: pcStep ? 'Código do arquivo RECUPERAR-SENHA.txt' : 'Código de recuperação', required: true },
+          { name: 'password', label: 'Nova senha', type: 'password', required: true, hint: 'mín. 8 caracteres, com letras e números' },
+          { name: 'password2', label: 'Repita a nova senha', type: 'password', required: true }])}
+        <button class="btn primary" style="width:100%">Criar nova senha</button>
+      </form>
+      <p class="small" style="text-align:center;margin-top:1rem"><a href="#/entrar">Voltar para entrar</a></p>
+    </div></div>`.__raw;
+  const form = document.getElementById('recForm');
+  form.querySelectorAll('[type=password]').forEach(capsLockHint);
+  form.querySelector('[name=code]').autocomplete = 'off';
+  let username = '';
+  document.getElementById('pcStart')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    username = readForm(e.target).email;
+    try {
+      const r = await api('/auth/recover/computer/start', { method: 'POST', body: { email: username } });
+      const info = document.getElementById('pcInfo');
+      info.hidden = false;
+      info.innerHTML = html`Código gravado. Abra o arquivo <b>RECUPERAR-SENHA.txt</b> na pasta:<br><code>${r.folder}</code><br>
+        <button type="button" class="btn small" id="openFolder" style="margin-top:.5rem">Abrir a pasta</button>
+        <div class="small muted" style="margin-top:.4rem">Vale por ${r.minutes} minutos. No programa instalado, a pasta também abre pelo menu Arquivo → Abrir pasta dos dados.</div>`.__raw;
+      document.getElementById('openFolder').onclick = async () => {
+        const o = await api('/auth/recover/open-folder', { method: 'POST' }).catch(() => ({}));
+        if (!o.opened) toast('Abra a pasta indicada pelo Explorador de Arquivos.');
+      };
+      form.hidden = false; form.querySelector('[name=code]').focus();
+    } catch (err) { toast(err.message, true); }
+  });
+  form.onsubmit = async (e) => {
+    e.preventDefault();
+    const body = readForm(form);
+    if (body.password !== body.password2) { toast('As duas senhas não são iguais.', true); return; }
+    delete body.password2;
+    if (pcStep) body.email = username;
+    try {
+      const r = await api(pcStep ? '/auth/recover/computer/finish' : '/auth/recover/code', { method: 'POST', body });
+      await showRecoveryCode(r.recovery_code, { title: 'Senha redefinida', intro: 'Sua nova senha foi cadastrada. O código de recuperação antigo deixou de valer; este é o novo.' });
+      location.hash = '#/'; location.reload();
     } catch (err) { toast(err.message, true); }
   };
 }
@@ -148,6 +206,7 @@ async function route() {
   const hash = location.hash.slice(1) || '/';
   const [path, qs] = hash.split('?');
   const query = Object.fromEntries(new URLSearchParams(qs || ''));
+  if (path === '/recuperar') { me = null; return recoverView(query.como === 'computador' ? 'computador' : 'codigo'); }
   if (path === '/entrar' || path === '/cadastro') {
     const state = await api('/auth/state').catch(() => ({ login: true }));
     if (!state.login) { location.hash = '#/'; return; } // login desligado

@@ -1,4 +1,4 @@
-import { api, html, icon, fields, readForm, toast, view, go, invalidate, fmtDate, confirmDialog, askConfirm } from '../lib.js';
+import { api, html, icon, fields, readForm, toast, view, go, invalidate, fmtDate, confirmDialog, askConfirm, showRecoveryCode, capsLockHint } from '../lib.js';
 
 const TABS = [['perfil', 'Meu perfil'], ['medicos', 'Médicos'], ['backup', 'Backup'], ['seguranca', 'Segurança e dados'], ['aparencia', 'Aparência']];
 const ENTITY = { usuario: 'Conta', sessao: 'Acesso', perfil: 'Perfil', medico: 'Médico', consulta: 'Consulta', exame: 'Exame', marcador: 'Exame (catálogo)', medicamento: 'Medicamento', medicao: 'Medição', agenda: 'Agenda', dados: 'Dados', ia: 'IA' };
@@ -95,9 +95,15 @@ async function security(head) {
       ${me.login ? html`<div class="card"><h2>Conta</h2><p>Você entrou como <b>${me.email}</b>.</p>
         <div class="actions" style="display:flex;gap:.6rem;flex-wrap:wrap"><button class="btn" id="switchUser">Trocar de usuário</button><button class="btn" id="newUser">Criar conta para outra pessoa</button></div>
         <p class="small muted">Cada conta tem os próprios exames, consultas, remédios e documentos.</p></div>
-        <div class="card"><h2>Trocar senha</h2>
-        <form id="pw" class="stack">${fields([{ name: 'current', label: 'Senha atual', type: 'password', required: true }, { name: 'password', label: 'Nova senha', type: 'password', required: true, hint: 'mín. 8, letras e números' }])}
-        <button class="btn primary">Trocar senha</button></form></div>` : html`<div class="card"><h2>Acesso</h2>
+        <div class="card"><h2>Redefinir senha</h2>
+        <form id="pw" class="stack">${fields([{ name: 'current', label: 'Senha atual', type: 'password', required: true }, { name: 'password', label: 'Nova senha', type: 'password', required: true, hint: 'mín. 8, letras e números' }, { name: 'password2', label: 'Repita a nova senha', type: 'password', required: true }])}
+        <button class="btn primary">Redefinir senha</button></form>
+        <p class="small muted">Esqueceu a senha atual? Saia e use <b>Esqueci minha senha</b> na tela de entrada.</p></div>
+        <div class="card"><h2>Código de recuperação</h2>
+        <p>${me.has_recovery ? html`Você tem um código de recuperação, criado em ${fmtDate(String(me.recovery_created_at || '').slice(0, 10))}.` : html`<b>Você ainda não tem um código de recuperação.</b> Gere um e guarde fora do computador.`}</p>
+        <form id="newCode" class="stack">${fields([{ name: 'password', label: 'Sua senha', type: 'password', required: true }])}
+        <button class="btn">${me.has_recovery ? 'Gerar um novo código' : 'Gerar código de recuperação'}</button></form>
+        <p class="small muted">Um código novo substitui o anterior. Ele serve para criar uma nova senha se você esquecer a atual.</p></div>` : html`<div class="card"><h2>Acesso</h2>
         <p>O programa está abrindo <b>sem senha</b>, direto no seu perfil deste computador.</p>
         <p class="small muted">Quem usar este computador consegue ver os dados. Os campos sensíveis continuam gravados criptografados no disco. Para pedir usuário e senha, deixe de definir SAUDE_EXIGIR_LOGIN=0.</p></div>`}
       <div class="card"><h2>Seus dados</h2>
@@ -118,8 +124,23 @@ async function security(head) {
     el.querySelector('#newUser')?.addEventListener('click', () => leave('#/cadastro'));
     el.querySelector('#pw')?.addEventListener('submit', async (e) => {
       e.preventDefault();
-      try { await api('/auth/password', { method: 'POST', body: readForm(e.target) }); toast('Senha alterada'); e.target.reset(); } catch (err) { toast(err.message, true); }
+      const body = readForm(e.target);
+      if (body.password !== body.password2) { toast('As duas senhas não são iguais.', true); return; }
+      delete body.password2;
+      try {
+        await api('/auth/password', { method: 'POST', body }); e.target.reset();
+        await askConfirm({ title: 'Senha redefinida', message: `A nova senha da conta ${me.email} foi cadastrada em ${new Date().toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}. Use-a na próxima vez que entrar.`, button: 'OK' });
+      } catch (err) { toast(err.message, true); }
     });
+    el.querySelector('#newCode')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      try {
+        const r = await api('/auth/recovery-code', { method: 'POST', body: readForm(e.target) }); e.target.reset();
+        await showRecoveryCode(r.recovery_code, { title: 'Novo código de recuperação', intro: 'O código anterior deixou de valer.' });
+        go('#/configuracoes/seguranca');
+      } catch (err) { toast(err.message, true); }
+    });
+    el.querySelectorAll('[type=password]').forEach(capsLockHint);
     el.querySelector('#delacc').onsubmit = async (e) => {
       e.preventDefault();
       if (!confirmDialog('Tem certeza? Esta ação não pode ser desfeita.')) return;

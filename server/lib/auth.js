@@ -4,6 +4,7 @@ const config = require('../config');
 const { hashPassword, verifyPassword, sha256, randomToken } = require('./crypto');
 const { HttpError } = require('./http');
 const audit = require('./audit');
+const recovery = require('./recovery');
 
 const COOKIE = 'sid';
 const attempts = new Map(); // limitação de tentativas por e-mail+IP
@@ -51,7 +52,7 @@ function register(ctx) {
   run('INSERT INTO profiles (user_id, full_name) VALUES (?, ?)', userId, full_name || null);
   audit.log(userId, 'usuario', userId, 'criar', null, { email });
   createSession(ctx, userId);
-  return { ok: true };
+  return { ok: true, recovery_code: recovery.newRecoveryCode(userId) };
 }
 
 function login(ctx) {
@@ -101,7 +102,34 @@ function setup(ctx) {
   }
   audit.log(u.id, 'usuario', u.id, 'primeiro acesso', null, { email });
   createSession(ctx, u.id);
-  return { ok: true };
+  return { ok: true, recovery_code: recovery.newRecoveryCode(u.id) };
+}
+
+// ---------- Recuperação de senha (sem internet)
+function recoverByCode(ctx) {
+  const key = `rec|${String(ctx.body.email).toLowerCase()}|${ctx.req.socket.remoteAddress}`;
+  const a = checkRate(key);
+  let id;
+  try { id = recovery.byCode(ctx.body.email, ctx.body.code, ctx.body.password, validatePassword); }
+  catch (e) { if (e.status === 401) failRate(key, a); throw e; }
+  attempts.delete(key);
+  createSession(ctx, id);
+  return { ok: true, recovery_code: recovery.newRecoveryCode(id) };
+}
+function recoverComputerStart(ctx) {
+  const key = `pc|${ctx.req.socket.remoteAddress}`;
+  const a = checkRate(key); failRate(key, a); // no máximo 5 pedidos a cada 5 minutos
+  return recovery.startComputer(ctx.body.email);
+}
+function recoverComputerFinish(ctx) {
+  const id = recovery.finishComputer(ctx.body.email, ctx.body.code, ctx.body.password, validatePassword);
+  createSession(ctx, id);
+  return { ok: true, recovery_code: recovery.newRecoveryCode(id) };
+}
+// Novo código de recuperação, pedindo a senha atual
+function regenerateCode(ctx) {
+  if (!module.exports.verifyPasswordOf(ctx.user.id, ctx.body.password)) throw new HttpError(401, 'Senha atual incorreta.');
+  return { ok: true, recovery_code: recovery.newRecoveryCode(ctx.user.id) };
 }
 
 // Perfil local usado quando o login está desligado: o primeiro usuário do banco (criado se não existir)
@@ -149,7 +177,7 @@ function changePassword(ctx) {
   return { ok: true };
 }
 
-module.exports = { register, login, logout, requireAuth, changePassword, state, setup, requireLogin: () => config.requireLogin, verifyPasswordOf: (id, pw) => {
+module.exports = { register, login, logout, requireAuth, changePassword, state, setup, recoverByCode, recoverComputerStart, recoverComputerFinish, regenerateCode, requireLogin: () => config.requireLogin, verifyPasswordOf: (id, pw) => {
   const u = get('SELECT password_hash FROM users WHERE id = ?', id);
   return u && verifyPassword(String(pw || ''), u.password_hash);
 } };

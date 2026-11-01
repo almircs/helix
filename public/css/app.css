@@ -511,3 +511,8 @@ input.invalid, select.invalid, textarea.invalid { border-color: var(--danger) !i
 .report-items li { margin: .3rem 0; }
 .report-text { white-space: pre-line; line-height: 1.55; }
 .imp-group.novos { border-color: var(--high); }
+
+/* Código de recuperação e aviso de Caps Lock */
+.recovery-code { font: 700 1.5rem/1.3 ui-monospace, Consolas, monospace; letter-spacing: .08em; text-align: center; padding: .9rem; border: 1.5px dashed var(--primary); border-radius: 12px; background: var(--surface-2); user-select: all; }
+.caps-hint { color: var(--warn); margin-top: .3rem; }
+.auth .tabs { margin: .8rem 0 0; }
