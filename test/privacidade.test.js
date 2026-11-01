@@ -6,7 +6,7 @@ const os = require('node:os');
 const path = require('node:path');
 const { spawn, execFileSync } = require('node:child_process');
 
-const PORT = 6500 + Math.floor(Math.random() * 400);
+const PORT = 8000 + Math.floor(Math.random() * 400); // faixa própria: cada arquivo de teste usa portas diferentes
 const DATA = fs.mkdtempSync(path.join(os.tmpdir(), 'helyx-priv-'));
 let server;
 after(() => { server && server.kill(); fs.rmSync(DATA, { recursive: true, force: true }); });
