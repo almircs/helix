@@ -3,6 +3,7 @@
 import { api, html, raw, icon, toast, view, go, cached, invalidate, options, fmtDate, fmtNum, numInput, today, sitTag, trendTag } from '../lib.js';
 import { ACCEPT, readForExtraction, kindOf, mimeOf, fileToBase64 } from '../reader.js';
 import { imagingCompareBlock } from './exams.js';
+import { categorySelect, resolveCategory } from './categories.js';
 
 const KIND_LABEL = { exame: 'Resultado de exame', imagem: 'Laudo de imagem', receita: 'Receita (remédios)', pedido: 'Pedido de exames', consulta: 'Relatório de consulta' };
 const DOC_KIND = { exame: 'laudo', imagem: 'laudo', receita: 'receita', pedido: 'pedido', consulta: 'relatorio' };
@@ -201,6 +202,7 @@ function imagingReview() {
   return html`<div class="card"><h2>Ligações</h2><div class="form-grid">${linkFields()}</div></div>
     <div class="card"><h2>Laudo</h2>
       <div class="form-grid">${f('title', 'Nome do exame *', 'text', 'required')}${f('collection_date', 'Data do exame *', 'date', 'required')}${f('result_date', 'Data do laudo', 'date')}${f('lab', 'Clínica / laboratório')}
+        <div><label>Categoria ${im.category && !im.category_choice ? html`<span class="hint">sugerida pelo Helyx</span>` : ''}</label>${categorySelect(S.cats, im.category_choice || '', { attrs: 'data-im="category_choice"', suggestion: im.category_choice ? null : im.category })}</div>
         ${f('reason', 'Indicação', 'textarea')}${f('conclusion', 'Conclusão / impressão (um item por linha)', 'textarea')}${f('findings', 'Achados', 'textarea')}${f('technique', 'Técnica', 'textarea')}</div>
       ${im.existing_exam_id ? html`<div class="note" style="margin-top:.6rem">Já existe um laudo deste exame nesta data (<a href="#/exames/${im.existing_exam_id}">abrir</a>). Salvar criará outro registro.</div>` : ''}
     </div>
@@ -291,7 +293,9 @@ async function save() {
     if (!String(im.title || '').trim()) throw new Error('Informe o nome do exame.');
     if (!im.collection_date) throw new Error('Informe a data do exame.');
     const findings = [im.technique ? `Técnica: ${im.technique}` : null, im.findings].filter(Boolean).join('\n\n') || null;
-    const saved = await api('/exams', { method: 'POST', body: { collection_date: im.collection_date, result_date: im.result_date || null, lab: im.lab || null,
+    const sel = document.querySelector('[data-im=category_choice]');
+    const category_id = await resolveCategory(sel ? sel.value : '');
+    const saved = await api('/exams', { method: 'POST', body: { collection_date: im.collection_date, result_date: im.result_date || null, lab: im.lab || null, category_id,
       exam_type: 'Imagem', title: im.title.trim(), reason: im.reason || null, findings, conclusion: im.conclusion || null,
       requested_by_doctor_id: doctor_id, consultation_id, results: [] } });
     await attachFile({ exam_id: saved.id, consultation_id }, `Laudo ${im.title.trim()} ${fmtDate(im.collection_date)}`, im.collection_date);
@@ -341,8 +345,8 @@ async function save() {
 // ---------------------------------------------------------------- Página
 export async function render({ query }) {
   const back = query.voltar ? decodeURIComponent(query.voltar) : query.doc ? `#/documentos/${query.doc}` : '#/';
-  const [doctors, consultations, markers] = await Promise.all([cached('doctors', '/doctors', true), api('/consultations'), api('/markers')]);
-  const ctx = { back, doctors, consultations, markers, docId: query.doc ? Number(query.doc) : null, consultationId: query.consulta || '', forceKind: KIND_LABEL[query.para] ? query.para : null };
+  const [doctors, consultations, markers, cats] = await Promise.all([cached('doctors', '/doctors', true), api('/consultations'), api('/markers'), api('/exam-categories')]);
+  const ctx = { back, doctors, consultations, markers, cats, docId: query.doc ? Number(query.doc) : null, consultationId: query.consulta || '', forceKind: KIND_LABEL[query.para] ? query.para : null };
 
   return view(html`
     <a class="back" href="${back}">${icon('back')}Voltar</a>

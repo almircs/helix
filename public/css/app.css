@@ -516,3 +516,17 @@ input.invalid, select.invalid, textarea.invalid { border-color: var(--danger) !i
 .recovery-code { font: 700 1.5rem/1.3 ui-monospace, Consolas, monospace; letter-spacing: .08em; text-align: center; padding: .9rem; border: 1.5px dashed var(--primary); border-radius: 12px; background: var(--surface-2); user-select: all; }
 .caps-hint { color: var(--warn); margin-top: .3rem; }
 .auth .tabs { margin: .8rem 0 0; }
+
+/* Categorias dos exames */
+.cat-group + .cat-group { margin-top: 1rem; }
+.cat-group h3 { font-size: 1rem; margin: 0 0 .3rem; color: var(--primary); }
+.cat-group .list > li { gap: .6rem; }
+.cat-move { width: auto; max-width: 13rem; padding: .3rem .5rem; font-size: .9rem; }
+.cat-bulk { position: sticky; bottom: .5rem; display: flex; gap: .6rem; align-items: center; flex-wrap: wrap; margin-top: 1rem; padding: .7rem .9rem; border-radius: 12px; background: var(--surface-2); border: 1px solid var(--primary); }
+.cat-bulk select { width: auto; }
+.cat-list li { gap: .5rem; }
+.cat-list li input { flex: 1; min-width: 0; }
+.cat-new { display: flex; gap: .5rem; margin-top: .8rem; }
+.cat-new input { flex: 1; }
+.cat-inline { display: flex; align-items: center; gap: .4rem; margin: 0; font-weight: 400; }
+.cat-inline select { width: auto; max-width: 14rem; }

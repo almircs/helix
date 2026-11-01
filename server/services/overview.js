@@ -246,6 +246,7 @@ function exportAll(userId) {
     consultas: consultations.list(userId, '', [], 'date'),
     exames_solicitados: all('SELECT * FROM exam_requests WHERE user_id = ?', userId).map(({ user_id, ...r }) => r),
     marcadores: markers.list(userId, '', [], 'name'),
+    categorias_exames: all('SELECT id, name, position, created_at FROM exam_categories WHERE user_id = ?', userId),
     exames: exams.list(userId, '', [], 'collection_date'),
     resultados: dec(all('SELECT * FROM exam_results WHERE user_id = ?', userId), ['notes']),
     medicamentos: medications.list(userId, '', [], 'id'),

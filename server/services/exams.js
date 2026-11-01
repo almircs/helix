@@ -89,6 +89,7 @@ function getExam(userId, id) {
   e.results = resultsOf(userId, e.id);
   e.doctor = e.requested_by_doctor_id ? get('SELECT id, name, specialty FROM doctors WHERE id = ?', e.requested_by_doctor_id) : null;
   e.consultation = e.consultation_id ? get('SELECT id, date, specialty FROM consultations WHERE id = ?', e.consultation_id) : null;
+  e.category = e.category_id ? get('SELECT id, name FROM exam_categories WHERE id = ?', e.category_id) : null;
   e.fulfilled_requests = all('SELECT id, description, consultation_id FROM exam_requests WHERE fulfilled_exam_id = ?', e.id);
   // compara cada resultado com o anterior do mesmo marcador
   for (const r of e.results) {

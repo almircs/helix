@@ -124,6 +124,7 @@ function analyze(userId, body = {}) {
     im.compare = im.conclusion ? imagingCompare(userId, { title: im.title, conclusion: im.conclusion, collection_date: parsed.date }) : null;
     const same = parsed.date && all('SELECT id, title FROM exams WHERE user_id = ? AND collection_date = ? AND title IS NOT NULL', userId, parsed.date).find((x) => x.title === im.title);
     if (same) im.existing_exam_id = same.id;
+    im.category = require('./categories').suggest(userId, { title: im.title, reason: im.reason, conclusion: im.conclusion });
   }
   // médico já cadastrado com o mesmo nome
   if (parsed.doctor?.name) {

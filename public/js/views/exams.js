@@ -1,22 +1,26 @@
 import { api, html, raw, icon, fields, readForm, readRows, options, toast, view, go, cached, invalidate,
   fmtDate, fmtNum, numInput, sitTag, trendTag, today, confirmDialog, SITUATION, TREND } from '../lib.js';
 import { lineChart } from '../chart.js';
+import { loadCategories, imagingSection, wireImagingSection, categorySelect } from './categories.js';
+export { manage as categories } from './categories.js';
 
 const DISCLAIMER = html`<p class="small muted">As indicações “acima/abaixo” e “aumento/redução” apenas comparam números com a referência do laudo e com o resultado anterior. Não são diagnóstico — servem de apoio para a conversa com seu médico.</p>`;
 const valueOf = (r) => (r.value_num != null ? fmtNum(r.value_num, 3) : r.value_text || '—');
 
 // ---------------------------------------------------------------- Lista
 export async function list({ query }) {
-  const tab = query.ver === 'datas' ? 'datas' : 'marcadores';
-  const [markers, exams] = await Promise.all([api('/markers'), api('/exams')]);
+  const tab = ['datas', 'laudos'].includes(query.ver) ? query.ver : 'marcadores';
+  const [markers, exams, cats] = await Promise.all([api('/markers'), api('/exams'), loadCategories()]);
   const withData = markers.filter((m) => m.count > 0);
   return view(html`
     <div class="page-head"><h1>Exames</h1><div class="actions">
       ${withData.length > 1 ? html`<a class="btn" href="#/exames/comparar">Comparar</a>` : ''}
       <a class="btn" href="#/importar?para=exame&voltar=${encodeURIComponent('#/exames')}">${icon('documentos')}Ler laudo</a>
       <a class="btn primary" href="#/exames/novo">${icon('plus')}Novo exame</a></div></div>
-    <div class="tabs"><a href="#/exames" class="${tab === 'marcadores' ? 'on' : ''}">Por exame (${withData.length})</a><a href="#/exames?ver=datas" class="${tab === 'datas' ? 'on' : ''}">Por data de coleta (${exams.length})</a></div>
-    ${tab === 'marcadores' ? html`
+    <div class="tabs"><a href="#/exames" class="${tab === 'marcadores' ? 'on' : ''}">Por exame (${withData.length})</a><a href="#/exames?ver=datas" class="${tab === 'datas' ? 'on' : ''}">Por data de coleta (${exams.length})</a><a href="#/exames?ver=laudos" class="${tab === 'laudos' ? 'on' : ''}">Laudos de imagem (${exams.filter((e) => e.title).length})</a></div>
+    ${tab === 'laudos' ? (imagingSection(exams, cats, query.cat || '') || html`<div class="card"><p class="empty">Nenhum laudo de imagem ainda. Use <a href="#/importar?para=exame">Ler laudo</a> para guardar uma tomografia, ultrassom ou ressonância.</p>
+      <p class="small muted">Os laudos podem ser organizados em <a href="#/exames/categorias">categorias</a> (Coração, Rins, Próstata…).</p></div>`)
+    : tab === 'marcadores' ? html`
       <div class="toolbar"><input type="search" id="filter" placeholder="Filtrar exames…" style="max-width:320px">
         <div class="chips" id="sitFilter"><button class="chip on" data-s="">Todos</button><button class="chip" data-s="fora">Fora da referência</button></div></div>
       <div class="card"><div class="table-wrap"><table id="mtable"><thead><tr><th>Exame</th><th class="num">Último</th><th>Data</th><th>Situação</th><th>Tendência</th><th class="num">Registros</th></tr></thead><tbody>
@@ -25,14 +29,14 @@ export async function list({ query }) {
         <td class="num"><b>${typeof m.last_value === 'number' ? fmtNum(m.last_value, 3) : m.last_value}</b> <span class="meta">${m.unit || ''}</span></td>
         <td>${fmtDate(m.last_date)}</td><td>${sitTag(m.last_situation)}</td><td>${trendTag(m.overall)}</td><td class="num">${m.count}</td></tr>`)}
       </tbody></table></div>${withData.length ? '' : html`<p class="empty">Nenhum resultado ainda. <a href="#/exames/novo">Cadastre o primeiro exame</a>.</p>`}</div>
-      ${exams.some((e) => e.title) ? html`<div class="card" style="margin-top:1rem"><h2>Exames de imagem e outros laudos</h2><ul class="list">${exams.filter((e) => e.title).map((e) => html`<li><a class="row-link grow" href="#/exames/${e.id}">
-        <div class="title">${e.title}</div><div class="meta">${fmtDate(e.collection_date)}${e.lab ? ' · ' + e.lab : ''}</div></a></li>`)}</ul></div>` : ''}`
+      ${exams.some((e) => e.title) ? html`<p class="small" style="margin-top:.8rem">Laudos de imagem (tomografia, ultrassom…) ficam na aba <a href="#/exames?ver=laudos">Laudos de imagem</a>.</p>` : ''}`
     : html`<div class="card"><ul class="list">${exams.map((e) => html`<li><a class="row-link grow" href="#/exames/${e.id}">
         <div class="title">${fmtDate(e.collection_date)} — ${e.title || e.lab || 'Laboratório não informado'}</div>
         <div class="meta">${e.title && e.lab ? e.lab + ' · ' : ''}${e.exam_type ? e.exam_type + ' · ' : ''}${e.markers.join(', ') || (e.title ? 'laudo descritivo' : 'sem resultados')}</div></a>
         <div>${e.out_of_range ? html`<span class="tag acima">${e.out_of_range} fora da ref.</span>` : ''} ${e.results_count ? html`<span class="tag">${e.results_count} resultado(s)</span>` : e.title ? html`<span class="tag">laudo</span>` : ''}</div></li>`)}</ul>
         ${exams.length ? '' : html`<p class="empty">Nenhum exame cadastrado.</p>`}</div>`}
     ${DISCLAIMER}`, (el) => {
+    wireImagingSection(el, (cat) => go(`#/exames?ver=laudos${(cat ?? query.cat) ? '&cat=' + (cat ?? query.cat) : ''}`));
     const f = el.querySelector('#filter'); if (!f) return;
     let sit = '';
     const apply = () => el.querySelectorAll('#mtable tbody tr').forEach((tr) => {
@@ -60,9 +64,9 @@ function resultRow(r = {}) {
 
 export async function form({ params, query }) {
   const id = params[0];
-  const [exam, doctors, consultations, markers] = await Promise.all([
+  const [exam, doctors, consultations, markers, cats] = await Promise.all([
     id ? api(`/exams/${id}`) : Promise.resolve({ collection_date: today(), results: [], consultation_id: query.consulta || '' }),
-    cached('doctors', '/doctors'), api('/consultations'), api('/markers'),
+    cached('doctors', '/doctors'), api('/consultations'), api('/markers'), loadCategories(),
   ]);
   // Pré-preenche linhas a partir dos exames pedidos numa consulta
   if (!id && query.consulta) {
@@ -84,6 +88,7 @@ export async function form({ params, query }) {
           { name: 'result_date', label: 'Data do resultado', type: 'date' },
           { name: 'lab', label: 'Laboratório', placeholder: 'Nome do laboratório' },
           { name: 'title', label: 'Nome do exame', placeholder: 'Ex.: Tomografia do abdômen total', hint: 'para laudos de imagem' },
+          { name: 'category_id', label: 'Categoria', type: 'select', hint: html`<a href="#/exames/categorias">gerenciar</a>`, options: [['', '— sem categoria —'], ...cats.map((c) => [c.id, c.name])] },
           { name: 'exam_type', label: 'Tipo de exame', type: 'select', options: [['', '—'], ...['Sangue', 'Urina', 'Fezes', 'Imagem', 'Cardiológico', 'Outro'].map((x) => [x, x])] },
           { name: 'requested_by_doctor_id', label: 'Médico solicitante', type: 'select', options: options(doctors, 'id', (d) => `${d.name}${d.specialty ? ' — ' + d.specialty : ''}`, '— não informado —') },
           { name: 'consultation_id', label: 'Pedido na consulta de', type: 'select', hint: 'liga o exame à consulta', options: options(consultations.filter((c) => c.status !== 'cancelada'), 'id', (c) => `${fmtDate(c.date)} — ${c.specialty || 'consulta'}${c.requests_pending ? ` (${c.requests_pending} pendente)` : ''}`, '— automático / nenhuma —') },
@@ -172,13 +177,13 @@ export function imagingCompareBlock(cmp) {
 }
 
 export async function detail({ params }) {
-  const e = await api(`/exams/${params[0]}`);
+  const [e, cats] = await Promise.all([api(`/exams/${params[0]}`), loadCategories()]);
   const docBlock = await (await import('./documents.js')).linkedBlock('exam_id', e.id, 'ligado a este exame (anexe o PDF do laudo)');
   return view(html`
-    <a class="back" href="#/exames?ver=datas">${icon('back')}Exames</a>
+    <a class="back" href="#/exames?ver=${e.title ? 'laudos' : 'datas'}">${icon('back')}Exames</a>
     <div class="page-head"><div><h1>${e.title ? html`${e.title} <span class="muted" style="font-weight:400">— ${fmtDate(e.collection_date)}</span>` : html`Exames de ${fmtDate(e.collection_date)}`}</h1>
       <p class="muted" style="margin:0">${[e.lab, e.exam_type, e.result_date ? 'resultado em ' + fmtDate(e.result_date) : null].filter(Boolean).join(' · ')}</p></div>
-      <div class="actions"><a class="btn" href="#/exames/${e.id}/editar">${icon('edit')}Editar</a><button class="btn danger" id="del">${icon('trash')}Excluir</button></div></div>
+      <div class="actions"><label class="cat-inline">Categoria ${categorySelect(cats, e.category_id, { id: 'catSel' })}</label><a class="btn" href="#/exames/${e.id}/editar">${icon('edit')}Editar</a><button class="btn danger" id="del">${icon('trash')}Excluir</button></div></div>
     ${e.consultation || e.fulfilled_requests.length ? html`<div class="note" style="margin-bottom:1rem">
       ${e.consultation ? html`Solicitado na <a href="#/consultas/${e.consultation.id}">consulta de ${fmtDate(e.consultation.date)}${e.consultation.specialty ? ' (' + e.consultation.specialty + ')' : ''}</a>. ` : ''}
       ${e.fulfilled_requests.length ? html`Atende ao(s) pedido(s): ${e.fulfilled_requests.map((r) => r.description).join(', ')}.` : ''}</div>` : ''}
@@ -197,9 +202,13 @@ export async function detail({ params }) {
       <dt>Médico solicitante</dt><dd>${e.doctor ? e.doctor.name : '—'}</dd>
       <dt>${e.title ? 'Indicação' : 'Motivo'}</dt><dd>${e.reason || '—'}</dd><dt>Observação</dt><dd>${e.notes || '—'}</dd></dl></div>${docBlock}</div>
     ${DISCLAIMER}`, (el) => {
+    el.querySelector('#catSel').onchange = async (ev) => {
+      try { await api('/exam-categories/move', { method: 'POST', body: { exam_ids: [e.id], category_id: ev.target.value || null } }); toast('Categoria alterada'); }
+      catch (err) { toast(err.message, true); }
+    };
     el.querySelector('#del').onclick = async () => {
       if (!confirmDialog('Excluir este exame e todos os seus resultados? Esta ação fica registrada no histórico de alterações.')) return;
-      await api(`/exams/${e.id}`, { method: 'DELETE' }); toast('Exame excluído'); go('#/exames?ver=datas');
+      await api(`/exams/${e.id}`, { method: 'DELETE' }); toast('Exame excluído'); go(`#/exames?ver=${e.title ? 'laudos' : 'datas'}`);
     };
   });
 }

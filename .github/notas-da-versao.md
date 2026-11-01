@@ -15,6 +15,13 @@ Isso só é preciso na primeira vez.
 
 Não sabe qual é o seu Mac? Menu  → **Sobre este Mac**: se aparecer "Chip Apple M…", use o primeiro; se aparecer "Processador Intel", use o segundo.
 
+## Novidades da 1.8.0
+- **Laudos de imagem por categoria** (Coração, Rins, Próstata, Tireoide…): nova aba **Exames → Laudos de imagem**, com os laudos agrupados por categoria e um filtro para ver só uma.
+  - **Mover:** escolha a categoria ao lado de cada laudo, ou marque vários e use **Mover selecionados**. Também dá para trocar na página do exame e no formulário de edição.
+  - **Gerenciar** (botão **Categorias**): criar, renomear, mudar a ordem e excluir. Excluir uma categoria não apaga os exames, que ficam "sem categoria". Há sugestões prontas (Abdômen, Tórax e pulmões, Coluna, Mamas, Vasos…) para criar com um clique.
+  - **Ao ler um laudo**, o Helyx já sugere a categoria pelo nome do exame e pela indicação (ex.: "cálculo renal" → Rins). Se a categoria ainda não existir, oferece criá-la.
+  - As categorias entram no backup e na restauração.
+
 ## Novidades da 1.7.0
 - **Esqueci minha senha** (na tela de entrada), sem internet e sem perder dados:
   - **Com o código de recuperação:** ao criar a conta ou redefinir a senha, o Helyx mostra um código (ex.: K7QF-9MXA-…) para anotar ou salvar em arquivo. Com ele, você cria uma nova senha.

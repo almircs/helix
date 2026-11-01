@@ -33,6 +33,7 @@ function wipe(userId) {
   run('DELETE FROM documents WHERE user_id = ?', userId);
   run('DELETE FROM medications WHERE user_id = ?', userId);   // versões e marcadores vão junto (CASCADE)
   run('DELETE FROM exams WHERE user_id = ?', userId);
+  run('DELETE FROM exam_categories WHERE user_id = ?', userId);
   run('UPDATE consultations SET previous_id = NULL WHERE user_id = ?', userId);
   run('DELETE FROM consultations WHERE user_id = ?', userId);
   run('DELETE FROM markers WHERE user_id = ?', userId);
@@ -59,7 +60,7 @@ function restore(userId, d) {
   docs.wipeFiles(userId);
   tx(() => {
     wipe(userId);
-    const map = { doc: new Map(), con: new Map(), mk: new Map(), ex: new Map(), med: new Map() };
+    const map = { doc: new Map(), con: new Map(), mk: new Map(), ex: new Map(), med: new Map(), cat: new Map() };
     const m = (k, id) => (id == null ? null : map[k].get(Number(id)) ?? null);
 
     if (d.perfil) {
@@ -73,7 +74,8 @@ function restore(userId, d) {
     for (const r of d.consultas || []) map.con.set(r.id, insert('consultations', userId, { ...r, doctor_id: m('doc', r.doctor_id), previous_id: null }, keepDates(fieldsOf(M.consultations)), M.consultations.encrypted));
     for (const r of d.consultas || []) if (r.previous_id) run('UPDATE consultations SET previous_id = ? WHERE id = ?', m('con', r.previous_id), m('con', r.id));
     for (const r of d.marcadores || []) map.mk.set(r.id, insert('markers', userId, r, fieldsOf(M.markers)));
-    for (const r of d.exames || []) map.ex.set(r.id, insert('exams', userId, { ...r, requested_by_doctor_id: m('doc', r.requested_by_doctor_id), consultation_id: m('con', r.consultation_id) }, keepDates(fieldsOf(M.exams)), M.exams.encrypted));
+    for (const r of d.categorias_exames || []) map.cat.set(r.id, insert('exam_categories', userId, r, ['name', 'position', 'created_at']));
+    for (const r of d.exames || []) map.ex.set(r.id, insert('exams', userId, { ...r, requested_by_doctor_id: m('doc', r.requested_by_doctor_id), consultation_id: m('con', r.consultation_id), category_id: m('cat', r.category_id) }, keepDates(fieldsOf(M.exams)), M.exams.encrypted));
     for (const r of d.resultados || []) {
       if (!m('ex', r.exam_id) || !m('mk', r.marker_id)) continue;
       insert('exam_results', userId, { ...r, exam_id: m('ex', r.exam_id), marker_id: m('mk', r.marker_id) }, ['exam_id', 'marker_id', 'value_num', 'value_text', 'unit', 'ref_min', 'ref_max', 'ref_text', 'notes'], ['notes']);

@@ -37,6 +37,7 @@ const ROUTES = [
   [/^\/exames$/, exams.list, '#/exames'],
   [/^\/exames\/novo$/, exams.form, '#/exames'],
   [/^\/exames\/comparar$/, exams.compare, '#/exames'],
+  [/^\/exames\/categorias$/, exams.categories, '#/exames'],
   [/^\/exames\/marcador\/(\d+)$/, exams.marker, '#/exames'],
   [/^\/exames\/(\d+)\/editar$/, exams.form, '#/exames'],
   [/^\/exames\/(\d+)$/, exams.detail, '#/exames'],

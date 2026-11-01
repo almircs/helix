@@ -88,6 +88,17 @@ r.post('/api/exams', A, (ctx) => examsSvc.saveExam(uid(ctx), ctx.body));
 r.put('/api/exams/:id', A, (ctx) => examsSvc.saveExam(uid(ctx), ctx.body, ctx.params.id));
 r.delete('/api/exams/:id', A, (ctx) => examsSvc.removeExam(uid(ctx), ctx.params.id));
 
+// ---------- Categorias dos exames
+const cats = require('./services/categories');
+r.get('/api/exam-categories', A, (ctx) => cats.list(uid(ctx)));
+r.post('/api/exam-categories', A, (ctx) => cats.create(uid(ctx), ctx.body));
+r.get('/api/exam-categories/suggested', A, () => cats.SUGGESTED.map(([n]) => n));
+r.post('/api/exam-categories/suggested', A, (ctx) => cats.createSuggested(uid(ctx), ctx.body.names));
+r.post('/api/exam-categories/order', A, (ctx) => cats.reorder(uid(ctx), ctx.body.ids));
+r.post('/api/exam-categories/move', A, (ctx) => cats.move(uid(ctx), ctx.body.exam_ids, ctx.body.category_id));
+r.put('/api/exam-categories/:id', A, (ctx) => cats.rename(uid(ctx), ctx.params.id, ctx.body));
+r.delete('/api/exam-categories/:id', A, (ctx) => cats.remove(uid(ctx), ctx.params.id, ctx.query.mover_para));
+
 // ---------- Consultas
 r.get('/api/consultations', A, (ctx) => consSvc.listConsultations(uid(ctx), ctx.query));
 r.get('/api/consultations/:id', A, (ctx) => consSvc.getConsultation(uid(ctx), ctx.params.id));
