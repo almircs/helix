@@ -77,7 +77,7 @@ function shell() {
         <form class="search" id="searchForm" role="search">${icon('search')}
           <input type="search" name="q" id="searchInput" placeholder="Buscar em exames, remédios, consultas…" aria-label="Busca">
         </form>
-        <span class="safe-pill"><i></i>Dados só neste computador</span>
+        <span class="safe-pill"><i></i>${window.HELYX_MOBILE ? 'Dados só neste aparelho' : 'Dados só neste computador'}</span>
         <span class="who" id="who"></span>
         <button class="btn icon ghost" id="logoutBtn" title="Sair / trocar de usuário" aria-label="Sair">${icon('logout')}</button>
       </header>
@@ -158,7 +158,7 @@ function recoverView(how = 'codigo') {
     <div class="auth"><div class="card">
       <div class="brand"><img src="/icon.png" alt="">Helyx</div>
       <h1 style="text-align:center">Recuperar a senha</h1>
-      <div class="tabs"><a href="#/recuperar" class="${pcStep ? '' : 'on'}">Tenho o código de recuperação</a><a href="#/recuperar?como=computador" class="${pcStep ? 'on' : ''}">Pelo computador</a></div>
+      ${window.HELYX_MOBILE ? '' : html`<div class="tabs"><a href="#/recuperar" class="${pcStep ? '' : 'on'}">Tenho o código de recuperação</a><a href="#/recuperar?como=computador" class="${pcStep ? 'on' : ''}">Pelo computador</a></div>`}
       ${pcStep ? html`<p class="muted small">O Helyx grava um código num arquivo dentro da pasta de dados dele, neste computador. Abra o arquivo, copie o código e crie a nova senha. Seus dados continuam todos lá.</p>
         <form id="pcStart" class="stack">${fields([{ name: 'email', label: 'Usuário ou e-mail', required: true }])}<button class="btn" style="width:100%">Gerar código no computador</button></form>
         <div id="pcInfo" class="note" hidden></div>`

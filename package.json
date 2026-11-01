@@ -16,7 +16,8 @@
     "demo": "node --disable-warning=ExperimentalWarning server/scripts/demo.js",
     "test": "node --disable-warning=ExperimentalWarning --test test/*.test.js",
     "dist:win": "electron-builder --win --publish never",
-    "dist:mac": "electron-builder --mac dir --x64 --arm64 --publish never"
+    "dist:mac": "electron-builder --mac dir --x64 --arm64 --publish never",
+    "build:celular": "node mobile/build.js"
   },
   "engines": {
     "node": ">=22.13"
@@ -30,6 +31,13 @@
     "better-sqlite3": "^12.4.1"
   },
   "devDependencies": {
+    "@noble/ciphers": "2.4.0",
+    "@noble/hashes": "2.4.0",
+    "buffer": "6.0.3",
+    "esbuild": "0.28.2",
+    "fflate": "0.8.3",
+    "path-browserify": "1.0.1",
+    "sql.js": "1.14.2",
     "electron": "^38.2.0",
     "electron-builder": "^26.0.12"
   },
