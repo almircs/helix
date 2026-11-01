@@ -187,6 +187,20 @@ async function backupView(head) {
         invalidate('doctors'); go('#/configuracoes/backup');
       } catch (err) { toast(err.message, true); }
     };
+    // No celular: o arquivo é preparado ao abrir a tela e o toque abre a janela de compartilhar
+    // (Salvar em Arquivos, WhatsApp, e-mail…) sem sair do app — o download comum deixava a tela desconfigurada no iPhone
+    if (window.HELYX_MOBILE) {
+      const dl = el.querySelector('#dl');
+      const name = `helyx-backup-${new Date().toISOString().slice(0, 10)}.helyx`;
+      let file = null;
+      fetch(dl.getAttribute('href'), { credentials: 'same-origin' }).then((r) => r.blob()).then((b) => { file = new File([b], name, { type: 'application/octet-stream' }); }).catch(() => {});
+      dl.addEventListener('click', (ev) => {
+        if (!file) { ev.preventDefault(); toast('Preparando o arquivo… toque de novo em instantes.'); return; }
+        ev.preventDefault();
+        if (navigator.canShare && navigator.canShare({ files: [file] })) navigator.share({ files: [file], title: 'Backup do Helyx' }).catch(() => {});
+        else { const a = document.createElement('a'); a.href = URL.createObjectURL(file); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 10000); }
+      });
+    }
     el.querySelector('#bk').onclick = async () => {
       try { await api('/backup', { method: 'POST' }); toast('Cópia guardada neste computador'); go('#/configuracoes/backup'); } catch (err) { toast(err.message, true); }
     };

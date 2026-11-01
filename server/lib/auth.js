@@ -105,6 +105,35 @@ function setup(ctx) {
   return { ok: true, recovery_code: recovery.newRecoveryCode(u.id) };
 }
 
+// ---------- Trazer a conta e os dados de outro aparelho (arquivo de backup)
+// Cria a conta deste aparelho com o mesmo usuário e senha do backup — só depois de conferir a senha — e restaura os dados.
+function importAccount(ctx) {
+  const { data, password } = ctx.body;
+  const restoreSvc = require('../services/restore');
+  restoreSvc.validate(data);
+  const key = `imp|${ctx.req.socket.remoteAddress}`;
+  const a = checkRate(key);
+  let email; let hash; let recoveryHash = null;
+  if (data.conta?.usuario && data.conta?.senha_hash) {
+    email = validateUsername(data.conta.usuario);
+    if (!verifyPassword(String(password || ''), data.conta.senha_hash)) { failRate(key, a); throw new HttpError(401, 'Senha incorreta. Use a mesma senha do Helyx do computador.'); }
+    hash = data.conta.senha_hash; recoveryHash = data.conta.recuperacao_hash || null;
+  } else {
+    // backup antigo, sem a conta: cria uma conta nova com o usuário e a senha informados
+    email = validateUsername(ctx.body.email);
+    validatePassword(password);
+    hash = hashPassword(password);
+  }
+  if (get('SELECT 1 FROM users WHERE email = ?', email)) throw new HttpError(409, `Já existe a conta "${email}" neste aparelho. Entre com ela e restaure o backup em Configurações → Backup.`);
+  attempts.delete(key);
+  const userId = Number(run('INSERT INTO users (email, password_hash, recovery_hash, password_set) VALUES (?, ?, ?, 1)', email, hash, recoveryHash).lastInsertRowid);
+  run('INSERT INTO profiles (user_id) VALUES (?)', userId);
+  audit.log(userId, 'usuario', userId, 'criar a partir de backup', null, { email });
+  const out = restoreSvc.restore(userId, data);
+  createSession(ctx, userId);
+  return { ok: true, usuario: email, ...out };
+}
+
 // ---------- Recuperação de senha (sem internet)
 function recoverByCode(ctx) {
   const key = `rec|${String(ctx.body.email).toLowerCase()}|${ctx.req.socket.remoteAddress}`;
@@ -177,7 +206,7 @@ function changePassword(ctx) {
   return { ok: true };
 }
 
-module.exports = { register, login, logout, requireAuth, changePassword, state, setup, recoverByCode, recoverComputerStart, recoverComputerFinish, regenerateCode, requireLogin: () => config.requireLogin, verifyPasswordOf: (id, pw) => {
+module.exports = { register, login, logout, requireAuth, changePassword, state, setup, importAccount, recoverByCode, recoverComputerStart, recoverComputerFinish, regenerateCode, requireLogin: () => config.requireLogin, verifyPasswordOf: (id, pw) => {
   const u = get('SELECT password_hash FROM users WHERE id = ?', id);
   return u && verifyPassword(String(pw || ''), u.password_hash);
 } };

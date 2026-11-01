@@ -130,7 +130,9 @@ function authView(mode, state = {}) {
       </form>
       ${mode === 'setup' ? '' : html`<p class="small" style="text-align:center;margin-top:1rem">${isLogin
         ? html`<a href="#/recuperar">Esqueci minha senha</a> · Outra pessoa vai usar o Helyx? <a href="#/cadastro">Criar conta</a>`
-        : state.has_users ? html`Já tem conta? <a href="#/entrar">Entrar</a>` : ''}</p>`}
+        : state.has_users ? html`Já tem conta? <a href="#/entrar">Entrar</a>` : ''}</p>
+        <a class="btn" href="#/trazer" style="width:100%;margin-top:.6rem">${window.HELYX_MOBILE ? 'Já uso o Helyx no computador' : 'Já uso o Helyx em outro aparelho'}</a>
+        <p class="small muted" style="text-align:center;margin-top:.3rem">Traz sua conta (mesmo usuário e senha) e seus dados pelo arquivo de backup.</p>`}
     </div></div>`.__raw;
   const form = document.getElementById('authForm');
   form.querySelector('[name=email]').autocomplete = 'username';
@@ -148,6 +150,56 @@ function authView(mode, state = {}) {
       if (r.recovery_code) await showRecoveryCode(r.recovery_code, { title: 'Conta criada', intro: `Usuário: ${body.email}. Sua senha foi cadastrada.` });
       location.hash = '#/'; location.reload(); // recomeça limpo, já na conta certa
     } catch (err) { toast(err.message, true); }
+  };
+}
+
+// Já uso o Helyx em outro aparelho: cria a conta com o mesmo usuário e senha do backup e traz os dados
+function bringView() {
+  app.innerHTML = html`
+    <div class="auth"><div class="card">
+      <div class="brand"><img src="/icon.png" alt="">Helyx</div>
+      <h1 style="text-align:center">Trazer minha conta e meus dados</h1>
+      <ol class="small muted" style="padding-left:1.2rem">
+        <li>No Helyx do ${window.HELYX_MOBILE ? 'computador' : 'outro aparelho'}: <b>Configurações → Backup → Salvar arquivo de backup</b>.</li>
+        <li>Passe o arquivo para cá (WhatsApp, e-mail, Drive…) e, no iPhone, use <b>Salvar em Arquivos</b>.</li>
+        <li>Escolha o arquivo abaixo e digite a <b>mesma senha</b> que você usa lá.</li>
+      </ol>
+      <form id="bringForm" class="stack" style="margin-top:1rem">
+        <label class="btn" style="width:100%;text-align:center">Escolher arquivo de backup<input type="file" id="bkFile" hidden></label>
+        <div id="bkInfo" class="note" hidden></div>
+        <div id="bkUser" hidden>${fields([{ name: 'email', label: 'Usuário para esta conta', hint: 'este backup não traz o usuário' }])}</div>
+        ${fields([{ name: 'password', label: 'Senha', type: 'password', required: true }])}
+        <button class="btn primary" style="width:100%" id="bkGo" disabled>Trazer conta e dados</button>
+      </form>
+      <p class="small" style="text-align:center;margin-top:1rem"><a href="#/entrar">Voltar</a></p>
+    </div></div>`.__raw;
+  const form = document.getElementById('bringForm');
+  form.querySelectorAll('[type=password]').forEach(capsLockHint);
+  let data = null;
+  document.getElementById('bkFile').onchange = async (e) => {
+    const f = e.target.files[0]; if (!f) return;
+    const info = document.getElementById('bkInfo');
+    try { data = JSON.parse((await f.text()).replace(/^\uFEFF/, '')); if (data.formato !== 'helyx' && data.formato !== 'prontuario-pessoal') throw new Error(); }
+    catch { data = null; info.hidden = false; info.textContent = 'Este arquivo não é um backup do Helyx.'; document.getElementById('bkGo').disabled = true; return; }
+    const n = (k) => (Array.isArray(data[k]) ? data[k].length : 0);
+    info.hidden = false;
+    info.innerHTML = html`<b>${f.name}</b><br>${data.conta?.usuario ? html`Conta: <b>${data.conta.usuario}</b><br>` : ''}
+      ${n('exames')} exame(s) · ${n('consultas')} consulta(s) · ${n('medicamentos')} remédio(s) · ${n('documentos')} documento(s)`.__raw;
+    document.getElementById('bkUser').hidden = !!data.conta?.usuario;
+    form.querySelector('[name=email]').required = !data.conta?.usuario;
+    document.getElementById('bkGo').disabled = false;
+    form.querySelector('[name=password]').focus();
+  };
+  form.onsubmit = async (e) => {
+    e.preventDefault();
+    if (!data) return;
+    const btn = document.getElementById('bkGo'); btn.disabled = true; btn.textContent = 'Trazendo…';
+    try {
+      const body = readForm(form);
+      const r = await api('/auth/import-account', { method: 'POST', body: { data, password: body.password, email: body.email } });
+      toast(`Pronto! Conta ${r.usuario} trazida com ${r.exames} exame(s).`);
+      setTimeout(() => { location.hash = '#/'; location.reload(); }, 900);
+    } catch (err) { toast(err.message, true); btn.disabled = false; btn.textContent = 'Trazer conta e dados'; }
   };
 }
 
@@ -213,6 +265,7 @@ async function route() {
   const [path, qs] = hash.split('?');
   const query = Object.fromEntries(new URLSearchParams(qs || ''));
   if (path === '/recuperar') { me = null; return recoverView(query.como === 'computador' ? 'computador' : 'codigo'); }
+  if (path === '/trazer') { me = null; return bringView(); }
   if (path === '/entrar' || path === '/cadastro') {
     const state = await api('/auth/state').catch(() => ({ login: true }));
     if (!state.login) { location.hash = '#/'; return; } // login desligado

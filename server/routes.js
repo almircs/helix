@@ -21,6 +21,7 @@ r.post('/api/auth/login', auth.login);
 r.post('/api/auth/logout', auth.logout);
 r.get('/api/auth/state', () => auth.state());
 r.post('/api/auth/setup', auth.setup);
+r.post('/api/auth/import-account', auth.importAccount);
 r.post('/api/auth/recover/code', auth.recoverByCode);
 r.post('/api/auth/recover/computer/start', auth.recoverComputerStart);
 r.post('/api/auth/recover/computer/finish', auth.recoverComputerFinish);

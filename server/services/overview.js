@@ -247,8 +247,11 @@ function exportAll(userId) {
   for (const f of PROFILE_ENCRYPTED) prof[f] = decrypt(prof[f]);
   delete prof.user_id;
   const dec = (rows, fields) => rows.map((r) => { const o = { ...r }; for (const f of fields) o[f] = decrypt(o[f]); delete o.user_id; return o; });
+  // conta (usuário e senha já embaralhada), para entrar com o mesmo login em outro aparelho
+  const u = get('SELECT email, password_hash, recovery_hash, password_set FROM users WHERE id = ?', userId);
   return {
     formato: 'helyx', versao: 1, exportado_em: new Date().toISOString(),
+    conta: u && u.password_set ? { usuario: u.email, senha_hash: u.password_hash, recuperacao_hash: u.recovery_hash || null } : null,
     perfil: prof,
     medicos: doctors.list(userId, '', [], 'id'),
     consultas: consultations.list(userId, '', [], 'date'),

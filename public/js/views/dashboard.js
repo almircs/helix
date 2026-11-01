@@ -65,6 +65,7 @@ export async function render() {
     ['Documentos', plural(h.documents.total, 'guardado', 'guardados'), '#fbbf24', '#/documentos'],
     ['Medições', h.measurements.last ? `última ${ago(h.measurements.last)}, ${h.measurements.last.slice(11, 16)}` : 'Registrar a primeira', '#34d399', '#/saude'],
     ['Relatórios', 'Resumo para levar à consulta', '#f87171', '#/relatorios'],
+    ['Configurações', 'Perfil, médicos, backup e senha', '#94a3b8', '#/configuracoes'],
   ];
 
   const headline = h.empty ? 'Comece cadastrando o que já tem em mãos.'
