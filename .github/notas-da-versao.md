@@ -15,6 +15,13 @@ Isso só é preciso na primeira vez.
 
 Não sabe qual é o seu Mac? Menu  → **Sobre este Mac**: se aparecer "Chip Apple M…", use o primeiro; se aparecer "Processador Intel", use o segundo.
 
+## Novidades da 1.10.0
+- **Helyx no celular** (iPhone, iPad e Android): https://almircs.github.io/helyx-celular/ — instale pela Tela de Início. Os dados ficam só no aparelho e funciona sem internet.
+- **Já uso o Helyx em outro aparelho** (na tela de entrada): escolha o arquivo de backup e digite a mesma senha; o Helyx cria a mesma conta e traz todos os dados. O backup agora guarda a conta (a senha vai só embaralhada).
+- **Restaurar backup:** dá para escolher o arquivo mesmo que o nome tenha mudado (ao passar pelo WhatsApp ou e-mail); o Helyx confere pelo conteúdo.
+- **Leitura de PDF** mais compatível (iPhones com iOS anterior ao 17.4).
+- **Acesso rápido:** atalho para Configurações.
+
 ## Novidades da 1.9.0
 - **Página de Pendências** (clique no quadro "Pendências" da página inicial): mostra **quais** são as pendências e deixa editar cada uma:
   - **Ação em andamento** (ex.: "coleta marcada para dia 12"), **status** (pendente, em andamento, concluída, cancelada) e **prazo**, com aviso de prazo vencido.
