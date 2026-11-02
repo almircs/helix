@@ -27,6 +27,8 @@ const keepDates = (cols) => [...cols, 'created_at', 'updated_at'];
 function wipe(userId) {
   // Ordem respeita as chaves estrangeiras
   run('DELETE FROM pendencias WHERE user_id = ?', userId);
+  run('DELETE FROM medication_doses WHERE user_id = ?', userId);
+  run("DELETE FROM settings WHERE user_id = ? AND key = 'familia'", userId);
   run('DELETE FROM vaccines WHERE user_id = ?', userId);
   run('DELETE FROM exam_results WHERE user_id = ?', userId);
   run('DELETE FROM exam_requests WHERE user_id = ?', userId);
@@ -104,6 +106,9 @@ function restore(userId, d) {
       if (p.source) { const [k, id] = String(p.source).split(':'); const nid = SRC[k] ? m(SRC[k], id) : null; if (!nid) continue; source = `${k}:${nid}`; }
       insert('pendencias', userId, { ...p, source }, ['source', 'title', 'action', 'status', 'due_date', 'created_at', 'updated_at'], ['title', 'action']);
     }
+    const doses = require('./doses');
+    doses.importDoses(userId, d.doses || [], (id) => m('med', id));
+    doses.importFamily(userId, d.familia);
     for (const r of d.agenda || []) insert('events', userId, { ...r, consultation_id: m('con', r.consultation_id), exam_id: m('ex', r.exam_id), medication_id: m('med', r.medication_id) }, keepDates(fieldsOf(M.events)), M.events.encrypted);
   });
   const s = summary(d);

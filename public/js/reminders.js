@@ -1,6 +1,7 @@
 // Lembretes enquanto o sistema está aberto: notificação do navegador (se permitida) e aviso na tela.
 // O módulo de notificações em segundo plano (e-mail/celular) entra na etapa 3.
-import { api, today, addDays, toast } from './lib.js';
+import { api, today, addDays, toast, go } from './lib.js';
+import { isSenior } from './views/senior.js';
 
 const shown = new Set();
 const DEFAULT_MIN = { consulta: 120, retorno: 120, exame: 60, procedimento: 120, vacina: 60, medicamento: 0, receita: 0, outro: 30 };
@@ -23,7 +24,25 @@ async function check() {
   }
 }
 
-export function startReminders() { check(); setInterval(check, 60e3); }
+// Doses do dia (horários dos medicamentos): avisa na hora e de novo se ficar 30 min sem anotação
+async function checkDoses() {
+  let day;
+  try { day = await api('/doses'); } catch { return; }
+  for (const d of day.doses) {
+    if (d.status || !d.due) continue;
+    const key = `dose-${d.medication_id}-${d.date}-${d.time}-${d.late ? 'atraso' : 'hora'}`;
+    if (shown.has(key)) continue;
+    shown.add(key);
+    // sem o nome do remédio: o aviso pode aparecer com outras pessoas por perto
+    const msg = d.late ? `O remédio das ${d.time} ainda não foi anotado` : `Hora do remédio das ${d.time}`;
+    toast('Lembrete: ' + msg);
+    try { if ('Notification' in window && Notification.permission === 'granted') new Notification('Helyx', { body: msg, icon: '/icon.png' }); } catch { /* sem suporte */ }
+    if (isSenior() && !location.hash.startsWith('#/simples')) go('#/simples');
+    else if (location.hash.startsWith('#/simples') && document.getElementById('srSent')?.hidden !== false) window.dispatchEvent(new HashChangeEvent('hashchange'));
+  }
+}
+
+export function startReminders() { check(); checkDoses(); setInterval(() => { check(); checkDoses(); }, 60e3); }
 
 export async function askPermission() {
   if (!('Notification' in window)) return 'indisponivel';

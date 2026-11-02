@@ -2,13 +2,19 @@ import { api, html, icon, fields, readForm, options, toast, view, go, cached, fm
 import { lineChart } from '../chart.js';
 
 export async function list({ query }) {
-  const meds = await api('/medications');
+  const [meds, day] = await Promise.all([api('/medications'), api('/doses').catch(() => ({ doses: [] }))]);
   const st = query.status || 'ativo';
   const shown = meds.filter((m) => st === 'todos' || m.status === st);
   const count = (s) => meds.filter((m) => m.status === s).length;
   return view(html`
     <div class="page-head"><h1>Medicamentos</h1><div class="actions"><a class="btn" href="#/importar?para=receita&voltar=${encodeURIComponent('#/medicamentos')}">${icon('documentos')}Ler receita</a><a class="btn primary" href="#/medicamentos/novo">${icon('plus')}Novo medicamento</a></div></div>
     <div class="chips" style="margin-bottom:1rem">${[['ativo', `Em uso (${count('ativo')})`], ['suspenso', `Suspensos (${count('suspenso')})`], ['encerrado', `Encerrados (${count('encerrado')})`], ['todos', 'Todos']].map(([v, l]) => html`<button class="chip ${st === v ? 'on' : ''}" data-s="${v}">${l}</button>`)}</div>
+    ${st === 'ativo' && day.doses.length ? html`<div class="card" style="margin-bottom:1rem">
+      <h2>Doses de hoje <small class="muted">${day.taken} de ${day.total} tomadas</small> <a class="btn small" href="#/simples" style="float:right">Modo sênior</a></h2>
+      <ul class="list">${day.doses.map((d) => html`<li><div class="grow"><div class="title">${d.time} · ${d.name} ${d.dosage || ''}</div>
+        <div class="meta">${d.status === 'tomado' ? `Tomado às ${String(d.at).slice(11, 16)}` : d.status === 'pulado' ? 'Não tomado' : d.late ? 'Atrasado' : d.due ? 'Está na hora' : 'Mais tarde'}</div></div>
+        ${d.status ? html`<button class="btn small ghost" data-dose="${d.medication_id}|${d.time}|">Desfazer</button>`
+          : html`<button class="btn small primary" data-dose="${d.medication_id}|${d.time}|tomado">Tomei</button><button class="btn small" data-dose="${d.medication_id}|${d.time}|pulado">Não tomei</button>`}</li>`)}</ul></div>` : ''}
     <div class="card"><ul class="list">${shown.map((m) => html`<li><a class="row-link grow" href="#/medicamentos/${m.id}">
       <div class="title">${m.name} ${m.dosage || ''}</div>
       <div class="meta">${[m.active_ingredient, m.frequency, m.schedule, m.start_date ? 'desde ' + fmtDate(m.start_date) : null].filter(Boolean).join(' · ')}</div>
@@ -16,6 +22,10 @@ export async function list({ query }) {
       <div>${m.versions_count > 1 ? html`<span class="tag">${m.versions_count - 1} alteração(ões)</span>` : ''} ${statusTag(m.status)}</div></li>`)}</ul>
       ${shown.length ? '' : html`<p class="empty">Nenhum medicamento nesta lista.</p>`}</div>`, (el) => {
     el.querySelectorAll('[data-s]').forEach((b) => b.onclick = () => go(`#/medicamentos?status=${b.dataset.s}`));
+    el.querySelectorAll('[data-dose]').forEach((b) => b.onclick = async () => {
+      const [medication_id, time, status] = b.dataset.dose.split('|');
+      try { await api('/doses', { method: 'POST', body: { medication_id, date: day.date, time, status: status || null } }); go(location.hash); } catch (err) { toast(err.message, true); }
+    });
   });
 }
 

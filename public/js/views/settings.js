@@ -1,6 +1,7 @@
+import { isSenior, setSenior, waLink, weekMessage } from './senior.js';
 import { api, html, icon, fields, readForm, toast, view, go, invalidate, fmtDate, confirmDialog, askConfirm, showRecoveryCode, capsLockHint } from '../lib.js';
 
-const TABS = [['perfil', 'Meu perfil'], ['medicos', 'Médicos'], ['backup', 'Backup'], ['seguranca', 'Segurança e dados'], ['aparencia', 'Aparência']];
+const TABS = [['perfil', 'Meu perfil'], ['medicos', 'Médicos'], ['backup', 'Backup'], ['seguranca', 'Segurança e dados'], ['aparencia', 'Aparência'], ['senior', 'Modo sênior']];
 const ENTITY = { usuario: 'Conta', sessao: 'Acesso', perfil: 'Perfil', medico: 'Médico', consulta: 'Consulta', exame: 'Exame', marcador: 'Exame (catálogo)', medicamento: 'Medicamento', medicao: 'Medição', agenda: 'Agenda', dados: 'Dados', ia: 'IA' };
 
 export function applyTheme() {
@@ -15,9 +16,55 @@ export async function render({ params, query }) {
   if (tab === 'medicos') return doctors(head, query);
   if (tab === 'seguranca') return security(head);
   if (tab === 'backup') return backupView(head);
+  if (tab === 'senior') return seniorView(head);
   let cur = 'auto'; try { cur = localStorage.getItem('tema') || 'auto'; } catch { /* */ }
   return view(html`${head}<div class="card"><h2>Tema</h2><div class="seg">${[['auto', 'Escuro (padrão)'], ['light', 'Claro']].map(([v, l]) => html`<button class="${cur === v ? 'on' : ''}" data-t="${v}">${l}</button>`)}</div></div>`, (el) => {
     el.querySelectorAll('[data-t]').forEach((b) => b.onclick = () => { try { localStorage.setItem('tema', b.dataset.t); } catch { /* */ } applyTheme(); go('#/configuracoes/aparencia'); });
+  });
+}
+
+// Modo sênior: liga neste aparelho e cadastra o familiar que acompanha
+async function seniorView(head) {
+  const [fam, hist] = await Promise.all([api('/family'), api('/doses/history?days=7')]);
+  const on = isSenior();
+  const days = hist.filter((h) => h.total);
+  const WD = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'];
+  return view(html`${head}
+    <div class="card">
+      <h2>Modo sênior</h2>
+      <p class="muted">Tela com letra grande e poucos botões: os remédios de hoje com o botão <b>Tomei</b>, o próximo compromisso e atalhos para ligar ou pedir ajuda a um familiar.
+        Vale só para <b>este ${window.HELYX_MOBILE ? 'aparelho' : 'computador'}</b>: no celular da pessoa ele abre direto no modo sênior; no seu, o Helyx continua completo.</p>
+      <div class="seg" style="margin:.6rem 0"><button class="${on ? 'on' : ''}" data-m="1">Abrir sempre no modo sênior</button><button class="${on ? '' : 'on'}" data-m="0">Helyx completo</button></div>
+      <a class="btn" href="#/simples">Ver a tela do modo sênior</a>
+      <p class="small muted" style="margin-top:.6rem">Os horários vêm do campo <b>Horário(s)</b> de cada medicamento em uso (ex.: 08:00 e 20:00). Remédios semanais ou mensais não entram na lista do dia.</p>
+    </div>
+    <form class="card" id="famForm">
+      <h2>Familiar que acompanha</h2>
+      <p class="muted small">Depois de tocar em <b>Tomei</b>, aparece o botão para avisar este familiar pelo WhatsApp, com a mensagem pronta. Nada é enviado sozinho: a mensagem só sai quando a pessoa toca e confirma no WhatsApp.</p>
+      <div class="form-grid">${fields([
+        { name: 'name', label: 'Nome', placeholder: 'Ex.: Ana (filha)' },
+        { name: 'phone', label: 'WhatsApp', type: 'tel', placeholder: 'DDD + número, ex.: 31 99999-8888' },
+        { name: 'include_names', label: 'Incluir o nome do remédio nas mensagens', type: 'checkbox', full: true },
+      ], fam)}</div>
+      <p class="small muted">Sem marcar a opção acima, a mensagem diz só o horário (ex.: “tomou o remédio das 08:00”).</p>
+      <div class="form-actions" style="position:static;background:none"><button class="btn primary">Salvar familiar</button>${fam.phone ? html`<button type="button" class="btn danger" id="famDel">Remover</button>` : ''}</div>
+    </form>
+    <div class="card">
+      <h2>Últimos dias</h2>
+      ${days.length ? html`<ul class="list">${days.map((h) => html`<li><div class="grow"><div class="title">${WD[new Date(h.date + 'T12:00:00').getDay()]} ${fmtDate(h.date).slice(0, 5)}</div>
+          <div class="meta">${h.taken} de ${h.total} tomados${h.skipped ? ` · ${h.skipped} não tomado(s)` : ''}${h.missing ? ` · ${h.missing} sem anotação` : ''}</div></div>
+          <span class="tag ${h.taken === h.total ? 'concluido' : 'pendente'}">${h.taken === h.total ? 'Completo' : 'Incompleto'}</span></li>`)}</ul>
+        ${fam.phone ? html`<a class="btn" target="_blank" rel="noopener" href="${waLink(fam.phone, weekMessage(fam, hist))}">Enviar resumo para ${fam.name || 'o familiar'} no WhatsApp</a>` : ''}`
+      : html`<p class="empty">O resumo começa no primeiro dia em que alguém tocar em <b>Tomei</b> ou <b>Não tomei</b>.</p>`}
+      <p class="small muted" style="margin-top:.6rem">“Sem anotação” quer dizer que ninguém tocou em Tomei ou Não tomei — não significa que a dose foi perdida.</p>
+    </div>`, (el) => {
+    el.querySelectorAll('[data-m]').forEach((b) => b.onclick = () => { setSenior(b.dataset.m === '1'); toast(b.dataset.m === '1' ? 'O Helyx vai abrir no modo sênior neste aparelho' : 'O Helyx vai abrir completo'); go('#/configuracoes/senior'); });
+    el.querySelector('#famForm').onsubmit = async (e) => {
+      e.preventDefault();
+      try { await api('/family', { method: 'PUT', body: readForm(e.target) }); toast('Familiar salvo'); go('#/configuracoes/senior'); } catch (err) { toast(err.message, true); }
+    };
+    const del = el.querySelector('#famDel');
+    if (del) del.onclick = async () => { await api('/family', { method: 'PUT', body: {} }); toast('Familiar removido'); go('#/configuracoes/senior'); };
   });
 }
 

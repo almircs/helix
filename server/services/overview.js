@@ -144,11 +144,7 @@ function dashboard(userId) {
 
 // ---------------------------------------------------------------- Página inicial discreta
 // Só datas, horários e contagens: nada que identifique exames, remédios, médicos ou especialidades.
-const DAILY_EXCLUDE = /seman|mens|m[êe]s|quinzen|anual/i;
-function medTimes(m) {
-  if (!m.schedule || DAILY_EXCLUDE.test(m.frequency || '')) return [];
-  return [...String(m.schedule).matchAll(/(\d{1,2})\s*[:hH]\s*(\d{2})?/g)].map((x) => `${x[1].padStart(2, '0')}:${x[2] || '00'}`);
-}
+const { medTimes } = require('./doses');
 function home(userId) {
   const today = localDate();
   const ag = agenda(userId, today, addDays(today, 60)).filter((e) => e.status === 'agendado');
@@ -182,6 +178,7 @@ function home(userId) {
     today,
     next: n ? { date: n.date, time: n.time || null, more: appts.filter((e) => e !== n && e.date <= addDays(today, 30)).length } : null,
     today_meds: { count: meds.filter((m) => medTimes(m).length).length, times },
+    doses_today: (({ total, taken, skipped }) => ({ total, taken, skipped }))(require('./doses').day(userId, today)),
     pending: require('./pendencias').summary(userId),
     imaging: { total: get('SELECT COUNT(*) n FROM exams WHERE user_id = ? AND title IS NOT NULL', userId).n },
     vaccines: { total: get('SELECT COUNT(*) n FROM vaccines WHERE user_id = ? AND applied_date IS NOT NULL', userId).n,
@@ -268,6 +265,8 @@ function exportAll(userId) {
     medicoes: measurements.list(userId, '', [], 'measured_at'),
     agenda: events.list(userId, '', [], 'starts_at'),
     documentos: require('./documents').exportAll(userId),
+    doses: require('./doses').exportDoses(userId),
+    familia: (({ name, phone, include_names }) => (name || phone ? { name, phone, include_names } : null))(require('./doses').getFamily(userId)),
   };
 }
 

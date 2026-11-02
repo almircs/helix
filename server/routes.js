@@ -128,6 +128,14 @@ r.put('/api/medications/:id', A, (ctx) => medsSvc.updateMedication(uid(ctx), ctx
 r.put('/api/medications/:id/markers', A, (ctx) => { medsSvc.setMarkers(uid(ctx), M.medications.get(uid(ctx), ctx.params.id).id, ctx.body.marker_names || [], ctx.body.marker_ids || []); return medsSvc.getMedication(uid(ctx), ctx.params.id); });
 r.delete('/api/medications/:id', A, (ctx) => medsSvc.removeMedication(uid(ctx), ctx.params.id));
 
+// ---------- Modo sênior: doses do dia e familiar que acompanha
+const doses = require('./services/doses');
+r.get('/api/doses', A, (ctx) => doses.day(uid(ctx), ctx.query.date || undefined));
+r.post('/api/doses', A, (ctx) => doses.mark(uid(ctx), ctx.body));
+r.get('/api/doses/history', A, (ctx) => doses.history(uid(ctx), ctx.query.days));
+r.get('/api/family', A, (ctx) => doses.getFamily(uid(ctx)));
+r.put('/api/family', A, (ctx) => doses.setFamily(uid(ctx), ctx.body));
+
 // ---------- Documentos
 const docs = require('./services/documents');
 r.get('/api/documents', A, (ctx) => docs.list(uid(ctx), ctx.query));

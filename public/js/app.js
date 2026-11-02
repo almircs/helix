@@ -13,6 +13,7 @@ import * as docs from './views/documents.js';
 import * as importar from './views/importar.js';
 import * as pendencias from './views/pendencias.js';
 import * as vacinas from './views/vacinas.js';
+import * as senior from './views/senior.js';
 import { startReminders } from './reminders.js';
 
 const app = document.getElementById('app');
@@ -58,6 +59,7 @@ const ROUTES = [
   [/^\/importar$/, importar.render, null],
   [/^\/pendencias$/, pendencias.render, null],
   [/^\/vacinas$/, vacinas.render, '#/vacinas'],
+  [/^\/simples$/, senior.render, null],
   [/^\/documentos$/, docs.list, '#/documentos'],
   [/^\/documentos\/(\d+)$/, docs.detail, '#/documentos'],
   [/^\/relatorios$/, misc.reports, '#/relatorios'],
@@ -91,6 +93,7 @@ function shell() {
             <a href="#/importar" class="launch-read">Ler arquivo (PDF, foto, Word, Excel)</a>
             <a href="#/exames/novo">Exame</a><a href="#/consultas/nova">Consulta</a><a href="#/medicamentos/novo">Medicamento</a>
             <a href="#/saude">Medição</a><a href="#/vacinas?editar=nova">Vacina</a><a href="#/documentos?novo=1">Documento</a><a href="#/agenda?novo=outro">Compromisso</a><a href="#/pendencias">Pendência</a>
+            <a href="#/simples" class="launch-read">Modo sênior (letra grande)</a>
           </div>
         </details>
       </nav>
@@ -283,6 +286,9 @@ async function route() {
     if (!me.login) document.getElementById('logoutBtn').style.display = 'none';
     else document.getElementById('who').textContent = (me.name || me.email || '').split(' ')[0];
   }
+  // Modo sênior: neste aparelho a abertura vai direto para a tela simples
+  if (path === '/' && senior.isSenior() && !query.completo) { location.replace('#/simples'); return; }
+  document.documentElement.classList.toggle('senior', path === '/simples');
   const content = document.getElementById('content');
   const found = ROUTES.find(([re]) => re.test(path));
   document.querySelectorAll('[data-nav]').forEach((a) => { const on = found && a.dataset.nav === found[2]; a.classList.toggle('active', on); if (on) a.scrollIntoView({ block: 'nearest', inline: 'nearest' }); });
