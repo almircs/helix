@@ -178,7 +178,7 @@ function home(userId) {
     today,
     next: n ? { date: n.date, time: n.time || null, more: appts.filter((e) => e !== n && e.date <= addDays(today, 30)).length } : null,
     today_meds: { count: meds.filter((m) => medTimes(m).length).length, times },
-    doses_today: (({ total, taken, skipped }) => ({ total, taken, skipped }))(require('./doses').day(userId, today)),
+    doses_today: require('./doses').isEnabled(userId) ? (({ total, taken, skipped }) => ({ total, taken, skipped }))(require('./doses').day(userId, today)) : null,
     pending: require('./pendencias').summary(userId),
     imaging: { total: get('SELECT COUNT(*) n FROM exams WHERE user_id = ? AND title IS NOT NULL', userId).n },
     vaccines: { total: get('SELECT COUNT(*) n FROM vaccines WHERE user_id = ? AND applied_date IS NOT NULL', userId).n,
@@ -266,6 +266,7 @@ function exportAll(userId) {
     agenda: events.list(userId, '', [], 'starts_at'),
     documentos: require('./documents').exportAll(userId),
     doses: require('./doses').exportDoses(userId),
+    controle_doses: require('./doses').isEnabled(userId),
     familia: (({ name, phone, include_names }) => (name || phone ? { name, phone, include_names } : null))(require('./doses').getFamily(userId)),
   };
 }

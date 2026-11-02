@@ -29,6 +29,11 @@ test('modo sênior: doses, família e backup', async () => {
   await call('POST', '/medications', { name: 'Antigo', schedule: '07:00', status: 'suspenso' });                                        // suspenso: fora
 
   let d = (await call('GET', '/doses')).data;
+  assert.equal(d.enabled, false, 'controle de doses começa desligado');
+  assert.equal((await call('GET', '/home')).data.doses_today, null);
+  assert.equal((await call('PUT', '/doses/settings', { enabled: true })).data.enabled, true);
+  d = (await call('GET', '/doses')).data;
+  assert.equal(d.enabled, true);
   assert.deepEqual(d.doses.map((x) => `${x.time} ${x.name}`), ['08:00 Losartana', '20:00 Losartana']);
   assert.equal(d.total, 2); assert.equal(d.taken, 0);
 
@@ -71,5 +76,6 @@ test('modo sênior: doses, família e backup', async () => {
   assert.equal((await call('POST', '/backup/restore', { data: bk, confirm: 'RESTAURAR' })).status, 200);
   assert.equal((await call('GET', '/family')).data.name, 'Ana');
   d = (await call('GET', '/doses')).data;
+  assert.equal(d.enabled, true, 'a opção volta com o backup');
   assert.equal(d.taken, 1, 'dose de hoje voltou com o remédio novo (id remapeado)');
 });

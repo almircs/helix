@@ -28,7 +28,7 @@ function wipe(userId) {
   // Ordem respeita as chaves estrangeiras
   run('DELETE FROM pendencias WHERE user_id = ?', userId);
   run('DELETE FROM medication_doses WHERE user_id = ?', userId);
-  run("DELETE FROM settings WHERE user_id = ? AND key = 'familia'", userId);
+  run("DELETE FROM settings WHERE user_id = ? AND key IN ('familia', 'doses_ativo')", userId);
   run('DELETE FROM vaccines WHERE user_id = ?', userId);
   run('DELETE FROM exam_results WHERE user_id = ?', userId);
   run('DELETE FROM exam_requests WHERE user_id = ?', userId);
@@ -109,6 +109,7 @@ function restore(userId, d) {
     const doses = require('./doses');
     doses.importDoses(userId, d.doses || [], (id) => m('med', id));
     doses.importFamily(userId, d.familia);
+    if (d.controle_doses) doses.setEnabled(userId, true);
     for (const r of d.agenda || []) insert('events', userId, { ...r, consultation_id: m('con', r.consultation_id), exam_id: m('ex', r.exam_id), medication_id: m('med', r.medication_id) }, keepDates(fieldsOf(M.events)), M.events.encrypted);
   });
   const s = summary(d);

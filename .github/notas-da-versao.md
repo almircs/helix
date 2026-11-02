@@ -17,8 +17,9 @@ Não sabe qual é o seu Mac? Menu  → **Sobre este Mac**: se aparecer "Chip App
 
 ## Novidades da 1.11.0
 
-- **Modo sênior:** tela com letra grande e poucos botões. Mostra os remédios do dia com o botão **Tomei**, o próximo compromisso e atalhos para **ligar** ou **pedir ajuda** a um familiar. Liga em **Configurações → Modo sênior** e vale só para aquele aparelho (o celular da pessoa abre direto nele).
-- **Familiar que acompanha:** depois de tocar em Tomei, um botão abre o WhatsApp com a mensagem pronta para o familiar. Nada é enviado sozinho. Por padrão, a mensagem diz só o horário, sem o nome do remédio.
+- **Modo sênior:** tela com letra grande e botões discretos. Mostra os remédios do dia e seus horários, o próximo compromisso e atalhos para **ligar** ou **pedir ajuda** a um familiar. Liga em **Configurações → Modo sênior** e vale só para aquele aparelho (o celular da pessoa abre direto nele).
+- **Controle de doses (botão Tomei)**, opcional e desligado de início: liga em Configurações → Modo sênior.
+- **Familiar que acompanha:** com o controle de doses ligado, depois de tocar em Tomei um botão abre o WhatsApp com a mensagem pronta para o familiar. Nada é enviado sozinho. Por padrão, a mensagem diz só o horário, sem o nome do remédio.
 - **Doses de hoje** em Medicamentos, com Tomei / Não tomei, e resumo dos últimos dias para enviar à família.
 - Lembrete de novo quando o remédio fica 30 minutos sem anotação.
 

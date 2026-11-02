@@ -29,6 +29,16 @@ function medsFor(userId, date) {
     .filter((m) => activeOn(m, date));
 }
 
+// Controle de doses (botão Tomei): desligado até a pessoa habilitar em Configurações → Modo sênior
+const ENABLED_KEY = 'doses_ativo';
+const isEnabled = (userId) => get('SELECT value FROM settings WHERE user_id = ? AND key = ?', userId, ENABLED_KEY)?.value === '1';
+function setEnabled(userId, on) {
+  if (on) run(`INSERT INTO settings (user_id, key, value) VALUES (?,?,'1') ON CONFLICT (user_id, key) DO UPDATE SET value = '1'`, userId, ENABLED_KEY);
+  else run('DELETE FROM settings WHERE user_id = ? AND key = ?', userId, ENABLED_KEY);
+  audit.log(userId, 'perfil', userId, on ? 'controle de doses ligado' : 'controle de doses desligado', null, null);
+  return { enabled: !!on };
+}
+
 /** Doses de um dia, em ordem de horário, com o que já foi anotado. */
 function day(userId, date = localDate()) {
   if (!ISO.test(date)) throw new HttpError(400, 'Data inválida');
@@ -52,7 +62,7 @@ function day(userId, date = localDate()) {
     }
   }
   doses.sort((a, b) => a.time.localeCompare(b.time) || a.name.localeCompare(b.name));
-  return { date, doses, total: doses.length, taken: doses.filter((d) => d.status === 'tomado').length,
+  return { date, enabled: isEnabled(userId), doses, total: doses.length, taken: doses.filter((d) => d.status === 'tomado').length,
     skipped: doses.filter((d) => d.status === 'pulado').length };
 }
 
@@ -122,4 +132,4 @@ function importFamily(userId, f) {
   if (f && (f.name || f.phone)) { try { setFamily(userId, f); } catch { /* telefone inválido no arquivo: ignora */ } }
 }
 
-module.exports = { medTimes, day, mark, history, getFamily, setFamily, exportDoses, importDoses, importFamily, LATE_MIN };
+module.exports = { isEnabled, setEnabled, medTimes, day, mark, history, getFamily, setFamily, exportDoses, importDoses, importFamily, LATE_MIN };

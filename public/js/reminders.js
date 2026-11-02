@@ -28,6 +28,7 @@ async function check() {
 async function checkDoses() {
   let day;
   try { day = await api('/doses'); } catch { return; }
+  if (!day.enabled) return; // controle de doses desligado: sem avisos de dose
   for (const d of day.doses) {
     if (d.status || !d.due) continue;
     const key = `dose-${d.medication_id}-${d.date}-${d.time}-${d.late ? 'atraso' : 'hora'}`;

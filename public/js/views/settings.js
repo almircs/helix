@@ -25,8 +25,9 @@ export async function render({ params, query }) {
 
 // Modo sênior: liga neste aparelho e cadastra o familiar que acompanha
 async function seniorView(head) {
-  const [fam, hist] = await Promise.all([api('/family'), api('/doses/history?days=7')]);
+  const [fam, hist, today] = await Promise.all([api('/family'), api('/doses/history?days=7'), api('/doses')]);
   const on = isSenior();
+  const track = today.enabled;
   const days = hist.filter((h) => h.total);
   const WD = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'];
   return view(html`${head}
@@ -35,12 +36,15 @@ async function seniorView(head) {
       <p class="muted">Tela com letra grande e poucos botões: os remédios de hoje com o botão <b>Tomei</b>, o próximo compromisso e atalhos para ligar ou pedir ajuda a um familiar.
         Vale só para <b>este ${window.HELYX_MOBILE ? 'aparelho' : 'computador'}</b>: no celular da pessoa ele abre direto no modo sênior; no seu, o Helyx continua completo.</p>
       <div class="seg" style="margin:.6rem 0"><button class="${on ? 'on' : ''}" data-m="1">Abrir sempre no modo sênior</button><button class="${on ? '' : 'on'}" data-m="0">Helyx completo</button></div>
-      <a class="btn" href="#/simples">Ver a tela do modo sênior</a>
+      <a class="btn small" href="#/simples">Ver a tela do modo sênior</a>
+      <h3 style="margin:1.2rem 0 .3rem">Controle de doses (botão Tomei)</h3>
+      <p class="muted small" style="margin:0">Ligado: cada remédio do dia ganha os botões <b>Tomei</b> e <b>Não tomei</b>, com aviso quando a dose fica 30 minutos sem anotação e o resumo dos últimos dias. Desligado: o modo sênior mostra só os horários.</p>
+      <div class="seg" style="margin:.6rem 0"><button class="${track ? 'on' : ''}" data-d="1">Ligado</button><button class="${track ? '' : 'on'}" data-d="0">Desligado</button></div>
       <p class="small muted" style="margin-top:.6rem">Os horários vêm do campo <b>Horário(s)</b> de cada medicamento em uso (ex.: 08:00 e 20:00). Remédios semanais ou mensais não entram na lista do dia.</p>
     </div>
     <form class="card" id="famForm">
       <h2>Familiar que acompanha</h2>
-      <p class="muted small">Depois de tocar em <b>Tomei</b>, aparece o botão para avisar este familiar pelo WhatsApp, com a mensagem pronta. Nada é enviado sozinho: a mensagem só sai quando a pessoa toca e confirma no WhatsApp.</p>
+      <p class="muted small">No modo sênior aparecem os atalhos <b>Ligar</b> e <b>Pedir ajuda</b> para este familiar. Com o controle de doses ligado, depois de tocar em <b>Tomei</b> aparece também o botão para avisá-lo pelo WhatsApp. Nada é enviado sozinho: a mensagem só sai quando a pessoa toca e confirma no WhatsApp.</p>
       <div class="form-grid">${fields([
         { name: 'name', label: 'Nome', placeholder: 'Ex.: Ana (filha)' },
         { name: 'phone', label: 'WhatsApp', type: 'tel', placeholder: 'DDD + número, ex.: 31 99999-8888' },
@@ -49,7 +53,7 @@ async function seniorView(head) {
       <p class="small muted">Sem marcar a opção acima, a mensagem diz só o horário (ex.: “tomou o remédio das 08:00”).</p>
       <div class="form-actions" style="position:static;background:none"><button class="btn primary">Salvar familiar</button>${fam.phone ? html`<button type="button" class="btn danger" id="famDel">Remover</button>` : ''}</div>
     </form>
-    <div class="card">
+    ${track ? html`<div class="card">
       <h2>Últimos dias</h2>
       ${days.length ? html`<ul class="list">${days.map((h) => html`<li><div class="grow"><div class="title">${WD[new Date(h.date + 'T12:00:00').getDay()]} ${fmtDate(h.date).slice(0, 5)}</div>
           <div class="meta">${h.taken} de ${h.total} tomados${h.skipped ? ` · ${h.skipped} não tomado(s)` : ''}${h.missing ? ` · ${h.missing} sem anotação` : ''}</div></div>
@@ -57,8 +61,11 @@ async function seniorView(head) {
         ${fam.phone ? html`<a class="btn" target="_blank" rel="noopener" href="${waLink(fam.phone, weekMessage(fam, hist))}">Enviar resumo para ${fam.name || 'o familiar'} no WhatsApp</a>` : ''}`
       : html`<p class="empty">O resumo começa no primeiro dia em que alguém tocar em <b>Tomei</b> ou <b>Não tomei</b>.</p>`}
       <p class="small muted" style="margin-top:.6rem">“Sem anotação” quer dizer que ninguém tocou em Tomei ou Não tomei — não significa que a dose foi perdida.</p>
-    </div>`, (el) => {
+    </div>` : ''}`, (el) => {
     el.querySelectorAll('[data-m]').forEach((b) => b.onclick = () => { setSenior(b.dataset.m === '1'); toast(b.dataset.m === '1' ? 'O Helyx vai abrir no modo sênior neste aparelho' : 'O Helyx vai abrir completo'); go('#/configuracoes/senior'); });
+    el.querySelectorAll('[data-d]').forEach((b) => b.onclick = async () => {
+      try { await api('/doses/settings', { method: 'PUT', body: { enabled: b.dataset.d === '1' } }); toast(b.dataset.d === '1' ? 'Controle de doses ligado' : 'Controle de doses desligado'); go('#/configuracoes/senior'); } catch (err) { toast(err.message, true); }
+    });
     el.querySelector('#famForm').onsubmit = async (e) => {
       e.preventDefault();
       try { await api('/family', { method: 'PUT', body: readForm(e.target) }); toast('Familiar salvo'); go('#/configuracoes/senior'); } catch (err) { toast(err.message, true); }

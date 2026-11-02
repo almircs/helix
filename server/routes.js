@@ -132,6 +132,7 @@ r.delete('/api/medications/:id', A, (ctx) => medsSvc.removeMedication(uid(ctx), 
 const doses = require('./services/doses');
 r.get('/api/doses', A, (ctx) => doses.day(uid(ctx), ctx.query.date || undefined));
 r.post('/api/doses', A, (ctx) => doses.mark(uid(ctx), ctx.body));
+r.put('/api/doses/settings', A, (ctx) => doses.setEnabled(uid(ctx), !!ctx.body.enabled));
 r.get('/api/doses/history', A, (ctx) => doses.history(uid(ctx), ctx.query.days));
 r.get('/api/family', A, (ctx) => doses.getFamily(uid(ctx)));
 r.put('/api/family', A, (ctx) => doses.setFamily(uid(ctx), ctx.body));

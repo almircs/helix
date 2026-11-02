@@ -53,7 +53,15 @@ export async function render() {
   // a dose "da vez": a primeira atrasada ou já na hora; senão a próxima do dia
   const current = day.doses.find((d) => d.due) || day.doses.find((d) => !d.status) || null;
   const left = day.doses.filter((d) => !d.status).length;
+  const track = day.enabled;
+  const nowHM = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+  const upcoming = day.doses.find((d) => d.time >= nowHM) || null;
 
+  const plainRow = (d) => html`<li class="sr-dose sr-plain ${d === upcoming ? 'proximo' : ''}">
+    <span class="sr-time">${d.time}</span>
+    <span class="sr-name"><b>${medLabel(d)}</b>${d.presentation ? html`<small>${d.presentation}</small>` : ''}</span>
+    <small class="sr-state">${d === upcoming ? 'Próximo' : d.time < nowHM ? 'Já passou' : ''}</small>
+  </li>`;
   const doseRow = (d) => html`<li class="sr-dose ${d.status || (d.late ? 'atrasado' : '')}">
     <span class="sr-time">${d.time}</span>
     <span class="sr-name"><b>${medLabel(d)}</b>${d.presentation ? html`<small>${d.presentation}</small>` : ''}
@@ -71,6 +79,8 @@ export async function render() {
 
     ${day.total === 0 ? html`<section class="sr-card"><h2>Nenhum remédio com horário</h2>
         <p>Peça para alguém cadastrar os remédios com o horário (ex.: 08:00 e 20:00) em Medicamentos.</p></section>`
+    : !track ? (upcoming ? html`<section class="sr-card sr-now"><span class="sr-label">Próximo remédio às ${upcoming.time}</span>
+        <h2>${medLabel(upcoming)}</h2>${upcoming.presentation ? html`<p>${upcoming.presentation}</p>` : ''}</section>` : '')
     : current ? html`<section class="sr-card sr-now ${current.late ? 'atrasado' : ''}" aria-live="polite">
         <span class="sr-label">${current.late ? `Atrasado — era às ${current.time}` : current.due ? 'Está na hora' : `Próximo remédio às ${current.time}`}</span>
         <h2>${medLabel(current)}</h2>
@@ -82,16 +92,16 @@ export async function render() {
         ${hasFam ? html`<a class="sr-big" target="_blank" rel="noopener" href="${waLink(fam.phone, `✅ ${fam.my_name || 'Eu'} tomou todos os remédios de hoje (${day.taken} de ${day.total}). — Helyx`)}">Avisar ${famName}</a>` : ''}</section>`}
 
     <section class="sr-card">
-      <h2>Remédios de hoje <small>${day.total ? `${day.taken} de ${day.total} tomados${left ? ` · faltam ${left}` : ''}` : ''}</small></h2>
-      <ul class="sr-list">${day.doses.map(doseRow)}</ul>
+      <h2>Remédios de hoje <small>${track && day.total ? `${day.taken} de ${day.total} tomados${left ? ` · faltam ${left}` : ''}` : ''}</small></h2>
+      <ul class="sr-list">${day.doses.map(track ? doseRow : plainRow)}</ul>
     </section>
 
     ${next ? html`<section class="sr-card sr-next"><span class="sr-label">Próximo compromisso</span>
       <h2>${next.when}</h2><p>${next.title}</p></section>` : ''}
 
     ${hasFam ? html`<section class="sr-family">
-      <a class="sr-btn" href="tel:+${fam.phone.length <= 11 ? '55' + fam.phone : fam.phone}">📞 Ligar para ${famName}</a>
-      <a class="sr-btn" target="_blank" rel="noopener" href="${waLink(fam.phone, `${fam.my_name || 'Eu'} está pedindo ajuda pelo Helyx. Pode me ligar?`)}">🆘 Pedir ajuda</a>
+      <a class="sr-btn" href="tel:+${fam.phone.length <= 11 ? '55' + fam.phone : fam.phone}">Ligar para ${famName}</a>
+      <a class="sr-btn" target="_blank" rel="noopener" href="${waLink(fam.phone, `${fam.my_name || 'Eu'} está pedindo ajuda pelo Helyx. Pode me ligar?`)}">Pedir ajuda</a>
     </section>` : html`<p class="sr-hint">Para avisar um familiar pelo WhatsApp, cadastre o contato em Configurações → Modo sênior.</p>`}
 
     <div class="sr-exit"><a href="#/configuracoes/senior">Ajustes</a> · <a href="#/" data-exit>Sair do modo sênior</a></div>
