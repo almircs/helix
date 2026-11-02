@@ -1,8 +1,9 @@
 import { api, html, icon, fields, readForm, options, toast, view, go, cached, fmtDate, fmtNum, today, statusTag, sitTag, confirmDialog } from '../lib.js';
 import { lineChart } from '../chart.js';
+import { waLink, doseMessage } from '../doses.js';
 
 export async function list({ query }) {
-  const [meds, day] = await Promise.all([api('/medications'), api('/doses').catch(() => ({ doses: [] }))]);
+  const [meds, day, fam] = await Promise.all([api('/medications'), api('/doses').catch(() => ({ doses: [] })), api('/family').catch(() => ({}))]);
   const st = query.status || 'ativo';
   const shown = meds.filter((m) => st === 'todos' || m.status === st);
   const count = (s) => meds.filter((m) => m.status === s).length;
@@ -10,10 +11,10 @@ export async function list({ query }) {
     <div class="page-head"><h1>Medicamentos</h1><div class="actions"><a class="btn" href="#/importar?para=receita&voltar=${encodeURIComponent('#/medicamentos')}">${icon('documentos')}Ler receita</a><a class="btn primary" href="#/medicamentos/novo">${icon('plus')}Novo medicamento</a></div></div>
     <div class="chips" style="margin-bottom:1rem">${[['ativo', `Em uso (${count('ativo')})`], ['suspenso', `Suspensos (${count('suspenso')})`], ['encerrado', `Encerrados (${count('encerrado')})`], ['todos', 'Todos']].map(([v, l]) => html`<button class="chip ${st === v ? 'on' : ''}" data-s="${v}">${l}</button>`)}</div>
     ${st === 'ativo' && day.enabled && day.doses.length ? html`<div class="card" style="margin-bottom:1rem">
-      <h2>Doses de hoje <small class="muted">${day.taken} de ${day.total} tomadas</small> <a class="btn small" href="#/simples" style="float:right">Modo sênior</a></h2>
+      <h2>Doses de hoje <small class="muted">${day.taken} de ${day.total} tomadas</small> <a class="small" href="#/configuracoes/doses" style="float:right;font-weight:500">Ajustes</a></h2>
       <ul class="list">${day.doses.map((d) => html`<li><div class="grow"><div class="title">${d.time} · ${d.name} ${d.dosage || ''}</div>
         <div class="meta">${d.status === 'tomado' ? `Tomado às ${String(d.at).slice(11, 16)}` : d.status === 'pulado' ? 'Não tomado' : d.late ? 'Atrasado' : d.due ? 'Está na hora' : 'Mais tarde'}</div></div>
-        ${d.status ? html`<button class="btn small ghost" data-dose="${d.medication_id}|${d.time}|">Desfazer</button>`
+        ${d.status ? html`${fam.phone ? html`<a class="btn small ghost" target="_blank" rel="noopener" href="${waLink(fam.phone, doseMessage(fam, d))}" title="Abre o WhatsApp com a mensagem pronta">Avisar ${fam.name || 'familiar'}</a>` : ''}<button class="btn small ghost" data-dose="${d.medication_id}|${d.time}|">Desfazer</button>`
           : html`<button class="btn small primary" data-dose="${d.medication_id}|${d.time}|tomado">Tomei</button><button class="btn small" data-dose="${d.medication_id}|${d.time}|pulado">Não tomei</button>`}</li>`)}</ul></div>` : ''}
     <div class="card"><ul class="list">${shown.map((m) => html`<li><a class="row-link grow" href="#/medicamentos/${m.id}">
       <div class="title">${m.name} ${m.dosage || ''}</div>

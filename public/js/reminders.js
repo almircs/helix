@@ -1,7 +1,6 @@
 // Lembretes enquanto o sistema está aberto: notificação do navegador (se permitida) e aviso na tela.
 // O módulo de notificações em segundo plano (e-mail/celular) entra na etapa 3.
-import { api, today, addDays, toast, go } from './lib.js';
-import { isSenior } from './views/senior.js';
+import { api, today, addDays, toast } from './lib.js';
 
 const shown = new Set();
 const DEFAULT_MIN = { consulta: 120, retorno: 120, exame: 60, procedimento: 120, vacina: 60, medicamento: 0, receita: 0, outro: 30 };
@@ -38,8 +37,6 @@ async function checkDoses() {
     const msg = d.late ? `O remédio das ${d.time} ainda não foi anotado` : `Hora do remédio das ${d.time}`;
     toast('Lembrete: ' + msg);
     try { if ('Notification' in window && Notification.permission === 'granted') new Notification('Helyx', { body: msg, icon: '/icon.png' }); } catch { /* sem suporte */ }
-    if (isSenior() && !location.hash.startsWith('#/simples')) go('#/simples');
-    else if (location.hash.startsWith('#/simples') && document.getElementById('srSent')?.hidden !== false) window.dispatchEvent(new HashChangeEvent('hashchange'));
   }
 }
 

@@ -1,4 +1,4 @@
-// Modo sênior: doses do dia a partir dos horários, "tomei"/"não tomei", resumo, familiar e backup.
+// Controle de doses: doses do dia a partir dos horários, "tomei"/"não tomei", resumo, familiar e backup.
 const { test, after } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -19,7 +19,7 @@ const call = async (method, url, body) => {
 };
 const day = (n) => { const d = new Date(); d.setDate(d.getDate() + n); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
 
-test('modo sênior: doses, família e backup', async () => {
+test('controle de doses, família e backup', async () => {
   server = spawn(process.execPath, ['--disable-warning=ExperimentalWarning', path.join(__dirname, '..', 'server', 'index.js')],
     { env: { ...process.env, PORT, SAUDE_DATA_DIR: DATA, SAUDE_EXIGIR_LOGIN: '0' }, stdio: 'pipe' });
   for (let i = 0; i < 300; i++) { try { await fetch(`http://127.0.0.1:${PORT}/`); break; } catch { await new Promise((r) => setTimeout(r, 100)); } }

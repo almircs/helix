@@ -1,7 +1,7 @@
-import { isSenior, setSenior, waLink, weekMessage } from './senior.js';
+import { waLink, weekMessage } from '../doses.js';
 import { api, html, icon, fields, readForm, toast, view, go, invalidate, fmtDate, confirmDialog, askConfirm, showRecoveryCode, capsLockHint } from '../lib.js';
 
-const TABS = [['perfil', 'Meu perfil'], ['medicos', 'Médicos'], ['backup', 'Backup'], ['seguranca', 'Segurança e dados'], ['aparencia', 'Aparência'], ['senior', 'Modo sênior']];
+const TABS = [['perfil', 'Meu perfil'], ['medicos', 'Médicos'], ['backup', 'Backup'], ['seguranca', 'Segurança e dados'], ['aparencia', 'Aparência'], ['doses', 'Controle de doses']];
 const ENTITY = { usuario: 'Conta', sessao: 'Acesso', perfil: 'Perfil', medico: 'Médico', consulta: 'Consulta', exame: 'Exame', marcador: 'Exame (catálogo)', medicamento: 'Medicamento', medicao: 'Medição', agenda: 'Agenda', dados: 'Dados', ia: 'IA' };
 
 export function applyTheme() {
@@ -16,35 +16,28 @@ export async function render({ params, query }) {
   if (tab === 'medicos') return doctors(head, query);
   if (tab === 'seguranca') return security(head);
   if (tab === 'backup') return backupView(head);
-  if (tab === 'senior') return seniorView(head);
+  if (tab === 'doses') return dosesView(head);
   let cur = 'auto'; try { cur = localStorage.getItem('tema') || 'auto'; } catch { /* */ }
   return view(html`${head}<div class="card"><h2>Tema</h2><div class="seg">${[['auto', 'Escuro (padrão)'], ['light', 'Claro']].map(([v, l]) => html`<button class="${cur === v ? 'on' : ''}" data-t="${v}">${l}</button>`)}</div></div>`, (el) => {
     el.querySelectorAll('[data-t]').forEach((b) => b.onclick = () => { try { localStorage.setItem('tema', b.dataset.t); } catch { /* */ } applyTheme(); go('#/configuracoes/aparencia'); });
   });
 }
 
-// Modo sênior: liga neste aparelho e cadastra o familiar que acompanha
-async function seniorView(head) {
+// Controle de doses (botão Tomei) e familiar que acompanha
+async function dosesView(head) {
   const [fam, hist, today] = await Promise.all([api('/family'), api('/doses/history?days=7'), api('/doses')]);
-  const on = isSenior();
   const track = today.enabled;
   const days = hist.filter((h) => h.total);
   const WD = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'];
   return view(html`${head}
     <div class="card">
-      <h2>Modo sênior</h2>
-      <p class="muted">Tela com letra grande e poucos botões: os remédios de hoje com o botão <b>Tomei</b>, o próximo compromisso e atalhos para ligar ou pedir ajuda a um familiar.
-        Vale só para <b>este ${window.HELYX_MOBILE ? 'aparelho' : 'computador'}</b>: no celular da pessoa ele abre direto no modo sênior; no seu, o Helyx continua completo.</p>
-      <div class="seg" style="margin:.6rem 0"><button class="${on ? 'on' : ''}" data-m="1">Abrir sempre no modo sênior</button><button class="${on ? '' : 'on'}" data-m="0">Helyx completo</button></div>
-      <a class="btn small" href="#/simples">Ver a tela do modo sênior</a>
-      <h3 style="margin:1.2rem 0 .3rem">Controle de doses (botão Tomei)</h3>
-      <p class="muted small" style="margin:0">Ligado: cada remédio do dia ganha os botões <b>Tomei</b> e <b>Não tomei</b>, com aviso quando a dose fica 30 minutos sem anotação e o resumo dos últimos dias. Desligado: o modo sênior mostra só os horários.</p>
-      <div class="seg" style="margin:.6rem 0"><button class="${track ? 'on' : ''}" data-d="1">Ligado</button><button class="${track ? '' : 'on'}" data-d="0">Desligado</button></div>
-      <p class="small muted" style="margin-top:.6rem">Os horários vêm do campo <b>Horário(s)</b> de cada medicamento em uso (ex.: 08:00 e 20:00). Remédios semanais ou mensais não entram na lista do dia.</p>
+      <h2>Controle de doses</h2>
+      <p class="muted small">Ligado, a página Medicamentos mostra as doses de hoje com <b>Tomei</b> e <b>Não tomei</b>, e o Helyx avisa quando uma dose fica 30 minutos sem anotação. Os horários vêm do campo <b>Horário(s)</b> de cada remédio em uso (ex.: 08:00 e 20:00).</p>
+      <div class="seg" style="margin:.6rem 0 0"><button class="${track ? 'on' : ''}" data-d="1">Ligado</button><button class="${track ? '' : 'on'}" data-d="0">Desligado</button></div>
     </div>
     <form class="card" id="famForm">
       <h2>Familiar que acompanha</h2>
-      <p class="muted small">No modo sênior aparecem os atalhos <b>Ligar</b> e <b>Pedir ajuda</b> para este familiar. Com o controle de doses ligado, depois de tocar em <b>Tomei</b> aparece também o botão para avisá-lo pelo WhatsApp. Nada é enviado sozinho: a mensagem só sai quando a pessoa toca e confirma no WhatsApp.</p>
+      <p class="muted small">Depois de anotar uma dose, aparece o link <b>Avisar</b> ao lado dela, que abre o WhatsApp com a mensagem pronta para este familiar. Nada é enviado sozinho: a mensagem só sai quando você confirma no WhatsApp.</p>
       <div class="form-grid">${fields([
         { name: 'name', label: 'Nome', placeholder: 'Ex.: Ana (filha)' },
         { name: 'phone', label: 'WhatsApp', type: 'tel', placeholder: 'DDD + número, ex.: 31 99999-8888' },
@@ -62,16 +55,15 @@ async function seniorView(head) {
       : html`<p class="empty">O resumo começa no primeiro dia em que alguém tocar em <b>Tomei</b> ou <b>Não tomei</b>.</p>`}
       <p class="small muted" style="margin-top:.6rem">“Sem anotação” quer dizer que ninguém tocou em Tomei ou Não tomei — não significa que a dose foi perdida.</p>
     </div>` : ''}`, (el) => {
-    el.querySelectorAll('[data-m]').forEach((b) => b.onclick = () => { setSenior(b.dataset.m === '1'); toast(b.dataset.m === '1' ? 'O Helyx vai abrir no modo sênior neste aparelho' : 'O Helyx vai abrir completo'); go('#/configuracoes/senior'); });
     el.querySelectorAll('[data-d]').forEach((b) => b.onclick = async () => {
-      try { await api('/doses/settings', { method: 'PUT', body: { enabled: b.dataset.d === '1' } }); toast(b.dataset.d === '1' ? 'Controle de doses ligado' : 'Controle de doses desligado'); go('#/configuracoes/senior'); } catch (err) { toast(err.message, true); }
+      try { await api('/doses/settings', { method: 'PUT', body: { enabled: b.dataset.d === '1' } }); toast(b.dataset.d === '1' ? 'Controle de doses ligado' : 'Controle de doses desligado'); go('#/configuracoes/doses'); } catch (err) { toast(err.message, true); }
     });
     el.querySelector('#famForm').onsubmit = async (e) => {
       e.preventDefault();
-      try { await api('/family', { method: 'PUT', body: readForm(e.target) }); toast('Familiar salvo'); go('#/configuracoes/senior'); } catch (err) { toast(err.message, true); }
+      try { await api('/family', { method: 'PUT', body: readForm(e.target) }); toast('Familiar salvo'); go('#/configuracoes/doses'); } catch (err) { toast(err.message, true); }
     };
     const del = el.querySelector('#famDel');
-    if (del) del.onclick = async () => { await api('/family', { method: 'PUT', body: {} }); toast('Familiar removido'); go('#/configuracoes/senior'); };
+    if (del) del.onclick = async () => { await api('/family', { method: 'PUT', body: {} }); toast('Familiar removido'); go('#/configuracoes/doses'); };
   });
 }
 
