@@ -15,7 +15,7 @@ export async function list({ query }) {
       <ul class="list">${day.doses.map((d) => html`<li><div class="grow"><div class="title">${d.time} · ${d.name} ${d.dosage || ''}</div>
         <div class="meta">${d.status === 'tomado' ? `Tomado às ${String(d.at).slice(11, 16)}` : d.status === 'pulado' ? 'Não tomado' : d.late ? 'Atrasado' : d.due ? 'Está na hora' : 'Mais tarde'}</div></div>
         ${d.status ? html`${fam.phone ? html`<a class="btn small ghost" target="_blank" rel="noopener" href="${waLink(fam.phone, doseMessage(fam, d))}" title="Abre o WhatsApp com a mensagem pronta">Avisar ${fam.name || 'familiar'}</a>` : ''}<button class="btn small ghost" data-dose="${d.medication_id}|${d.time}|">Desfazer</button>`
-          : html`<button class="btn small primary" data-dose="${d.medication_id}|${d.time}|tomado">Tomei</button><button class="btn small" data-dose="${d.medication_id}|${d.time}|pulado">Não tomei</button>`}</li>`)}</ul></div>` : ''}
+          : html`<button class="btn small" data-dose="${d.medication_id}|${d.time}|tomado">Tomei</button><button class="btn small ghost" data-dose="${d.medication_id}|${d.time}|pulado">Não tomei</button>`}</li>`)}</ul></div>` : ''}
     <div class="card"><ul class="list">${shown.map((m) => html`<li><a class="row-link grow" href="#/medicamentos/${m.id}">
       <div class="title">${m.name} ${m.dosage || ''}</div>
       <div class="meta">${[m.active_ingredient, m.frequency, m.schedule, m.start_date ? 'desde ' + fmtDate(m.start_date) : null].filter(Boolean).join(' · ')}</div>
