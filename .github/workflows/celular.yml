@@ -1,0 +1,28 @@
+name: Montar Helyx para celular
+
+# Só manual (aba Actions). Monta a versão para celular (mobile/build.js) e deixa o pacote
+# no Release "celular" deste repositório, de onde ele é copiado para o repositório helyx-celular.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  montar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install --ignore-scripts
+      - name: Montar
+        run: node mobile/build.js --out dist-celular
+      - name: Publicar o pacote no Release "celular"
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cd dist-celular && zip -qr ../helyx-celular.zip . && cd ..
+          gh release view celular >/dev/null 2>&1 || gh release create celular --prerelease --title "Pacote do Helyx para celular" --notes "Gerado automaticamente; usado para atualizar o repositório helyx-celular." --target "$GITHUB_SHA"
+          gh release upload celular helyx-celular.zip --clobber
