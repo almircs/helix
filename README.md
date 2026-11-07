@@ -52,3 +52,9 @@ Para dados fictícios de demonstração, rode `npm run demo` numa pasta de dados
 - `npm run dist:win` / `npm run dist:mac` — gera instaladores localmente
 - A cada envio para a branch `main`, o GitHub Actions testa, gera os instaladores e publica em *Releases* (`.github/workflows/instaladores.yml`). A versão publicada vem do campo `version` do `package.json`.
 - Arquitetura, banco, fluxo e plano de etapas: [docs/ARQUITETURA.md](docs/ARQUITETURA.md)
+
+## Direitos autorais
+
+© 2026 Carlos Almir. Todos os direitos reservados.
+
+O código está publicado para consulta. Não é permitido copiar, modificar, redistribuir ou usar comercialmente sem autorização.
