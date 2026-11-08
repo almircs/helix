@@ -5,6 +5,13 @@ tudo interligado, guardado no seu computador e protegido por senha e criptografi
 
 > O sistema organiza e acompanha informações. **Não faz diagnóstico** e não substitui o médico.
 
+### Remédios do dia e acompanhamento da família
+
+O Helyx mostra as doses de cada dia com os botões **Tomei** e **Não tomei** e avisa quando uma dose fica sem
+anotação. Depois de anotar, um toque em **Avisar** abre o WhatsApp com a mensagem pronta para o familiar ou
+cuidador cadastrado, e dá para enviar também um resumo da semana. É um apoio prático no acompanhamento de
+pessoas idosas. Nada sai sozinho: a mensagem só é enviada quando você confirma no WhatsApp.
+
 ## Como instalar
 
 Baixe o instalador na página **Releases** do repositório:
