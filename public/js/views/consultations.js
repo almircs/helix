@@ -6,7 +6,8 @@ export async function list({ query }) {
   const items = await api('/consultations');
   const t = today();
   const upcoming = items.filter((c) => c.status === 'agendada' && c.date >= t).reverse();
-  const past = items.filter((c) => !(c.status === 'agendada' && c.date >= t));
+  const toSchedule = items.filter((c) => c.status === 'a_agendar').reverse();
+  const past = items.filter((c) => !(c.status === 'agendada' && c.date >= t) && c.status !== 'a_agendar');
   const specs = [...new Set(items.map((c) => c.specialty).filter(Boolean))].sort();
   const spec = query.esp || '';
   const row = (c) => html`<li><a class="row-link grow" href="#/consultas/${c.id}">
@@ -15,6 +16,7 @@ export async function list({ query }) {
       <div>${c.requests_total ? html`<span class="tag ${c.requests_pending ? 'pendente' : 'realizado'}">${c.requests_total - c.requests_pending}/${c.requests_total} exames feitos</span>` : ''} ${c.status !== 'realizada' ? statusTag(c.status) : ''}</div></li>`;
   return view(html`
     <div class="page-head"><h1>Consultas</h1><div class="actions"><a class="btn" href="#/importar?para=consulta&voltar=${encodeURIComponent('#/consultas')}">${icon('documentos')}Ler pedido ou relatório</a><a class="btn primary" href="#/consultas/nova">${icon('plus')}Nova consulta</a></div></div>
+    ${toSchedule.length ? html`<div class="card" style="margin-bottom:1rem"><h2>A agendar</h2><ul class="list">${toSchedule.map(row)}</ul></div>` : ''}
     ${upcoming.length ? html`<div class="card" style="margin-bottom:1rem"><h2>Agendadas</h2><ul class="list">${upcoming.map(row)}</ul></div>` : ''}
     <div class="card"><h2>Histórico</h2>
       ${specs.length > 1 ? html`<div class="chips" style="margin-bottom:.5rem"><button class="chip ${!spec ? 'on' : ''}" data-e="">Todas</button>${specs.map((s) => html`<button class="chip ${spec === s ? 'on' : ''}" data-e="${s}">${s}</button>`)}</div>` : ''}
@@ -47,8 +49,8 @@ export async function form({ params, query }) {
     <form id="cform">
       <fieldset><legend>Quando e com quem</legend><div class="form-grid">
         ${fields([
-          { name: 'date', label: 'Data', type: 'date', required: true }, { name: 'time', label: 'Horário', type: 'time' },
-          { name: 'status', label: 'Situação', type: 'select', options: [['realizada', 'Realizada'], ['agendada', 'Agendada'], ['cancelada', 'Cancelada']] },
+          { name: 'date', label: 'Data', type: 'date', required: true, hint: 'se for A agendar, a data prevista' }, { name: 'time', label: 'Horário', type: 'time' },
+          { name: 'status', label: 'Situação', type: 'select', options: [['realizada', 'Realizada'], ['agendada', 'Agendada'], ['a_agendar', 'A agendar'], ['cancelada', 'Cancelada']] },
           { name: 'specialty', label: 'Especialidade', placeholder: 'Ex.: Nefrologia' },
           { name: 'doctor_id', label: 'Médico', type: 'select', hint: html`<a href="#/configuracoes/medicos">cadastrar médico</a>`, options: options(doctors, 'id', (d) => `${d.name}${d.specialty ? ' — ' + d.specialty : ''}`, '— não informado —') },
           { name: 'location', label: 'Local' },
@@ -102,7 +104,7 @@ export async function detail({ params }) {
   return view(html`
     <a class="back" href="#/consultas">${icon('back')}Consultas</a>
     <div class="page-head"><div><h1>${c.is_return ? 'Retorno' : 'Consulta'}${c.specialty ? ' — ' + c.specialty : ''}</h1>
-      <p class="muted" style="margin:0">${fmtLongDate(c.date)}${c.time ? ' às ' + c.time : ''} ${c.status !== 'realizada' ? statusTag(c.status) : ''} ${c.status === 'agendada' ? '(' + relDay(c.date) + ')' : ''}</p></div>
+      <p class="muted" style="margin:0">${fmtLongDate(c.date)}${c.time ? ' às ' + c.time : ''} ${c.status !== 'realizada' ? statusTag(c.status) : ''} ${c.status === 'agendada' ? '(' + relDay(c.date) + ')' : c.status === 'a_agendar' ? '(data prevista)' : ''}</p></div>
       <div class="actions"><a class="btn" href="#/importar?para=pedido&consulta=${c.id}&voltar=${encodeURIComponent('#/consultas/' + c.id)}">${icon('documentos')}Ler arquivo</a><a class="btn" href="#/consultas/${c.id}/editar">${icon('edit')}Editar</a><a class="btn" href="#/consultas/nova?retorno=${c.id}">${icon('plus')}Agendar retorno</a><button class="btn danger" id="del">${icon('trash')}Excluir</button></div></div>
 
     <div class="card" style="margin-bottom:1rem"><h2>Sequência desta consulta</h2>
@@ -112,7 +114,7 @@ export async function detail({ params }) {
         <div class="step"><b>Exames pedidos</b>${c.requests.length ? `${c.requests.length - pending.length} de ${c.requests.length} realizados` : 'nenhum'}</div><span class="arrow">→</span>
         <div class="step"><b>Resultados</b>${c.exams.length ? c.exams.map((e) => fmtDate(e.collection_date)).join(', ') : '—'}</div><span class="arrow">→</span>
         <div class="step"><b>Medicamentos</b>${c.medications.length + c.medication_changes.length ? [...c.medications.map((m) => `${m.name} (novo)`), ...c.medication_changes.map((m) => `${m.name} ${m.dosage || ''} (alterado)`)].join(', ') : '—'}</div>
-        ${c.returns.length ? html`<span class="arrow">→</span>${c.returns.map((r) => html`<a class="step" href="#/consultas/${r.id}"><b>Retorno</b>${fmtDate(r.date)} ${r.status === 'agendada' ? '(agendado)' : ''}</a>`)}` : ''}
+        ${c.returns.length ? html`<span class="arrow">→</span>${c.returns.map((r) => html`<a class="step" href="#/consultas/${r.id}"><b>Retorno</b>${fmtDate(r.date)} ${r.status === 'agendada' ? '(agendado)' : r.status === 'a_agendar' ? '(a agendar)' : ''}</a>`)}` : ''}
       </div></div>
 
     <div class="grid g2">

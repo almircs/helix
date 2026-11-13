@@ -34,7 +34,7 @@ function timeline(userId, q = {}) {
     items.push({ date: c.date, time: c.time, kind: c.is_return ? 'retorno' : 'consulta', id: c.id, link: `#/consultas/${c.id}`, status: c.status,
       title: `${c.is_return ? 'Retorno' : 'Consulta'}${c.specialty ? ' — ' + c.specialty : ''}${d ? ' · ' + d.name : ''}`,
       lines: [
-        ...(c.status !== 'realizada' ? [{ text: c.status === 'agendada' ? 'Agendada' : 'Cancelada' }] : []),
+        ...(c.status !== 'realizada' ? [{ text: c.status === 'agendada' ? 'Agendada' : c.status === 'a_agendar' ? 'A agendar' : 'Cancelada' }] : []),
         ...(reqs.length ? [{ text: `Exames solicitados: ${reqs.map((r) => r.description + (r.status === 'realizado' ? ' ✓' : '')).join(', ')}` }] : []),
         ...(decrypt(c.diagnoses) ? [{ text: `Diagnóstico informado: ${decrypt(c.diagnoses)}` }] : []),
       ] });
@@ -82,7 +82,7 @@ function agenda(userId, from, to) {
     const d = c.doctor_id ? get('SELECT name FROM doctors WHERE id = ?', c.doctor_id) : null;
     out.push({ source: 'consulta', id: c.id, type: c.is_return ? 'retorno' : 'consulta', date: c.date, time: c.time,
       title: `${c.is_return ? 'Retorno' : 'Consulta'}${c.specialty ? ' — ' + c.specialty : ''}${d ? ' · ' + d.name : ''}`,
-      status: c.status === 'agendada' ? 'agendado' : c.status === 'realizada' ? 'concluido' : 'cancelado', location: c.location });
+      status: c.status === 'agendada' ? 'agendado' : c.status === 'a_agendar' ? 'a_agendar' : c.status === 'realizada' ? 'concluido' : 'cancelado', location: c.location });
   }
   for (const m of all("SELECT * FROM medications WHERE user_id = ? AND status = 'ativo' AND end_date BETWEEN ? AND ?", userId, from, to)) {
     out.push({ source: 'medicamento', id: m.id, type: 'receita', date: m.end_date, title: `Término previsto: ${m.name}`, status: 'agendado' });

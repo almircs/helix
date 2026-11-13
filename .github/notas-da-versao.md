@@ -15,6 +15,10 @@ Isso só é preciso na primeira vez.
 
 Não sabe qual é o seu Mac? Menu  → **Sobre este Mac**: se aparecer "Chip Apple M…", use o primeiro; se aparecer "Processador Intel", use o segundo.
 
+## Novidades da 1.14.1
+
+- **A agendar** também nas **consultas** (Nova consulta → Situação). As consultas a agendar ficam num grupo próprio na página Consultas e aparecem na lista "A agendar" da Agenda.
+
 ## Novidades da 1.14.0
 
 - **Página inicial** sem o quadro "Próximos 7 dias" (a Agenda já mostra tudo).

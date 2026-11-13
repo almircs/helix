@@ -11,7 +11,7 @@ const consultations = new Resource({
   table: 'consultations', entity: 'consulta',
   fields: {
     date: 'date', time: 'text', specialty: 'text', doctor_id: 'int', location: 'text',
-    status: ['agendada', 'realizada', 'cancelada'], is_return: 'bool', previous_id: 'int',
+    status: ['a_agendar', 'agendada', 'realizada', 'cancelada'], is_return: 'bool', previous_id: 'int',
     reason: 'text', symptoms: 'text', diagnoses: 'text', conduct: 'text', prescribed: 'text', recommendations: 'text', notes: 'text',
   },
   encrypted: ['reason', 'symptoms', 'diagnoses', 'conduct', 'prescribed', 'recommendations', 'notes'],
