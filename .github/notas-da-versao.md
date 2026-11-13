@@ -15,6 +15,12 @@ Isso só é preciso na primeira vez.
 
 Não sabe qual é o seu Mac? Menu  → **Sobre este Mac**: se aparecer "Chip Apple M…", use o primeiro; se aparecer "Processador Intel", use o segundo.
 
+## Novidades da 1.13.0
+
+- **Entrar ficou simples:** só usuário (ou e-mail) e senha. Embaixo, **Esqueci minha senha** e **Criar conta**. O Helyx lembra o último usuário, então basta digitar a senha.
+- **Restaurar backup** fica dentro do programa: Configurações → Backup (ou menu Arquivo → Restaurar backup).
+- **Sair** dentro do programa: botão **Sair** no alto da tela, em Configurações → Segurança e, no celular, no menu **Mais**.
+
 ## Novidades da 1.12.1
 
 - **Celular:** os botões de cada página (Ler laudo, Novo exame, Editar, Excluir…), as abas de Configurações e de Exames e o Acesso rápido da página inicial agora aparecem em **blocos com ícone**, no mesmo estilo do menu Mais.

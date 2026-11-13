@@ -256,7 +256,7 @@ legend { font-weight: 700; padding: 0 .4rem; }
 #toast.err { background: var(--danger); color: #fff; }
 .auth { min-height: 100vh; display: grid; place-items: center; padding: 1rem; }
 .auth .card { width: 100%; max-width: 420px; padding: 1.8rem; }
-.auth .brand { justify-content: center; font-size: 1.25rem; }
+.auth .brand { justify-content: center; font-size: 1.25rem; margin-bottom: .9rem; }
 .badge-count { background: var(--high); color: #fff; border-radius: 99px; font-size: .72rem; padding: 0 .45rem; margin-left: auto; }
 .toolbar { display: flex; flex-wrap: wrap; gap: .6rem; align-items: center; margin-bottom: 1rem; }
 .toolbar .spacer { flex: 1; }
@@ -549,6 +549,10 @@ input.invalid, select.invalid, textarea.invalid { border-color: var(--danger) !i
    Barra fixa embaixo (Início, Agenda, Lançar, Remédios, Mais) e folhas que sobem de baixo.
    No computador nada disso aparece. */
 .tabbar, .sheet { display: none; }
+.auth-links { display: flex; justify-content: space-between; gap: 1rem; margin-top: 1.1rem; font-size: .95rem; }
+.auth-links:has(> :only-child) { justify-content: center; }
+.btn.logout { gap: .4rem; }
+.sheet-logout { width: 100%; margin-top: .8rem; justify-content: center; }
 /* abas com ícone: no computador o ícone fica escondido e elas continuam como abas */
 .tile-tabs a svg { display: none; }
 @media (max-width: 760px) {
@@ -560,6 +564,7 @@ input.invalid, select.invalid, textarea.invalid { border-color: var(--danger) !i
   .brand small { font-size: .76rem; }
   .apphead .search, .apphead .safe-pill, .topnav { display: none; }
   .who { display: none; }
+  .btn.logout span { display: none; }
   h1 { font-size: 1.3rem; }
 
   .tabbar { display: grid; grid-template-columns: repeat(5, 1fr); position: fixed; left: 0; right: 0; bottom: 0; z-index: 50;

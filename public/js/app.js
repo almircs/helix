@@ -91,7 +91,7 @@ function shell() {
         </form>
         <span class="safe-pill"><i></i>${window.HELYX_MOBILE ? 'Dados só neste aparelho' : 'Dados só neste computador'}</span>
         <span class="who" id="who"></span>
-        <button class="btn icon ghost" id="logoutBtn" title="Sair / trocar de usuário" aria-label="Sair">${icon('logout')}</button>
+        <button class="btn ghost logout" id="logoutBtn" title="Sair / trocar de usuário">${icon('logout')}<span>Sair</span></button>
       </header>
       <nav class="topnav" aria-label="Menu principal">
         <div class="topnav-links">
@@ -120,6 +120,7 @@ function shell() {
         <div class="sheet-grid">
           ${MORE.map(([href, label, ic]) => html`<a href="${href}">${icon(ic)}<span>${label}</span></a>`)}
         </div>
+        <button type="button" class="btn ghost sheet-logout" id="sheetLogout">${icon('logout')}Sair da conta</button>
         <p class="sheet-safe"><i></i>Dados só neste ${window.HELYX_MOBILE ? 'aparelho' : 'computador'}</p>
       </div></div>
       <div class="sheet" id="launchSheet" hidden><div class="sheet-panel" role="dialog" aria-label="Lançar">
@@ -152,12 +153,15 @@ function shell() {
     const q = document.getElementById('searchInput').value.trim();
     if (q) location.hash = '#/busca?q=' + encodeURIComponent(q);
   };
-  document.getElementById('logoutBtn').onclick = async () => { await api('/auth/logout', { method: 'POST' }); location.hash = '#/entrar'; location.reload(); };
+  const logout = async () => { await api('/auth/logout', { method: 'POST' }).catch(() => {}); location.hash = '#/entrar'; location.reload(); };
+  document.getElementById('logoutBtn').onclick = logout;
+  document.getElementById('sheetLogout').onclick = logout;
+  window.helyxLogout = logout;
 }
 
 // Telas de acesso: entrar, criar conta e primeiro acesso (dar usuário e senha aos dados já existentes)
 const AUTH = {
-  login: { title: 'Entrar', button: 'Entrar', text: 'Cada pessoa tem a própria conta. Os dados ficam guardados neste computador, protegidos por senha e criptografia.' },
+  login: { title: 'Entrar', button: 'Entrar', text: '' },
   register: { title: 'Criar conta', button: 'Criar conta', text: 'Uma conta nova começa vazia. Cada pessoa vê só os próprios exames, consultas e remédios.' },
   setup: { title: 'Proteja seus dados com senha', button: 'Criar meu acesso', text: 'A partir desta versão, o Helyx pede usuário e senha. Os exames, consultas, remédios e documentos que já estão no programa ficam na sua conta.' },
 };
@@ -168,7 +172,7 @@ function authView(mode, state = {}) {
     <div class="auth"><div class="card">
       <div class="brand"><img src="/icon.png" alt="">Helyx</div>
       <h1 style="text-align:center">${c.title}</h1>
-      <p class="muted small" style="text-align:center">${c.text}</p>
+      ${c.text ? html`<p class="muted small" style="text-align:center">${c.text}</p>` : ''}
       <form id="authForm" class="stack" style="margin-top:1rem">
         ${!isLogin ? fields([{ name: 'full_name', label: 'Seu nome' }]) : ''}
         ${fields([{ name: 'email', label: 'Usuário ou e-mail', required: true, hint: isLogin ? '' : 'ex.: carlos' },
@@ -176,21 +180,22 @@ function authView(mode, state = {}) {
         ${!isLogin ? fields([{ name: 'password2', label: 'Repita a senha', type: 'password', required: true }]) : ''}
         <button class="btn primary" style="width:100%">${c.button}</button>
       </form>
-      ${mode === 'setup' ? '' : html`<p class="small" style="text-align:center;margin-top:1rem">${isLogin
-        ? html`<a href="#/recuperar">Esqueci minha senha</a> · Outra pessoa vai usar o Helyx? <a href="#/cadastro">Criar conta</a>`
-        : state.has_users ? html`Já tem conta? <a href="#/entrar">Entrar</a>` : ''}</p>
-        <a class="btn" href="#/trazer" style="width:100%;margin-top:.6rem">${window.HELYX_MOBILE ? 'Já uso o Helyx no computador' : 'Já uso o Helyx em outro aparelho'}</a>
-        <p class="small muted" style="text-align:center;margin-top:.3rem">Traz sua conta (mesmo usuário e senha) e seus dados pelo arquivo de backup.</p>`}
+      ${mode === 'setup' ? '' : isLogin
+        ? html`<div class="auth-links"><a href="#/recuperar">Esqueci minha senha</a><a href="#/cadastro">Criar conta</a></div>`
+        : state.has_users ? html`<div class="auth-links"><a href="#/entrar">Já tenho conta — entrar</a></div>` : ''}
     </div></div>`.__raw;
   const form = document.getElementById('authForm');
   form.querySelector('[name=email]').autocomplete = 'username';
   form.querySelector('[name=email]').autocapitalize = 'none';
   form.querySelector('[name=password]').autocomplete = isLogin ? 'current-password' : 'new-password';
-  form.querySelector('[name=email]').focus();
+  let last = ''; try { last = localStorage.getItem('ultimoUsuario') || ''; } catch { /* sem armazenamento */ }
+  if (isLogin && last) { form.querySelector('[name=email]').value = last; form.querySelector('[name=password]').focus(); }
+  else form.querySelector('[name=email]').focus();
   form.querySelectorAll('[type=password]').forEach(capsLockHint);
   form.onsubmit = async (e) => {
     e.preventDefault();
     const body = readForm(form);
+    try { localStorage.setItem('ultimoUsuario', String(body.email || '').trim()); } catch { /* sem armazenamento */ }
     if (!isLogin && body.password !== body.password2) { toast('As duas senhas não são iguais.', true); return; }
     delete body.password2;
     try {
@@ -328,7 +333,7 @@ async function route() {
   }
   if (!document.getElementById('content')) {
     shell(); startReminders();
-    if (!me.login) document.getElementById('logoutBtn').style.display = 'none';
+    if (!me.login) { document.getElementById('logoutBtn').style.display = 'none'; document.getElementById('sheetLogout').style.display = 'none'; }
     else document.getElementById('who').textContent = (me.name || me.email || '').split(' ')[0];
   }
   const content = document.getElementById('content');

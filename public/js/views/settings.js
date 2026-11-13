@@ -139,7 +139,7 @@ async function security(head) {
   return view(html`${head}
     <div class="grid g2">
       ${me.login ? html`<div class="card"><h2>Conta</h2><p>Você entrou como <b>${me.email}</b>.</p>
-        <div class="actions" style="display:flex;gap:.6rem;flex-wrap:wrap"><button class="btn" id="switchUser">${icon('logout')}Trocar de usuário</button><button class="btn" id="newUser">${icon('user')}Criar conta para outra pessoa</button></div>
+        <div class="actions" style="display:flex;gap:.6rem;flex-wrap:wrap"><button class="btn" id="switchUser">${icon('logout')}Sair / trocar de usuário</button><button class="btn" id="newUser">${icon('user')}Criar conta para outra pessoa</button></div>
         <p class="small muted">Cada conta tem os próprios exames, consultas, remédios e documentos.</p></div>
         <div class="card"><h2>Redefinir senha</h2>
         <form id="pw" class="stack">${fields([{ name: 'current', label: 'Senha atual', type: 'password', required: true }, { name: 'password', label: 'Nova senha', type: 'password', required: true, hint: 'mín. 8, letras e números' }, { name: 'password2', label: 'Repita a nova senha', type: 'password', required: true }])}
