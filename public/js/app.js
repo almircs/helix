@@ -77,6 +77,19 @@ const LAUNCH = [
   ['#/agenda?novo=outro', 'Compromisso', 'agenda'], ['#/pendencias', 'Pendência', 'pendencias'],
 ];
 
+// Celular: diminui a letra de um nome que não cabe no quadrado (sem cortar a palavra no meio)
+const FIT = '.sheet-grid a span, .tile-tabs a span, .page-head .actions .btn, .quick b, .tabbar span';
+function fitLabels(root = document) {
+  if (!matchMedia('(max-width: 760px)').matches) return;
+  root.querySelectorAll(FIT).forEach((el) => {
+    el.style.fontSize = '';
+    if (!el.offsetParent) return; // escondido (folha fechada): ajusta quando abrir
+    let size = parseFloat(getComputedStyle(el).fontSize);
+    for (let i = 0; i < 16 && size > 9 && el.scrollWidth > el.clientWidth + 1; i++) { size -= 0.5; el.style.fontSize = size + 'px'; }
+  });
+}
+window.addEventListener('resize', () => fitLabels());
+
 const WEEK = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'];
 const MONTH = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
 
@@ -138,6 +151,7 @@ function shell() {
   document.querySelectorAll('[data-sheet]').forEach((b) => b.onclick = () => {
     const sh = document.getElementById(b.dataset.sheet); const wasOpen = !sh.hidden;
     closeSheets(); sh.hidden = wasOpen;
+    if (!sh.hidden) fitLabels(sh);
   });
   sheets.forEach((sh) => sh.addEventListener('click', (e) => { if (e.target === sh || e.target.closest('a')) closeSheets(); }));
   window.addEventListener('hashchange', closeSheets);
@@ -366,6 +380,7 @@ async function route() {
     if (id !== renderId) return;
     if (out !== undefined) content.innerHTML = out.__raw ?? out;
     if (out?.mount) out.mount(content);
+    fitLabels();
     window.scrollTo(0, 0);
     content.focus({ preventScroll: true });
   } catch (err) {

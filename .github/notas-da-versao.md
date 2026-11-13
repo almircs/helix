@@ -15,6 +15,10 @@ Isso só é preciso na primeira vez.
 
 Não sabe qual é o seu Mac? Menu  → **Sobre este Mac**: se aparecer "Chip Apple M…", use o primeiro; se aparecer "Processador Intel", use o segundo.
 
+## Novidades da 1.13.2
+
+- **Celular:** os nomes dentro dos quadrados (menu Mais, Acesso rápido, abas e botões) agora sempre cabem. A letra se ajusta ao tamanho da tela e, se um nome longo não couber, ele diminui um pouco em vez de ser cortado no meio.
+
 ## Novidades da 1.13.1
 
 - **Primeira vez num aparelho:** o Helyx pergunta se você **já tem conta** (traz a conta e os dados do computador pelo arquivo de backup) ou quer **criar uma conta nova**.

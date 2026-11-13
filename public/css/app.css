@@ -585,7 +585,7 @@ input.invalid, select.invalid, textarea.invalid { border-color: var(--danger) !i
 
   .sheet:not([hidden]) { display: flex; align-items: flex-end; position: fixed; inset: 0; z-index: 45; background: rgba(2, 14, 16, .6); }
   .sheet-panel { width: 100%; max-height: 82vh; overflow-y: auto; background: var(--surface); border-radius: 22px 22px 0 0; border-top: 1px solid var(--glass-line);
-    padding: .5rem 1rem calc(84px + env(safe-area-inset-bottom)); animation: sheetUp .18s ease-out; }
+    padding: .5rem 1rem calc(110px + env(safe-area-inset-bottom)); animation: sheetUp .18s ease-out; }
   @keyframes sheetUp { from { transform: translateY(30px); opacity: .4; } to { transform: none; opacity: 1; } }
   .sheet-grip { width: 42px; height: 5px; border-radius: 99px; background: var(--line); margin: .2rem auto .8rem; }
   .sheet-panel h2 { font-size: 1.05rem; margin: 0 0 .7rem; }
@@ -623,6 +623,18 @@ input.invalid, select.invalid, textarea.invalid { border-color: var(--danger) !i
   .kpi-sub { font-size: .8rem; }
   .kpi-bar { display: none; }
   .home-grid > *, .kpis > * { min-width: 0; }
+
+  /* nomes sempre dentro dos quadrados: a letra acompanha a largura da tela e, se uma palavra
+     longa (Medicamentos, Configurações) ainda não couber, o app diminui só aquele nome (fitLabels) */
+  .sheet-grid a, .tile-tabs a, .page-head .actions .btn, .quick a { min-width: 0; overflow: hidden; }
+  .sheet-grid a span, .tile-tabs a span, .quick b, .quick small { display: block; max-width: 100%; }
+  .quick span { width: 100%; }
+  .sheet-grid a { font-size: clamp(.68rem, 3.4vw, .84rem); padding: .8rem .25rem; }
+  .tile-tabs a { font-size: clamp(.66rem, 3.2vw, .8rem); }
+  .page-head .actions .btn { font-size: clamp(.68rem, 3.3vw, .82rem); }
+  .quick b { font-size: clamp(.82rem, 4vw, 1rem); line-height: 1.2; }
+  .quick small { font-size: clamp(.68rem, 3.2vw, .78rem); }
+  .tabbar a, .tabbar button { font-size: clamp(.6rem, 2.9vw, .72rem); }
 
   /* menus em blocos, no estilo do "Mais": ações das páginas, abas e acesso rápido */
   .page-head { display: block; }
