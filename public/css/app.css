@@ -544,3 +544,83 @@ input.invalid, select.invalid, textarea.invalid { border-color: var(--danger) !i
 /* Vacinas */
 .vac-groups { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); }
 .vac-group h3 { margin: 0 0 .3rem; font-size: 1rem; color: var(--primary); }
+
+/* ---------------------------------------------------------------- Celular (telas estreitas)
+   Barra fixa embaixo (Início, Agenda, Lançar, Remédios, Mais) e folhas que sobem de baixo.
+   No computador nada disso aparece. */
+.tabbar, .sheet { display: none; }
+@media (max-width: 760px) {
+  .shell { padding: 0 .9rem calc(88px + env(safe-area-inset-bottom)); }
+  .apphead { padding: calc(.6rem + env(safe-area-inset-top)) 0 .7rem; gap: .5rem; flex-wrap: nowrap; }
+  .brand { gap: .6rem; }
+  .brand img { width: 34px; height: 34px; border-radius: 10px; }
+  .brand b { font-size: 1.15rem; }
+  .brand small { font-size: .76rem; }
+  .apphead .search, .apphead .safe-pill, .topnav { display: none; }
+  .who { display: none; }
+  h1 { font-size: 1.3rem; }
+
+  .tabbar { display: grid; grid-template-columns: repeat(5, 1fr); position: fixed; left: 0; right: 0; bottom: 0; z-index: 50;
+    padding: .35rem .4rem calc(.35rem + env(safe-area-inset-bottom)); background: color-mix(in srgb, var(--surface) 92%, transparent);
+    backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border-top: 1px solid var(--glass-line); }
+  .tabbar a, .tabbar button { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .15rem; min-height: 52px;
+    background: none; border: 0; color: var(--muted); font: inherit; font-size: .72rem; font-weight: 600; text-decoration: none; cursor: pointer; border-radius: 12px; }
+  .tabbar svg { width: 23px; height: 23px; }
+  .tabbar .active { color: var(--primary); }
+  .tabbar .tab-plus svg { width: 26px; height: 26px; padding: 8px; box-sizing: content-box; border-radius: 50%; background: var(--accent-grad); color: #04202a; margin-top: -18px;
+    box-shadow: 0 6px 18px rgba(0,0,0,.35); }
+  .tabbar .tab-plus { color: var(--text); }
+
+  .sheet:not([hidden]) { display: flex; align-items: flex-end; position: fixed; inset: 0; z-index: 45; background: rgba(2, 14, 16, .6); }
+  .sheet-panel { width: 100%; max-height: 82vh; overflow-y: auto; background: var(--surface); border-radius: 22px 22px 0 0; border-top: 1px solid var(--glass-line);
+    padding: .5rem 1rem calc(84px + env(safe-area-inset-bottom)); animation: sheetUp .18s ease-out; }
+  @keyframes sheetUp { from { transform: translateY(30px); opacity: .4; } to { transform: none; opacity: 1; } }
+  .sheet-grip { width: 42px; height: 5px; border-radius: 99px; background: var(--line); margin: .2rem auto .8rem; }
+  .sheet-panel h2 { font-size: 1.05rem; margin: 0 0 .7rem; }
+  .sheet-search { position: relative; margin-bottom: .9rem; }
+  .sheet-search input { width: 100%; padding-left: 2.4rem; }
+  .sheet-search svg { position: absolute; left: .75rem; top: 50%; transform: translateY(-50%); width: 18px; height: 18px; color: var(--muted); }
+  .sheet-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .55rem; }
+  .sheet-grid a { display: flex; flex-direction: column; align-items: center; gap: .4rem; padding: .85rem .3rem; border-radius: 14px; background: var(--glass);
+    border: 1px solid var(--glass-line); color: var(--text); text-decoration: none; font-size: .84rem; font-weight: 600; text-align: center; }
+  .sheet-grid a:active { background: var(--primary-soft); }
+  .sheet-grid svg { width: 24px; height: 24px; color: var(--primary); }
+  .sheet-read { display: flex; gap: .8rem; align-items: center; padding: .85rem; margin-bottom: .7rem; border-radius: 14px; background: var(--primary-soft);
+    border: 1px solid var(--primary); color: var(--text); text-decoration: none; }
+  .sheet-read svg { width: 26px; height: 26px; color: var(--primary); flex: none; }
+  .sheet-read b { display: block; }
+  .sheet-read small { display: block; color: var(--muted); font-size: .8rem; }
+  .sheet-safe { display: flex; align-items: center; justify-content: center; gap: .45rem; margin: .9rem 0 0; font-size: .78rem; color: var(--muted); }
+  .sheet-safe i { width: 8px; height: 8px; border-radius: 50%; background: var(--ok); }
+
+  /* títulos e botões das páginas mais compactos */
+  .page-head { gap: .6rem; margin-bottom: 1rem; }
+  .page-head .actions { gap: .4rem; }
+  .page-head .actions .btn { min-height: 38px; padding: .4rem .75rem; font-size: .9rem; }
+  .page-head .actions .btn svg { width: 16px; height: 16px; }
+
+  /* listas: etiquetas vão para baixo do texto em vez de espremer o nome */
+  .list > li { flex-wrap: wrap; gap: .35rem .6rem; }
+  .list > li > .grow { flex-basis: 100%; }
+  .card { padding: .95rem 1rem; }
+  table { font-size: .88rem; }
+  th, td { padding-left: .4rem !important; padding-right: .4rem !important; }
+
+  /* início: resumo compacto, sem a faixa colorida */
+  .kpis { gap: .55rem; }
+  .kpi { padding: .75rem .8rem; }
+  .kpi-value { font-size: 1.25rem; }
+  .kpi-label { font-size: .68rem; }
+  .kpi-sub { font-size: .8rem; }
+  .kpi-bar { display: none; }
+  .home-grid > *, .kpis > * { min-width: 0; }
+  /* semana inteira cabe na tela (sem rolagem para o lado) */
+  .week { grid-template-columns: repeat(7, minmax(0, 1fr)) !important; overflow: visible !important; gap: .25rem; }
+  .day-head { border-radius: 9px; padding: .3rem 0; }
+  .day-head small { font-size: .62rem; }
+  .day-head b { font-size: 1rem; }
+  .day [class^="chip-"] { padding: .25rem .1rem; text-align: center; border-radius: 6px; }
+  .day [class^="chip-"] b { font-size: .64rem; letter-spacing: -.02em; }
+  .day .free { font-size: .62rem; text-align: center; }
+  #mtable th:nth-child(n+5), #mtable td:nth-child(n+5) { display: none; }
+}

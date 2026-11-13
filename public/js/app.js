@@ -65,6 +65,18 @@ const ROUTES = [
   [/^\/configuracoes(?:\/(\w+))?$/, settings.render, '#/configuracoes'],
 ];
 
+// Celular: o que fica em "Mais" e em "Lançar" (a barra de baixo tem Início, Agenda e Remédios)
+const MORE = [
+  ['#/exames', 'Exames', 'exames'], ['#/consultas', 'Consultas', 'consultas'], ['#/saude', 'Saúde', 'saude'],
+  ['#/vacinas', 'Vacinas', 'vacinas'], ['#/documentos', 'Documentos', 'documentos'], ['#/linha-do-tempo', 'Linha do tempo', 'tempo'],
+  ['#/pendencias', 'Pendências', 'pendencias'], ['#/relatorios', 'Relatórios', 'relatorios'], ['#/configuracoes', 'Configurações', 'config'],
+];
+const LAUNCH = [
+  ['#/exames/novo', 'Exame', 'exames'], ['#/consultas/nova', 'Consulta', 'consultas'], ['#/medicamentos/novo', 'Remédio', 'medicamentos'],
+  ['#/saude', 'Medição', 'saude'], ['#/vacinas?editar=nova', 'Vacina', 'vacinas'], ['#/documentos?novo=1', 'Documento', 'documentos'],
+  ['#/agenda?novo=outro', 'Compromisso', 'agenda'], ['#/pendencias', 'Pendência', 'pendencias'],
+];
+
 const WEEK = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'];
 const MONTH = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
 
@@ -95,7 +107,43 @@ function shell() {
         </details>
       </nav>
       <main class="content" id="content" tabindex="-1"></main>
+      <nav class="tabbar" aria-label="Menu">
+        <a href="#/" data-tab="#/">${icon('dashboard')}<span>Início</span></a>
+        <a href="#/agenda" data-tab="#/agenda">${icon('agenda')}<span>Agenda</span></a>
+        <button type="button" class="tab-plus" data-sheet="launchSheet" aria-label="Lançar">${icon('plus')}<span>Lançar</span></button>
+        <a href="#/medicamentos" data-tab="#/medicamentos">${icon('medicamentos')}<span>Remédios</span></a>
+        <button type="button" data-sheet="moreSheet" data-tab="mais">${icon('mais')}<span>Mais</span></button>
+      </nav>
+      <div class="sheet" id="moreSheet" hidden><div class="sheet-panel" role="dialog" aria-label="Todas as seções">
+        <div class="sheet-grip"></div>
+        <form class="sheet-search" id="sheetSearch" role="search">${icon('search')}<input type="search" name="q" placeholder="Buscar em exames, remédios, consultas…" aria-label="Busca"></form>
+        <div class="sheet-grid">
+          ${MORE.map(([href, label, ic]) => html`<a href="${href}">${icon(ic)}<span>${label}</span></a>`)}
+        </div>
+        <p class="sheet-safe"><i></i>Dados só neste ${window.HELYX_MOBILE ? 'aparelho' : 'computador'}</p>
+      </div></div>
+      <div class="sheet" id="launchSheet" hidden><div class="sheet-panel" role="dialog" aria-label="Lançar">
+        <div class="sheet-grip"></div>
+        <h2>O que você quer lançar?</h2>
+        <a href="#/importar" class="sheet-read">${icon('documentos')}<span><b>Ler arquivo</b><small>PDF, foto, Word ou Excel — o Helyx preenche para você</small></span></a>
+        <div class="sheet-grid">
+          ${LAUNCH.map(([href, label, ic]) => html`<a href="${href}">${icon(ic)}<span>${label}</span></a>`)}
+        </div>
+      </div></div>
     </div>`.__raw;
+  // folhas de baixo (Mais / Lançar): abrem pelo botão, fecham ao tocar fora ou ao escolher
+  const sheets = [...document.querySelectorAll('.sheet')];
+  const closeSheets = () => sheets.forEach((sh) => { sh.hidden = true; });
+  document.querySelectorAll('[data-sheet]').forEach((b) => b.onclick = () => {
+    const sh = document.getElementById(b.dataset.sheet); const wasOpen = !sh.hidden;
+    closeSheets(); sh.hidden = wasOpen;
+  });
+  sheets.forEach((sh) => sh.addEventListener('click', (e) => { if (e.target === sh || e.target.closest('a')) closeSheets(); }));
+  window.addEventListener('hashchange', closeSheets);
+  document.getElementById('sheetSearch').onsubmit = (e) => {
+    e.preventDefault(); const q = e.target.q.value.trim();
+    if (q) { closeSheets(); location.hash = '#/busca?q=' + encodeURIComponent(q); }
+  };
   const launch = document.getElementById('launch');
   launch.addEventListener('click', (e) => { if (e.target.closest('.launch-menu a')) launch.open = false; });
   document.addEventListener('click', (e) => { if (!launch.contains(e.target)) launch.open = false; });
@@ -286,6 +334,8 @@ async function route() {
   const content = document.getElementById('content');
   const found = ROUTES.find(([re]) => re.test(path));
   document.querySelectorAll('[data-nav]').forEach((a) => { const on = found && a.dataset.nav === found[2]; a.classList.toggle('active', on); if (on) a.scrollIntoView({ block: 'nearest', inline: 'nearest' }); });
+  const tabKey = found && ['#/', '#/agenda', '#/medicamentos'].includes(found[2]) ? found[2] : 'mais';
+  document.querySelectorAll('[data-tab]').forEach((a) => a.classList.toggle('active', a.dataset.tab === tabKey));
   if (!found) { content.innerHTML = '<h1>Página não encontrada</h1>'; return; }
   const id = ++renderId;
   content.innerHTML = '<p class="muted">Carregando…</p>';

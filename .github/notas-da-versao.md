@@ -15,6 +15,12 @@ Isso só é preciso na primeira vez.
 
 Não sabe qual é o seu Mac? Menu  → **Sobre este Mac**: se aparecer "Chip Apple M…", use o primeiro; se aparecer "Processador Intel", use o segundo.
 
+## Novidades da 1.12.0
+
+- **Celular mais fácil de usar:** barra fixa embaixo com **Início**, **Agenda**, **Lançar**, **Remédios** e **Mais**. O **Mais** abre todas as seções em botões grandes (Exames, Consultas, Saúde, Vacinas, Documentos, Linha do tempo, Pendências, Relatórios e Configurações), com a busca no topo. O **Lançar** abre as opções de cadastro do mesmo jeito.
+- Cabeçalho mais enxuto no celular, botões das páginas menores, listas sem nomes espremidos e a semana inteira cabendo na tela.
+- No computador nada muda.
+
 ## Novidades da 1.11.0
 
 - **Controle de doses (opcional):** em Configurações → Controle de doses. Ligado, a página Medicamentos mostra as doses de hoje com **Tomei** / **Não tomei** e o Helyx avisa quando uma dose fica 30 minutos sem anotação.
