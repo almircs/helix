@@ -15,6 +15,10 @@ Isso só é preciso na primeira vez.
 
 Não sabe qual é o seu Mac? Menu  → **Sobre este Mac**: se aparecer "Chip Apple M…", use o primeiro; se aparecer "Processador Intel", use o segundo.
 
+## Novidades da 1.12.1
+
+- **Celular:** os botões de cada página (Ler laudo, Novo exame, Editar, Excluir…), as abas de Configurações e de Exames e o Acesso rápido da página inicial agora aparecem em **blocos com ícone**, no mesmo estilo do menu Mais.
+
 ## Novidades da 1.12.0
 
 - **Celular mais fácil de usar:** barra fixa embaixo com **Início**, **Agenda**, **Lançar**, **Remédios** e **Mais**. O **Mais** abre todas as seções em botões grandes (Exames, Consultas, Saúde, Vacinas, Documentos, Linha do tempo, Pendências, Relatórios e Configurações), com a busca no topo. O **Lançar** abre as opções de cadastro do mesmo jeito.

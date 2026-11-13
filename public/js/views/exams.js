@@ -14,10 +14,10 @@ export async function list({ query }) {
   const withData = markers.filter((m) => m.count > 0);
   return view(html`
     <div class="page-head"><h1>Exames</h1><div class="actions">
-      ${withData.length > 1 ? html`<a class="btn" href="#/exames/comparar">Comparar</a>` : ''}
+      ${withData.length > 1 ? html`<a class="btn" href="#/exames/comparar">${icon('compare')}Comparar</a>` : ''}
       <a class="btn" href="#/importar?para=exame&voltar=${encodeURIComponent('#/exames')}">${icon('documentos')}Ler laudo</a>
       <a class="btn primary" href="#/exames/novo">${icon('plus')}Novo exame</a></div></div>
-    <div class="tabs"><a href="#/exames" class="${tab === 'marcadores' ? 'on' : ''}">Por exame (${withData.length})</a><a href="#/exames?ver=datas" class="${tab === 'datas' ? 'on' : ''}">Por data de coleta (${exams.length})</a><a href="#/exames?ver=laudos" class="${tab === 'laudos' ? 'on' : ''}">Laudos de imagem (${exams.filter((e) => e.title).length})</a></div>
+    <div class="tabs tile-tabs"><a href="#/exames" class="${tab === 'marcadores' ? 'on' : ''}">${icon('exames')}<span>Por exame (${withData.length})</span></a><a href="#/exames?ver=datas" class="${tab === 'datas' ? 'on' : ''}">${icon('agenda')}<span>Por data de coleta (${exams.length})</span></a><a href="#/exames?ver=laudos" class="${tab === 'laudos' ? 'on' : ''}">${icon('documentos')}<span>Laudos de imagem (${exams.filter((e) => e.title).length})</span></a></div>
     ${tab === 'laudos' ? (imagingSection(exams, cats, query.cat || '') || html`<div class="card"><p class="empty">Nenhum laudo de imagem ainda. Use <a href="#/importar?para=exame">Ler laudo</a> para guardar uma tomografia, ultrassom ou ressonância.</p>
       <p class="small muted">Os laudos podem ser organizados em <a href="#/exames/categorias">categorias</a> (Coração, Rins, Próstata…).</p></div>`)
     : tab === 'marcadores' ? html`

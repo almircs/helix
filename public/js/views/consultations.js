@@ -103,7 +103,7 @@ export async function detail({ params }) {
     <a class="back" href="#/consultas">${icon('back')}Consultas</a>
     <div class="page-head"><div><h1>${c.is_return ? 'Retorno' : 'Consulta'}${c.specialty ? ' — ' + c.specialty : ''}</h1>
       <p class="muted" style="margin:0">${fmtLongDate(c.date)}${c.time ? ' às ' + c.time : ''} ${c.status !== 'realizada' ? statusTag(c.status) : ''} ${c.status === 'agendada' ? '(' + relDay(c.date) + ')' : ''}</p></div>
-      <div class="actions"><a class="btn" href="#/importar?para=pedido&consulta=${c.id}&voltar=${encodeURIComponent('#/consultas/' + c.id)}">${icon('documentos')}Ler arquivo</a><a class="btn" href="#/consultas/${c.id}/editar">${icon('edit')}Editar</a><a class="btn" href="#/consultas/nova?retorno=${c.id}">${icon('plus')}Agendar retorno</a><button class="btn danger" id="del">${icon('trash')}</button></div></div>
+      <div class="actions"><a class="btn" href="#/importar?para=pedido&consulta=${c.id}&voltar=${encodeURIComponent('#/consultas/' + c.id)}">${icon('documentos')}Ler arquivo</a><a class="btn" href="#/consultas/${c.id}/editar">${icon('edit')}Editar</a><a class="btn" href="#/consultas/nova?retorno=${c.id}">${icon('plus')}Agendar retorno</a><button class="btn danger" id="del">${icon('trash')}Excluir</button></div></div>
 
     <div class="card" style="margin-bottom:1rem"><h2>Sequência desta consulta</h2>
       <div class="flow">

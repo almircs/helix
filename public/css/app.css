@@ -549,6 +549,8 @@ input.invalid, select.invalid, textarea.invalid { border-color: var(--danger) !i
    Barra fixa embaixo (Início, Agenda, Lançar, Remédios, Mais) e folhas que sobem de baixo.
    No computador nada disso aparece. */
 .tabbar, .sheet { display: none; }
+/* abas com ícone: no computador o ícone fica escondido e elas continuam como abas */
+.tile-tabs a svg { display: none; }
 @media (max-width: 760px) {
   .shell { padding: 0 .9rem calc(88px + env(safe-area-inset-bottom)); }
   .apphead { padding: calc(.6rem + env(safe-area-inset-top)) 0 .7rem; gap: .5rem; flex-wrap: nowrap; }
@@ -595,9 +597,6 @@ input.invalid, select.invalid, textarea.invalid { border-color: var(--danger) !i
 
   /* títulos e botões das páginas mais compactos */
   .page-head { gap: .6rem; margin-bottom: 1rem; }
-  .page-head .actions { gap: .4rem; }
-  .page-head .actions .btn { min-height: 38px; padding: .4rem .75rem; font-size: .9rem; }
-  .page-head .actions .btn svg { width: 16px; height: 16px; }
 
   /* listas: etiquetas vão para baixo do texto em vez de espremer o nome */
   .list > li { flex-wrap: wrap; gap: .35rem .6rem; }
@@ -614,6 +613,32 @@ input.invalid, select.invalid, textarea.invalid { border-color: var(--danger) !i
   .kpi-sub { font-size: .8rem; }
   .kpi-bar { display: none; }
   .home-grid > *, .kpis > * { min-width: 0; }
+
+  /* menus em blocos, no estilo do "Mais": ações das páginas, abas e acesso rápido */
+  .page-head { display: block; }
+  .page-head h1 { margin-bottom: .7rem; }
+  .page-head .actions { display: grid; grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); gap: .5rem; width: 100%; }
+  .page-head .actions .btn { flex-direction: column; justify-content: center; gap: .35rem; min-height: 74px; padding: .6rem .35rem; border-radius: 14px;
+    font-size: .82rem; font-weight: 600; text-align: center; line-height: 1.2; white-space: normal; background: var(--glass); border: 1px solid var(--glass-line); color: var(--text); }
+  .page-head .actions .btn svg { width: 22px; height: 22px; color: var(--primary); margin: 0; }
+  .page-head .actions .btn.primary { background: var(--primary-soft); border-color: var(--primary); }
+  .page-head .actions .btn.danger svg, .page-head .actions .btn.danger { color: var(--danger); }
+  .page-head .actions > .seg, .page-head .actions > .cat-inline { grid-column: 1 / -1; }
+  .page-head .actions > .seg { width: 100%; }
+  .page-head .actions > .seg button { flex: 1; }
+
+  .tile-tabs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .5rem; border-bottom: 0; overflow: visible; margin-bottom: 1rem; }
+  .tile-tabs a { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .35rem; min-height: 74px; padding: .6rem .3rem;
+    border-radius: 14px; background: var(--glass); border: 1px solid var(--glass-line); color: var(--text); font-size: .8rem; text-align: center;
+    white-space: normal; line-height: 1.2; margin: 0; }
+  .tile-tabs a svg { display: block; width: 22px; height: 22px; color: var(--primary); }
+  .tile-tabs a.on { background: var(--primary-soft); border-color: var(--primary); color: var(--text); }
+
+  .quick { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .quick a { flex-direction: column; align-items: flex-start; gap: .4rem; padding: .75rem; border-radius: 14px; border: 1px solid var(--glass-line); }
+  .quick i { width: 28px; height: 5px; }
+  .quick small { font-size: .76rem; line-height: 1.25; display: block; }
+  .quick em { display: none; }
   /* semana inteira cabe na tela (sem rolagem para o lado) */
   .week { grid-template-columns: repeat(7, minmax(0, 1fr)) !important; overflow: visible !important; gap: .25rem; }
   .day-head { border-radius: 9px; padding: .3rem 0; }

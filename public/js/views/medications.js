@@ -95,7 +95,7 @@ export async function detail({ params }) {
     <a class="back" href="#/medicamentos">${icon('back')}Medicamentos</a>
     <div class="page-head"><div><h1>${m.name} ${m.dosage || ''}</h1>
       <p class="muted" style="margin:0">${[m.active_ingredient, m.presentation, m.frequency, m.schedule].filter(Boolean).join(' · ')} ${statusTag(m.status)}</p></div>
-      <div class="actions"><a class="btn primary" href="#/medicamentos/${m.id}/editar">${icon('edit')}Registrar alteração</a><button class="btn danger" id="del">${icon('trash')}</button></div></div>
+      <div class="actions"><a class="btn primary" href="#/medicamentos/${m.id}/editar">${icon('edit')}Registrar alteração</a><button class="btn danger" id="del">${icon('trash')}Excluir</button></div></div>
     <div class="grid g2">
       <div class="card"><h2>Informações</h2><dl class="kv">
         <dt>Início</dt><dd>${fmtDate(m.start_date) || '—'}</dd><dt>Término previsto</dt><dd>${fmtDate(m.end_date) || '—'}</dd>

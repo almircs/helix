@@ -142,7 +142,7 @@ export async function detail({ params }) {
   return view(html`
     <a class="back" href="#/documentos">${icon('back')}Documentos</a>
     <div class="page-head"><div><h1>${d.title}</h1><p class="muted" style="margin:0">${KINDS[d.kind] || d.kind} · ${fmtDate(d.doc_date)} · ${fmtSize(d.size_bytes || 0)}</p></div>
-      <div class="actions"><a class="btn primary" href="#/importar?doc=${d.id}">${icon('documentos')}Extrair dados</a><a class="btn" href="/api/documents/${d.id}/file?baixar=1" download>Baixar</a><button class="btn danger" id="del">${icon('trash')}Excluir</button></div></div>
+      <div class="actions"><a class="btn primary" href="#/importar?doc=${d.id}">${icon('documentos')}Extrair dados</a><a class="btn" href="/api/documents/${d.id}/file?baixar=1" download>${icon('download')}Baixar</a><button class="btn danger" id="del">${icon('trash')}Excluir</button></div></div>
     <div class="doc-detail">
       <div class="card doc-view" id="viewer"><p class="muted">Abrindo…</p></div>
       <form class="card" id="meta"><h2>Informações</h2>

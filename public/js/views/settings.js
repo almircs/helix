@@ -1,7 +1,7 @@
 import { waLink, weekMessage } from '../doses.js';
 import { api, html, icon, fields, readForm, toast, view, go, invalidate, fmtDate, confirmDialog, askConfirm, showRecoveryCode, capsLockHint } from '../lib.js';
 
-const TABS = [['perfil', 'Meu perfil'], ['medicos', 'Médicos'], ['backup', 'Backup'], ['seguranca', 'Segurança e dados'], ['aparencia', 'Aparência'], ['doses', 'Controle de doses']];
+const TABS = [['perfil', 'Meu perfil', 'user'], ['medicos', 'Médicos', 'consultas'], ['backup', 'Backup', 'backup'], ['seguranca', 'Segurança e dados', 'lock'], ['aparencia', 'Aparência', 'sun'], ['doses', 'Controle de doses', 'medicamentos']];
 const ENTITY = { usuario: 'Conta', sessao: 'Acesso', perfil: 'Perfil', medico: 'Médico', consulta: 'Consulta', exame: 'Exame', marcador: 'Exame (catálogo)', medicamento: 'Medicamento', medicao: 'Medição', agenda: 'Agenda', dados: 'Dados', ia: 'IA' };
 
 export function applyTheme() {
@@ -11,7 +11,7 @@ export function applyTheme() {
 
 export async function render({ params, query }) {
   const tab = TABS.some(([t]) => t === params[0]) ? params[0] : 'perfil';
-  const head = html`<h1>Configurações</h1><div class="tabs">${TABS.map(([t, l]) => html`<a href="#/configuracoes/${t}" class="${t === tab ? 'on' : ''}">${l}</a>`)}</div>`;
+  const head = html`<h1>Configurações</h1><div class="tabs tile-tabs">${TABS.map(([t, l, ic]) => html`<a href="#/configuracoes/${t}" class="${t === tab ? 'on' : ''}">${icon(ic)}<span>${l}</span></a>`)}</div>`;
   if (tab === 'perfil') return profile(head);
   if (tab === 'medicos') return doctors(head, query);
   if (tab === 'seguranca') return security(head);
@@ -139,7 +139,7 @@ async function security(head) {
   return view(html`${head}
     <div class="grid g2">
       ${me.login ? html`<div class="card"><h2>Conta</h2><p>Você entrou como <b>${me.email}</b>.</p>
-        <div class="actions" style="display:flex;gap:.6rem;flex-wrap:wrap"><button class="btn" id="switchUser">Trocar de usuário</button><button class="btn" id="newUser">Criar conta para outra pessoa</button></div>
+        <div class="actions" style="display:flex;gap:.6rem;flex-wrap:wrap"><button class="btn" id="switchUser">${icon('logout')}Trocar de usuário</button><button class="btn" id="newUser">${icon('user')}Criar conta para outra pessoa</button></div>
         <p class="small muted">Cada conta tem os próprios exames, consultas, remédios e documentos.</p></div>
         <div class="card"><h2>Redefinir senha</h2>
         <form id="pw" class="stack">${fields([{ name: 'current', label: 'Senha atual', type: 'password', required: true }, { name: 'password', label: 'Nova senha', type: 'password', required: true, hint: 'mín. 8, letras e números' }, { name: 'password2', label: 'Repita a nova senha', type: 'password', required: true }])}
