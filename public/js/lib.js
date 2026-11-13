@@ -64,7 +64,8 @@ export function trendTag(t) {
   const arrow = t.direction === 'aumento' ? '↑' : t.direction === 'reducao' ? '↓' : '→';
   return html`<span class="tag ${t.relevant ? 'relevante' : ''}" title="Comparado ao resultado anterior">${arrow} ${TREND[t.direction]} ${t.direction !== 'estavel' ? `(${fmtNum(t.pct, 1)}%)` : ''}${t.relevant ? ' · relevante' : ''}</span>`;
 }
-export const statusTag = (s) => (s ? html`<span class="tag ${s}">${s[0].toUpperCase() + s.slice(1)}</span>` : '');
+const STATUS_LABEL = { a_agendar: 'A agendar', concluido: 'Concluído' };
+export const statusTag = (s) => (s ? html`<span class="tag ${s}">${STATUS_LABEL[s] || s[0].toUpperCase() + s.slice(1)}</span>` : '');
 
 // ---------- Toast
 let toastTimer;

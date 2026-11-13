@@ -41,10 +41,10 @@ function eventForm(ev, consultations) {
       ${fields([
         { name: 'type', label: 'Tipo', type: 'select', options: Object.entries(EVENT_TYPES) },
         { name: 'title', label: 'Descrição', required: true, placeholder: 'Ex.: Coleta de sangue' },
-        { name: 'date', label: 'Data', type: 'date', required: true }, { name: 'time', label: 'Horário', type: 'time' },
+        { name: 'date', label: 'Data', type: 'date', hint: 'se ainda vai agendar, a data prevista' }, { name: 'time', label: 'Horário', type: 'time' },
         { name: 'location', label: 'Local' },
         { name: 'remind_minutes', label: 'Lembrar com antecedência', type: 'select', options: [['', 'padrão'], ['0', 'na hora'], ['30', '30 min'], ['60', '1 hora'], ['120', '2 horas'], ['1440', '1 dia']] },
-        { name: 'status', label: 'Situação', type: 'select', options: [['agendado', 'Agendado'], ['concluido', 'Concluído'], ['cancelado', 'Cancelado']] },
+        { name: 'status', label: 'Situação', type: 'select', options: [['a_agendar', 'A agendar'], ['agendado', 'Agendado'], ['concluido', 'Concluído'], ['cancelado', 'Cancelado']] },
         { name: 'consultation_id', label: 'Ligado à consulta', type: 'select', options: [['', '— nenhuma —'], ...consultations.map((c) => [c.id, `${fmtDate(c.date)} — ${c.specialty || 'consulta'}`])] },
         { name: 'notes', label: 'Observações', type: 'textarea', full: true },
       ], ev)}
@@ -56,7 +56,11 @@ export async function render({ query }) {
   const mode = MODES.some(([m]) => m === query.modo) ? query.modo : 'mes';
   const d = query.d || today();
   const [a, b] = range(mode, d);
-  const [items, consultations] = await Promise.all([api(`/agenda?from=${a}&to=${b}`), api('/consultations')]);
+  const [items, consultations, all] = await Promise.all([api(`/agenda?from=${a}&to=${b}`), api('/consultations'), api('/events').catch(() => [])]);
+  const toSchedule = all.filter((e) => e.status === 'a_agendar').sort((x, y) => String(x.date).localeCompare(String(y.date)));
+  const cy = parseISO(d).getFullYear(); const cm = parseISO(d).getMonth();
+  const years = Array.from({ length: 16 }, (_, i) => new Date().getFullYear() - 10 + i);
+  if (!years.includes(cy)) years.push(cy), years.sort();
   const byDay = new Map();
   for (const e of items) { if (!byDay.has(e.date)) byDay.set(e.date, []); byDay.get(e.date).push(e); }
   const nav = (dd, m = mode) => `#/agenda?modo=${m}&d=${dd}`;
@@ -95,7 +99,12 @@ export async function render({ query }) {
       <div class="seg">${MODES.map(([m, l]) => html`<button class="${m === mode ? 'on' : ''}" data-mode="${m}">${l}</button>`)}</div>
       <div class="seg"><button data-go="${shift(mode, d, -1)}" aria-label="Anterior">‹</button><button data-go="${today()}">Hoje</button><button data-go="${shift(mode, d, 1)}" aria-label="Próximo">›</button></div>
       <b style="font-size:1.1rem">${title(mode, d, [a, b])}</b>
+      <span class="jump" aria-label="Ir para mês e ano">
+        <select id="jumpMonth" aria-label="Mês">${MONTHS.map((mn, i) => html`<option value="${i}" ${i === cm ? 'selected' : ''}>${mn[0].toUpperCase() + mn.slice(1)}</option>`)}</select>
+        <select id="jumpYear" aria-label="Ano">${years.map((y) => html`<option value="${y}" ${y === cy ? 'selected' : ''}>${y}</option>`)}</select>
+      </span>
     </div>
+    ${toSchedule.length ? html`<div class="card to-schedule" style="margin-bottom:1rem"><h2>A agendar <small class="muted">${toSchedule.length}</small></h2>${eventList(toSchedule)}</div>` : ''}
     ${body}
     ${mode === 'mes' && items.length ? html`<div class="card" style="margin-top:1rem"><h2>Compromissos do período</h2>${eventList(items.filter((e) => parseISO(e.date).getMonth() === parseISO(d).getMonth()))}</div>` : ''}
     <p class="small muted" style="margin-top:1rem">Consultas agendadas e términos previstos de medicamentos aparecem aqui automaticamente. Os lembretes aparecem enquanto o sistema estiver aberto no navegador.</p>`, (el) => {
@@ -103,6 +112,11 @@ export async function render({ query }) {
     el.querySelectorAll('[data-go]').forEach((x) => x.onclick = () => go(nav(x.dataset.go)));
     el.querySelectorAll('[data-day]').forEach((x) => x.onclick = () => go(nav(x.dataset.day, 'dia')));
     el.querySelectorAll('[data-month]').forEach((x) => x.onclick = () => go(nav(x.dataset.month, 'mes')));
+    const jump = () => {
+      const y = el.querySelector('#jumpYear').value; const m = String(Number(el.querySelector('#jumpMonth').value) + 1).padStart(2, '0');
+      go(nav(`${y}-${m}-01`, mode === 'ano' ? 'ano' : mode === 'mes' ? 'mes' : mode));
+    };
+    el.querySelector('#jumpMonth').onchange = jump; el.querySelector('#jumpYear').onchange = jump;
     el.querySelectorAll('[data-new]').forEach((x) => x.onclick = () => go(`${nav(d)}&novo=outro&data=${x.dataset.new}`));
     el.querySelectorAll('[data-edit]').forEach((x) => x.onclick = (e) => { e.preventDefault(); go(`${nav(d)}&evento=${x.dataset.edit}`); });
     el.querySelector('#notif')?.addEventListener('click', async () => { const r = await askPermission(); toast(r === 'granted' ? 'Lembretes ativados' : 'Permissão não concedida'); });
@@ -117,6 +131,10 @@ export async function render({ query }) {
       f.onsubmit = async (e) => {
         e.preventDefault();
         const v = readForm(f);
+        if (!v.date) {
+          if (v.status !== 'a_agendar') { toast('Informe a data (ou escolha a situação "A agendar").', true); return; }
+          v.date = today(); // ainda sem data: fica com a de hoje como prevista
+        }
         const body = { ...v, starts_at: v.time ? `${v.date} ${v.time}` : v.date };
         delete body.date; delete body.time;
         try {

@@ -134,6 +134,7 @@ p { margin: 0 0 .75rem; }
 .tag.abaixo { background: var(--low-soft); color: var(--low); }
 .tag.dentro, .tag.ativo, .tag.realizado, .tag.realizada, .tag.concluido { background: var(--ok-soft); color: var(--ok); }
 .tag.suspenso, .tag.pendente, .tag.agendada, .tag.agendado, .tag.relevante { background: var(--warn-soft); color: var(--warn); }
+.tag.a_agendar { background: var(--primary-soft); color: var(--primary); border: 1px dashed var(--primary); }
 .tag.encerrado, .tag.cancelada, .tag.cancelado { background: var(--surface-2); color: var(--muted); }
 
 .alert { display: flex; gap: .65rem; padding: .7rem .85rem; border-radius: 10px; background: var(--surface-2); text-decoration: none; color: var(--text); align-items: flex-start; }
@@ -227,6 +228,9 @@ legend { font-weight: 700; padding: 0 .4rem; }
 .cal .ev.exame { background: var(--low-soft); color: var(--low); }
 .cal .ev.receita, .cal .ev.medicamento { background: var(--warn-soft); color: var(--warn); }
 .cal .ev.cancelado { text-decoration: line-through; opacity: .6; }
+.cal .ev.a_agendar { background: transparent; border: 1px dashed currentColor; }
+.jump { display: inline-flex; gap: .4rem; margin-left: auto; }
+.jump select { min-height: 40px; padding: .35rem .5rem; width: auto; }
 @media (max-width: 640px) { .cal .day { min-height: 64px; } .cal .ev { font-size: 0; height: 6px; padding: 0; } }
 .year { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: .75rem; }
 @media (max-width: 760px) { .year { grid-template-columns: repeat(2, minmax(0,1fr)); } }
@@ -392,8 +396,9 @@ legend { font-weight: 700; padding: 0 .4rem; }
 .kpi-value { font-size: 1.9rem; font-weight: 800; line-height: 1.15; }
 .kpi-sub { color: var(--muted); font-size: .88rem; }
 .kpi-bar { height: 6px; border-radius: 99px; background: var(--g); margin-top: .5rem; }
-.home-grid { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(260px, 1fr) minmax(280px, .95fr); gap: 1.1rem; align-items: stretch; }
-@media (max-width: 1200px) { .home-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } .home-grid .glass-panel:first-child { grid-column: 1 / -1; } }
+.home-grid { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(300px, 1fr); gap: 1.1rem; align-items: stretch; }
+@media (max-width: 1200px) { .home-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
+@media (min-width: 1000px) { .home-grid .quick { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 760px) { .home-grid { grid-template-columns: 1fr; } }
 .glass-panel { background: rgba(255,255,255,.04); border: 1px solid var(--glass-line); border-radius: 18px; padding: 1.1rem 1.2rem; display: flex; flex-direction: column; gap: .8rem; min-width: 0; }
 :root[data-theme="light"] .glass-panel { background: var(--surface); }

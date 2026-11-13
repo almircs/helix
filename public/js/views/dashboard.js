@@ -2,8 +2,6 @@
 // Nada que identifique exames, remédios, médicos ou especialidades (usa /api/home).
 import { api, html, raw, icon, fmtDate, parseISO, MONTHS_SHORT, WEEKDAYS, daysUntil } from '../lib.js';
 
-const WD = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'];
-const KIND = { compromisso: 'Compromisso', remedio: 'Remédio', receita: 'Renovar receita' };
 const plural = (n, um, varios) => `${n} ${n === 1 ? um : varios}`;
 const svg = (d, color) => raw(`<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${d}"/></svg>`);
 const I = {
@@ -52,8 +50,6 @@ export async function render() {
       value: String(h.measurements.total), sub: h.measurements.last ? `Registradas · última ${ago(h.measurements.last)}` : 'Nenhuma registrada' }),
   ];
 
-  const apptDays = h.week.filter((d) => d.items.some((i) => i.kind === 'compromisso')).length;
-  const apptCount = h.week.reduce((n, d) => n + d.items.filter((i) => i.kind === 'compromisso').length, 0);
 
   const quick = [
     ['Exames', h.exams.tracked ? `${plural(h.exams.tracked, 'acompanhado', 'acompanhados')}${h.exams.last ? ' · último ' + fmtDate(h.exams.last).slice(0, 5) : ''}` : 'Lançar o primeiro', '#a78bfa', '#/exames'],
@@ -78,21 +74,6 @@ export async function render() {
     <section class="kpis" aria-label="Resumo">${kpis}</section>
 
     <div class="home-grid">
-      <section class="glass-panel">
-        <div class="panel-head"><h2>Próximos 7 dias</h2>
-          <span class="muted small">${apptCount ? `${plural(apptCount, 'compromisso', 'compromissos')}` : 'Nenhum compromisso'}${h.today_meds.times.length ? ` · remédio todo dia às ${h.today_meds.times.join(', ')}` : ''}</span>
-          <a href="#/agenda" class="small">Abrir agenda</a></div>
-        <div class="week">${h.week.map((d, i) => {
-          const dt = parseISO(d.date);
-          return html`<a class="day ${i === 0 ? 'is-today' : ''}" href="#/agenda?modo=dia&d=${d.date}">
-            <span class="day-head"><small>${i === 0 ? 'hoje' : WD[dt.getDay()]}</small><b>${dt.getDate()}</b></span>
-            ${d.items.length ? d.items.map((it) => html`<span class="chip-${it.kind}" title="${KIND[it.kind]}"><b>${it.time || (it.kind === 'receita' ? 'receita' : '—')}</b><span class="sr">${KIND[it.kind]}</span></span>`) : html`<span class="free">livre</span>`}
-          </a>`;
-        })}</div>
-        <div class="legend-row"><span><i class="chip-compromisso"></i>Compromisso</span><span><i class="chip-remedio"></i>Remédio</span><span><i class="chip-receita"></i>Renovar receita</span></div>
-        <p class="small muted" style="margin:0">Os detalhes de cada compromisso e remédio ficam na Agenda e em Medicamentos.</p>
-      </section>
-
       <section class="glass-panel">
         <h2>Acesso rápido</h2>
         <div class="quick">${quick.map(([t, d, c, href]) => html`<a href="${href}"><i style="background:${c}"></i><span><b>${t}</b><small>${d}</small></span><em aria-hidden="true">›</em></a>`)}</div>

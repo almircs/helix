@@ -15,6 +15,12 @@ Isso só é preciso na primeira vez.
 
 Não sabe qual é o seu Mac? Menu  → **Sobre este Mac**: se aparecer "Chip Apple M…", use o primeiro; se aparecer "Processador Intel", use o segundo.
 
+## Novidades da 1.14.0
+
+- **Página inicial** sem o quadro "Próximos 7 dias" (a Agenda já mostra tudo).
+- **Agenda:** nova situação **A agendar** para compromissos que ainda não têm data marcada; eles aparecem numa lista própria no alto da Agenda. A data pode ficar em branco (fica a de hoje como prevista).
+- **Agenda:** escolha de **mês e ano** para ir direto a qualquer período.
+
 ## Novidades da 1.13.2
 
 - **Celular:** os nomes dentro dos quadrados (menu Mais, Acesso rápido, abas e botões) agora sempre cabem. A letra se ajusta ao tamanho da tela e, se um nome longo não couber, ele diminui um pouco em vez de ser cortado no meio.

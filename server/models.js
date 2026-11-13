@@ -53,7 +53,7 @@ const events = new Resource({
   table: 'events', entity: 'agenda',
   fields: {
     type: ['consulta', 'exame', 'retorno', 'vacina', 'procedimento', 'medicamento', 'receita', 'outro'],
-    title: 'text', starts_at: 'datetime', location: 'text', status: ['agendado', 'concluido', 'cancelado'],
+    title: 'text', starts_at: 'datetime', location: 'text', status: ['a_agendar', 'agendado', 'concluido', 'cancelado'],
     remind_minutes: 'int', consultation_id: 'int', exam_id: 'int', medication_id: 'int', notes: 'text',
   },
   encrypted: ['notes'], required: ['type', 'title', 'starts_at'],
