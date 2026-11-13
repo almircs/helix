@@ -15,6 +15,11 @@ Isso só é preciso na primeira vez.
 
 Não sabe qual é o seu Mac? Menu  → **Sobre este Mac**: se aparecer "Chip Apple M…", use o primeiro; se aparecer "Processador Intel", use o segundo.
 
+## Novidades da 1.13.1
+
+- **Primeira vez num aparelho:** o Helyx pergunta se você **já tem conta** (traz a conta e os dados do computador pelo arquivo de backup) ou quer **criar uma conta nova**.
+- No celular, a tela de entrar tem também o botão **Entrar com minha conta do computador**.
+
 ## Novidades da 1.13.0
 
 - **Entrar ficou simples:** só usuário (ou e-mail) e senha. Embaixo, **Esqueci minha senha** e **Criar conta**. O Helyx lembra o último usuário, então basta digitar a senha.

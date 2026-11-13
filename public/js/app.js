@@ -181,8 +181,10 @@ function authView(mode, state = {}) {
         <button class="btn primary" style="width:100%">${c.button}</button>
       </form>
       ${mode === 'setup' ? '' : isLogin
-        ? html`<div class="auth-links"><a href="#/recuperar">Esqueci minha senha</a><a href="#/cadastro">Criar conta</a></div>`
-        : state.has_users ? html`<div class="auth-links"><a href="#/entrar">Já tenho conta — entrar</a></div>` : ''}
+        ? html`<div class="auth-links"><a href="#/recuperar">Esqueci minha senha</a><a href="#/cadastro">Criar conta</a></div>
+          ${window.HELYX_MOBILE ? html`<a class="btn auth-bring" href="#/trazer">${icon('user')}Entrar com minha conta do computador</a>` : ''}`
+        : state.has_users ? html`<div class="auth-links"><a href="#/entrar">Já tenho conta — entrar</a></div>`
+        : html`<div class="auth-links"><a href="#/entrar">Voltar</a></div>`}
     </div></div>`.__raw;
   const form = document.getElementById('authForm');
   form.querySelector('[name=email]').autocomplete = 'username';
@@ -204,6 +206,18 @@ function authView(mode, state = {}) {
       location.hash = '#/'; location.reload(); // recomeça limpo, já na conta certa
     } catch (err) { toast(err.message, true); }
   };
+}
+
+// Primeira vez neste aparelho: entrar com a conta que já existe (vem pelo backup) ou criar uma nova
+function welcomeView() {
+  app.innerHTML = html`
+    <div class="auth"><div class="card">
+      <div class="brand"><img src="/icon.png" alt="">Helyx</div>
+      <h1 style="text-align:center">Bem-vindo</h1>
+      <p class="muted small" style="text-align:center">Este ${window.HELYX_MOBILE ? 'aparelho' : 'computador'} ainda não tem nenhuma conta do Helyx.</p>
+      <a class="btn primary welcome-btn" href="#/trazer">${icon('user')}<span><b>Já tenho conta</b><small>Entrar com a conta ${window.HELYX_MOBILE ? 'do computador' : 'de outro aparelho'} (usa o arquivo de backup)</small></span></a>
+      <a class="btn welcome-btn" href="#/cadastro">${icon('plus')}<span><b>Criar conta nova</b><small>Começar do zero</small></span></a>
+    </div></div>`.__raw;
 }
 
 // Já uso o Helyx em outro aparelho: cria a conta com o mesmo usuário e senha do backup e traz os dados
@@ -326,7 +340,9 @@ async function route() {
     if (info && path === '/entrar') { location.hash = '#/'; return; } // já entrou
     me = null;
     if (state.setup) return authView('setup', state);
-    return authView(path === '/cadastro' || !state.has_users ? 'register' : 'login', state);
+    // aparelho sem nenhuma conta: primeiro pergunta se a pessoa já tem conta
+    if (!state.has_users && path !== '/cadastro') return welcomeView();
+    return authView(path === '/cadastro' ? 'register' : 'login', state);
   }
   if (!me) {
     try { me = await api('/auth/me'); } catch { location.hash = '#/entrar'; return; }

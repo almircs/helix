@@ -552,6 +552,11 @@ input.invalid, select.invalid, textarea.invalid { border-color: var(--danger) !i
 .auth-links { display: flex; justify-content: space-between; gap: 1rem; margin-top: 1.1rem; font-size: .95rem; }
 .auth-links:has(> :only-child) { justify-content: center; }
 .btn.logout { gap: .4rem; }
+.welcome-btn { display: flex; align-items: center; gap: .8rem; width: 100%; margin-top: .8rem; padding: .9rem 1rem; text-align: left; justify-content: flex-start; }
+.welcome-btn svg { width: 26px; height: 26px; flex: none; }
+.welcome-btn b { display: block; font-size: 1.05rem; }
+.welcome-btn small { display: block; font-weight: 500; opacity: .8; white-space: normal; }
+.auth-bring { width: 100%; margin-top: 1rem; justify-content: center; gap: .45rem; }
 .sheet-logout { width: 100%; margin-top: .8rem; justify-content: center; }
 /* abas com ícone: no computador o ícone fica escondido e elas continuam como abas */
 .tile-tabs a svg { display: none; }
