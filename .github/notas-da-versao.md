@@ -15,6 +15,11 @@ Isso só é preciso na primeira vez.
 
 Não sabe qual é o seu Mac? Menu  → **Sobre este Mac**: se aparecer "Chip Apple M…", use o primeiro; se aparecer "Processador Intel", use o segundo.
 
+## Novidades da 1.15.2
+
+- **Mostrar a senha:** em todos os campos de senha (entrar, criar conta, trazer conta, recuperar e trocar a senha) há um botão de **olho** para ver ou esconder o que foi digitado.
+- **Modo Simples:** o quadro **Medicamentos** agora abre a mesma tela da versão completa (doses de hoje com Tomei e Avisar, lista, novo medicamento e ler receita), só que sem os menus.
+
 ## Novidades da 1.15.1
 
 - **Modo Simples** com nova tela inicial: **Consultas** e **Exames** em botões grandes, abrindo as mesmas telas da versão completa (só sem os menus), e **Meus remédios** num quadro menor, logo abaixo. Saiu o botão "Falar com a família"; o **Avisar** pelo WhatsApp continua depois do **Tomei**. Em qualquer tela, **Voltar ao início** fica no alto.

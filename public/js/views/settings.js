@@ -75,7 +75,7 @@ async function simpleView(head) {
   return view(html`${head}
     <div class="card">
       <h2>Modo Simples</h2>
-      <p class="muted small">Uma versão enxuta do Helyx para idosos e pessoas pouco acostumadas com tecnologia: letras grandes, sem menus e só três botões na tela inicial: <b>Consultas</b> e <b>Exames</b> (com tudo o que a versão completa faz) e <b>Meus remédios</b> (com o botão <b>Tomei</b>).</p>
+      <p class="muted small">Uma versão enxuta do Helyx para idosos e pessoas pouco acostumadas com tecnologia: letras grandes, sem menus e só três botões na tela inicial: <b>Consultas</b>, <b>Exames</b> e <b>Medicamentos</b>, com tudo o que a versão completa faz (inclusive o botão <b>Tomei</b>).</p>
       <p class="muted small">Funciona assim: <b>quem cuida configura, quem toma só confirma.</b> Cadastre aqui, na versão completa, os remédios com os horários, as consultas e o familiar; depois ligue o Modo Simples no aparelho da pessoa. Os dados são os mesmos: dá para voltar à versão completa a qualquer momento, pelo botão no fim da tela inicial, sem perder nada.</p>
       <p class="muted small">Vale só para este ${window.HELYX_MOBILE ? 'aparelho' : 'computador'}.</p>
       <h3 style="margin-top:1rem">Antes de ligar, confira</h3>

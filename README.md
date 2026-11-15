@@ -14,7 +14,7 @@ pessoas idosas. Nada sai sozinho: a mensagem só é enviada quando você confirm
 
 ### Modo Simples
 
-Para idosos e pessoas pouco ligadas em tecnologia: *Configurações → Modo Simples* deixa o Helyx com letras grandes, sem menus e só três botões (**Consultas** e **Exames**, com as mesmas telas da versão completa, e **Meus remédios** com o botão **Tomei**). Quem cuida configura na versão completa; quem toma só confirma. Vale só para o aparelho em que foi ligado e volta à versão completa pelo botão no fim da tela inicial.
+Para idosos e pessoas pouco ligadas em tecnologia: *Configurações → Modo Simples* deixa o Helyx com letras grandes, sem menus e só três botões (**Consultas**, **Exames** e **Medicamentos**, com as mesmas telas da versão completa). Quem cuida configura na versão completa; quem toma só confirma. Vale só para o aparelho em que foi ligado e volta à versão completa pelo botão no fim da tela inicial.
 
 ## Como instalar
 

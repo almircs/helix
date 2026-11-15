@@ -140,6 +140,8 @@ const P = {
   download: 'M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3',
   backup: 'M3 12a9 9 0 1 0 3-6.7L3 8M3 3v5h5M12 7v5l3 2',
   compare: 'M16 3h5v5M4 20 21 3M21 16v5h-5M15 15l6 6M4 4l5 5',
+  eye: 'M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8zM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z',
+  eyeOff: 'M17.9 17.9A10.1 10.1 0 0 1 12 20c-7 0-11-8-11-8a18.5 18.5 0 0 1 5.1-5.9M9.9 4.2A9.1 9.1 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.2 3.2M14.1 14.1a3 3 0 1 1-4.2-4.2M1 1l22 22',
   pendencias: 'M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11',
 };
 export const icon = (name) => raw(`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${P[name] || ''}"/></svg>`);
@@ -206,10 +208,19 @@ export function showRecoveryCode(code, { title = 'Seu código de recuperação',
 }
 
 // Aviso de Caps Lock nos campos de senha (causa comum de "a senha não entra")
+// Campo de senha: botão de olho para mostrar/esconder o que foi digitado e aviso de Caps Lock ligado
 export function capsLockHint(input) {
+  const wrap = document.createElement('span'); wrap.className = 'pw-wrap';
+  input.parentNode.insertBefore(wrap, input); wrap.append(input);
+  const eye = document.createElement('button');
+  eye.type = 'button'; eye.className = 'pw-eye';
+  const set = (shown) => { eye.innerHTML = icon(shown ? 'eyeOff' : 'eye').__raw; eye.title = eye.ariaLabel = shown ? 'Esconder a senha' : 'Mostrar a senha'; };
+  set(false);
+  eye.onclick = () => { const show = input.type === 'password'; input.type = show ? 'text' : 'password'; set(show); input.focus(); };
+  wrap.append(eye);
   const hint = document.createElement('div');
   hint.className = 'small caps-hint'; hint.textContent = 'Atenção: Caps Lock (letras maiúsculas) está ligado.'; hint.hidden = true;
-  input.after(hint);
+  wrap.after(hint);
   const check = (e) => { if (e.getModifierState) hint.hidden = !e.getModifierState('CapsLock'); };
   input.addEventListener('keydown', check); input.addEventListener('keyup', check);
 }
