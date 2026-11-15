@@ -77,14 +77,14 @@ async function simpleView(head) {
       <h2>Modo Simples</h2>
       <p class="muted small">Uma versão enxuta do Helyx para idosos e pessoas pouco acostumadas com tecnologia: letras grandes, sem menus e só três botões na tela inicial: <b>Consultas</b>, <b>Exames</b> e <b>Medicamentos</b>, com tudo o que a versão completa faz (inclusive o botão <b>Tomei</b>).</p>
       <p class="muted small">Funciona assim: <b>quem cuida configura, quem toma só confirma.</b> Cadastre aqui, na versão completa, os remédios com os horários, as consultas e o familiar; depois ligue o Modo Simples no aparelho da pessoa. Os dados são os mesmos: dá para voltar à versão completa a qualquer momento, pelo botão no fim da tela inicial, sem perder nada.</p>
-      <p class="muted small">Vale só para este ${window.HELYX_MOBILE ? 'aparelho' : 'computador'}.</p>
+      <p class="muted small">O Helyx já abre no Modo Simples. Quem escolheu a versão completa volta a ele por aqui. Vale só para este ${window.HELYX_MOBILE ? 'aparelho' : 'computador'}.</p>
       <h3 style="margin-top:1rem">Antes de ligar, confira</h3>
       <ul class="list">
         <li><div class="grow">Controle de doses ligado</div><span class="tag ${today.enabled ? 'concluido' : 'pendente'}">${today.enabled ? 'Ligado' : 'Será ligado'}</span></li>
         <li><div class="grow">Remédios com horário para hoje</div><span class="tag ${today.total ? 'concluido' : 'pendente'}">${today.total ? `${today.total} dose(s)` : 'Nenhum'}</span></li>
         <li><div class="grow">Familiar cadastrado (para o botão Avisar)</div>${fam.phone ? html`<span class="tag concluido">${fam.name || 'Sim'}</span>` : html`<a class="small" href="#/configuracoes/doses">Cadastrar</a>`}</li>
       </ul>
-      <button class="btn primary" id="simpleOn" style="margin-top:1rem;white-space:normal">Ligar o Modo Simples</button>
+      <button class="btn primary" id="simpleOn" style="margin-top:1rem;white-space:normal">Voltar ao Modo Simples</button>
     </div>`, (el) => {
     el.querySelector('#simpleOn').onclick = async () => {
       try { if (!today.enabled) await api('/doses/settings', { method: 'PUT', body: { enabled: true } }); } catch (err) { toast(err.message, true); return; }

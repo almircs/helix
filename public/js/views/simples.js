@@ -3,9 +3,10 @@
 import { api, html, icon, view, today, addDays, fmtDate, daysUntil, WEEKDAYS, MONTHS } from '../lib.js';
 
 const KEY = 'modoSimples';
-export function isOn() { try { return localStorage.getItem(KEY) === '1'; } catch { return false; } }
+// O Helyx já abre no Modo Simples; só sai dele quem escolher "Usar a versão completa" (guarda '0')
+export function isOn() { try { return localStorage.getItem(KEY) !== '0'; } catch { return true; } }
 export function turnOn() { try { localStorage.setItem(KEY, '1'); } catch { /* sem armazenamento */ } }
-export function turnOff() { try { localStorage.removeItem(KEY); } catch { /* sem armazenamento */ } }
+export function turnOff() { try { localStorage.setItem(KEY, '0'); } catch { /* sem armazenamento */ } }
 
 const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
 const when = (iso) => { const n = daysUntil(iso); return n === 0 ? 'Hoje' : n === 1 ? 'Amanhã' : `Daqui a ${n} dias`; };

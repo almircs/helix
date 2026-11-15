@@ -15,6 +15,10 @@ Isso só é preciso na primeira vez.
 
 Não sabe qual é o seu Mac? Menu  → **Sobre este Mac**: se aparecer "Chip Apple M…", use o primeiro; se aparecer "Processador Intel", use o segundo.
 
+## Novidades da 1.15.3
+
+- O Helyx agora **já abre no Modo Simples**. Para ver todos os menus, toque em **Usar a versão completa** no fim da tela inicial; o aparelho guarda essa escolha. Para voltar, *Configurações → Modo Simples*.
+
 ## Novidades da 1.15.2
 
 - **Mostrar a senha:** em todos os campos de senha (entrar, criar conta, trazer conta, recuperar e trocar a senha) há um botão de **olho** para ver ou esconder o que foi digitado.
