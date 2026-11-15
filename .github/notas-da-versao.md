@@ -15,6 +15,10 @@ Isso só é preciso na primeira vez.
 
 Não sabe qual é o seu Mac? Menu  → **Sobre este Mac**: se aparecer "Chip Apple M…", use o primeiro; se aparecer "Processador Intel", use o segundo.
 
+## Novidades da 1.16.0
+
+- **Médicos:** nova página (no menu, ao lado de Saúde, e pelo botão **Médicos** dentro de Consultas, também no Modo Simples) para cadastrar, editar e excluir médicos. Tem busca pelo nome, especialidade ou CRM e mostra na hora **se você já consultou com aquele médico**, quantas vezes e a data da última; tocando no nome, aparecem todas as consultas com ele.
+
 ## Novidades da 1.15.3
 
 - O Helyx agora **já abre no Modo Simples**. Para ver todos os menus, toque em **Usar a versão completa** no fim da tela inicial; o aparelho guarda essa escolha. Para voltar, *Configurações → Modo Simples*.

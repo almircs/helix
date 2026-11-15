@@ -15,7 +15,7 @@ export async function list({ query }) {
       <div class="meta">${[c.doctor_name, c.location, c.diagnoses].filter(Boolean).join(' · ') || '—'}</div></a>
       <div>${c.requests_total ? html`<span class="tag ${c.requests_pending ? 'pendente' : 'realizado'}">${c.requests_total - c.requests_pending}/${c.requests_total} exames feitos</span>` : ''} ${c.status !== 'realizada' ? statusTag(c.status) : ''}</div></li>`;
   return view(html`
-    <div class="page-head"><h1>Consultas</h1><div class="actions"><a class="btn" href="#/importar?para=consulta&voltar=${encodeURIComponent('#/consultas')}">${icon('documentos')}Ler pedido ou relatório</a><a class="btn primary" href="#/consultas/nova">${icon('plus')}Nova consulta</a></div></div>
+    <div class="page-head"><h1>Consultas</h1><div class="actions"><a class="btn" href="#/medicos">${icon('user')}Médicos</a><a class="btn" href="#/importar?para=consulta&voltar=${encodeURIComponent('#/consultas')}">${icon('documentos')}Ler pedido ou relatório</a><a class="btn primary" href="#/consultas/nova">${icon('plus')}Nova consulta</a></div></div>
     ${toSchedule.length ? html`<div class="card" style="margin-bottom:1rem"><h2>A agendar</h2><ul class="list">${toSchedule.map(row)}</ul></div>` : ''}
     ${upcoming.length ? html`<div class="card" style="margin-bottom:1rem"><h2>Agendadas</h2><ul class="list">${upcoming.map(row)}</ul></div>` : ''}
     <div class="card"><h2>Histórico</h2>

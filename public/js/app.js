@@ -14,6 +14,7 @@ import * as importar from './views/importar.js';
 import * as pendencias from './views/pendencias.js';
 import * as vacinas from './views/vacinas.js';
 import * as simples from './views/simples.js';
+import * as medicos from './views/doctors.js';
 import { startReminders } from './reminders.js';
 
 const app = document.getElementById('app');
@@ -27,6 +28,7 @@ const NAV = [
   ['#/medicamentos', 'Medicamentos', 'medicamentos'],
   ['#/linha-do-tempo', 'Linha do tempo', 'tempo'],
   ['#/saude', 'Saúde', 'saude'],
+  ['#/medicos', 'Médicos', 'medicos'],
   ['#/vacinas', 'Vacinas', 'vacinas'],
   ['#/documentos', 'Documentos', 'documentos'],
   ['#/relatorios', 'Relatórios', 'relatorios'],
@@ -55,6 +57,7 @@ const ROUTES = [
   [/^\/medicamentos\/(\d+)$/, meds.detail, '#/medicamentos'],
   [/^\/linha-do-tempo$/, timeline.render, '#/linha-do-tempo'],
   [/^\/saude$/, health.render, '#/saude'],
+  [/^\/medicos$/, medicos.list, '#/medicos'],
   [/^\/busca$/, misc.search, null],
   [/^\/importar$/, importar.render, null],
   [/^\/pendencias$/, pendencias.render, null],
@@ -68,7 +71,7 @@ const ROUTES = [
 
 // Celular: o que fica em "Mais" e em "Lançar" (a barra de baixo tem Início, Agenda e Remédios)
 const MORE = [
-  ['#/exames', 'Exames', 'exames'], ['#/consultas', 'Consultas', 'consultas'], ['#/saude', 'Saúde', 'saude'],
+  ['#/exames', 'Exames', 'exames'], ['#/consultas', 'Consultas', 'consultas'], ['#/saude', 'Saúde', 'saude'], ['#/medicos', 'Médicos', 'user'],
   ['#/vacinas', 'Vacinas', 'vacinas'], ['#/documentos', 'Documentos', 'documentos'], ['#/linha-do-tempo', 'Linha do tempo', 'tempo'],
   ['#/pendencias', 'Pendências', 'pendencias'], ['#/relatorios', 'Relatórios', 'relatorios'], ['#/configuracoes', 'Configurações', 'config'],
 ];
