@@ -15,6 +15,10 @@ Isso só é preciso na primeira vez.
 
 Não sabe qual é o seu Mac? Menu  → **Sobre este Mac**: se aparecer "Chip Apple M…", use o primeiro; se aparecer "Processador Intel", use o segundo.
 
+## Novidades da 1.15.1
+
+- **Modo Simples** com nova tela inicial: **Consultas** e **Exames** em botões grandes, abrindo as mesmas telas da versão completa (só sem os menus), e **Meus remédios** num quadro menor, logo abaixo. Saiu o botão "Falar com a família"; o **Avisar** pelo WhatsApp continua depois do **Tomei**. Em qualquer tela, **Voltar ao início** fica no alto.
+
 ## Novidades da 1.15.0
 
 - **Modo Simples** para idosos e pessoas pouco ligadas em tecnologia (*Configurações → Modo Simples*): letras grandes, sem menus e só quatro botões — **Meus remédios de hoje** (com **Tomei** e **Avisar** a família), **Próxima consulta**, **Guardar um exame** (pela foto) e **Falar com a família** (WhatsApp ou ligação).

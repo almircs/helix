@@ -380,9 +380,13 @@ async function route() {
 // Modo Simples: casca sem menus e só as telas grandes (views/simples.js)
 async function routeSimple(path, query) {
   if (!document.querySelector('.simples')) { simples.shell(app); startReminders(); }
-  const found = simples.ROUTES.find(([p]) => p === path);
+  document.getElementById('sBack').hidden = path === '/';
+  const own = simples.ROUTES.find(([p]) => p === path);
+  if (own) return paint(document.getElementById('content'), own[1], [], query);
+  // Consultas, Exames e as telas ligadas a elas: as mesmas da versão completa, sem os menus
+  const found = ROUTES.find(([re]) => re.test(path));
   if (!found) { location.hash = '#/'; return; }
-  await paint(document.getElementById('content'), found[1], [], query);
+  await paint(document.getElementById('content'), found[1], path.match(found[0]).slice(1), query);
 }
 
 async function paint(content, render, params, query) {
