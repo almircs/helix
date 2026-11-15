@@ -13,6 +13,7 @@ import * as docs from './views/documents.js';
 import * as importar from './views/importar.js';
 import * as pendencias from './views/pendencias.js';
 import * as vacinas from './views/vacinas.js';
+import * as simples from './views/simples.js';
 import { startReminders } from './reminders.js';
 
 const app = document.getElementById('app');
@@ -361,6 +362,7 @@ async function route() {
   if (!me) {
     try { me = await api('/auth/me'); } catch { location.hash = '#/entrar'; return; }
   }
+  if (simples.isOn()) return routeSimple(path, query);
   if (!document.getElementById('content')) {
     shell(); startReminders();
     if (!me.login) { document.getElementById('logoutBtn').style.display = 'none'; document.getElementById('sheetLogout').style.display = 'none'; }
@@ -372,11 +374,22 @@ async function route() {
   const tabKey = found && ['#/', '#/agenda', '#/medicamentos'].includes(found[2]) ? found[2] : 'mais';
   document.querySelectorAll('[data-tab]').forEach((a) => a.classList.toggle('active', a.dataset.tab === tabKey));
   if (!found) { content.innerHTML = '<h1>Página não encontrada</h1>'; return; }
+  await paint(content, found[1], path.match(found[0]).slice(1), query);
+}
+
+// Modo Simples: casca sem menus e só as telas grandes (views/simples.js)
+async function routeSimple(path, query) {
+  if (!document.querySelector('.simples')) { simples.shell(app); startReminders(); }
+  const found = simples.ROUTES.find(([p]) => p === path);
+  if (!found) { location.hash = '#/'; return; }
+  await paint(document.getElementById('content'), found[1], [], query);
+}
+
+async function paint(content, render, params, query) {
   const id = ++renderId;
   content.innerHTML = '<p class="muted">Carregando…</p>';
   try {
-    const params = path.match(found[0]).slice(1);
-    const out = await found[1]({ params, query, el: content, isCurrent: () => id === renderId });
+    const out = await render({ params, query, el: content, isCurrent: () => id === renderId });
     if (id !== renderId) return;
     if (out !== undefined) content.innerHTML = out.__raw ?? out;
     if (out?.mount) out.mount(content);

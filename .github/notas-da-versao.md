@@ -15,6 +15,11 @@ Isso só é preciso na primeira vez.
 
 Não sabe qual é o seu Mac? Menu  → **Sobre este Mac**: se aparecer "Chip Apple M…", use o primeiro; se aparecer "Processador Intel", use o segundo.
 
+## Novidades da 1.15.0
+
+- **Modo Simples** para idosos e pessoas pouco ligadas em tecnologia (*Configurações → Modo Simples*): letras grandes, sem menus e só quatro botões — **Meus remédios de hoje** (com **Tomei** e **Avisar** a família), **Próxima consulta**, **Guardar um exame** (pela foto) e **Falar com a família** (WhatsApp ou ligação).
+- Quem cuida configura tudo na versão completa; quem toma só confirma. Os dados são os mesmos e dá para voltar à versão completa a qualquer momento, pelo botão no fim da tela inicial. Vale só para o aparelho em que foi ligado.
+
 ## Novidades da 1.14.1
 
 - **A agendar** também nas **consultas** (Nova consulta → Situação). As consultas a agendar ficam num grupo próprio na página Consultas e aparecem na lista "A agendar" da Agenda.

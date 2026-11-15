@@ -12,6 +12,10 @@ anotação. Depois de anotar, um toque em **Avisar** abre o WhatsApp com a mensa
 cuidador cadastrado, e dá para enviar também um resumo da semana. É um apoio prático no acompanhamento de
 pessoas idosas. Nada sai sozinho: a mensagem só é enviada quando você confirma no WhatsApp.
 
+### Modo Simples
+
+Para idosos e pessoas pouco ligadas em tecnologia: *Configurações → Modo Simples* deixa o Helyx com letras grandes, sem menus e só quatro botões (remédios de hoje com **Tomei**, próxima consulta, guardar exame pela foto e falar com a família). Quem cuida configura na versão completa; quem toma só confirma. Vale só para o aparelho em que foi ligado e volta à versão completa pelo botão no fim da tela inicial.
+
 ## Como instalar
 
 Baixe o instalador na página **Releases** do repositório:

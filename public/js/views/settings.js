@@ -1,7 +1,8 @@
 import { waLink, weekMessage } from '../doses.js';
+import * as simples from './simples.js';
 import { api, html, icon, fields, readForm, toast, view, go, invalidate, fmtDate, confirmDialog, askConfirm, showRecoveryCode, capsLockHint } from '../lib.js';
 
-const TABS = [['perfil', 'Meu perfil', 'user'], ['medicos', 'Médicos', 'consultas'], ['backup', 'Backup', 'backup'], ['seguranca', 'Segurança e dados', 'lock'], ['aparencia', 'Aparência', 'sun'], ['doses', 'Controle de doses', 'medicamentos']];
+const TABS = [['perfil', 'Meu perfil', 'user'], ['medicos', 'Médicos', 'consultas'], ['backup', 'Backup', 'backup'], ['seguranca', 'Segurança e dados', 'lock'], ['aparencia', 'Aparência', 'sun'], ['doses', 'Controle de doses', 'medicamentos'], ['simples', 'Modo Simples', 'dashboard']];
 const ENTITY = { usuario: 'Conta', sessao: 'Acesso', perfil: 'Perfil', medico: 'Médico', consulta: 'Consulta', exame: 'Exame', marcador: 'Exame (catálogo)', medicamento: 'Medicamento', medicao: 'Medição', agenda: 'Agenda', dados: 'Dados', ia: 'IA' };
 
 export function applyTheme() {
@@ -17,6 +18,7 @@ export async function render({ params, query }) {
   if (tab === 'seguranca') return security(head);
   if (tab === 'backup') return backupView(head);
   if (tab === 'doses') return dosesView(head);
+  if (tab === 'simples') return simpleView(head);
   let cur = 'auto'; try { cur = localStorage.getItem('tema') || 'auto'; } catch { /* */ }
   return view(html`${head}<div class="card"><h2>Tema</h2><div class="seg">${[['auto', 'Escuro (padrão)'], ['light', 'Claro']].map(([v, l]) => html`<button class="${cur === v ? 'on' : ''}" data-t="${v}">${l}</button>`)}</div></div>`, (el) => {
     el.querySelectorAll('[data-t]').forEach((b) => b.onclick = () => { try { localStorage.setItem('tema', b.dataset.t); } catch { /* */ } applyTheme(); go('#/configuracoes/aparencia'); });
@@ -64,6 +66,30 @@ async function dosesView(head) {
     };
     const del = el.querySelector('#famDel');
     if (del) del.onclick = async () => { await api('/family', { method: 'PUT', body: {} }); toast('Familiar removido'); go('#/configuracoes/doses'); };
+  });
+}
+
+// Modo Simples: liga neste aparelho a versão enxuta (views/simples.js)
+async function simpleView(head) {
+  const [fam, today] = await Promise.all([api('/family').catch(() => ({})), api('/doses').catch(() => ({}))]);
+  return view(html`${head}
+    <div class="card">
+      <h2>Modo Simples</h2>
+      <p class="muted small">Uma versão enxuta do Helyx para idosos e pessoas pouco acostumadas com tecnologia: letras grandes, sem menus e só quatro botões na tela inicial — <b>Meus remédios de hoje</b> (com o botão <b>Tomei</b>), <b>Próxima consulta</b>, <b>Guardar um exame</b> (pela foto) e <b>Falar com a família</b>.</p>
+      <p class="muted small">Funciona assim: <b>quem cuida configura, quem toma só confirma.</b> Cadastre aqui, na versão completa, os remédios com os horários, as consultas e o familiar; depois ligue o Modo Simples no aparelho da pessoa. Os dados são os mesmos: dá para voltar à versão completa a qualquer momento, pelo botão no fim da tela inicial, sem perder nada.</p>
+      <p class="muted small">Vale só para este ${window.HELYX_MOBILE ? 'aparelho' : 'computador'}.</p>
+      <h3 style="margin-top:1rem">Antes de ligar, confira</h3>
+      <ul class="list">
+        <li><div class="grow">Controle de doses ligado</div><span class="tag ${today.enabled ? 'concluido' : 'pendente'}">${today.enabled ? 'Ligado' : 'Será ligado'}</span></li>
+        <li><div class="grow">Remédios com horário para hoje</div><span class="tag ${today.total ? 'concluido' : 'pendente'}">${today.total ? `${today.total} dose(s)` : 'Nenhum'}</span></li>
+        <li><div class="grow">Familiar cadastrado (para avisar e falar)</div>${fam.phone ? html`<span class="tag concluido">${fam.name || 'Sim'}</span>` : html`<a class="small" href="#/configuracoes/doses">Cadastrar</a>`}</li>
+      </ul>
+      <button class="btn primary" id="simpleOn" style="margin-top:1rem;white-space:normal">Ligar o Modo Simples</button>
+    </div>`, (el) => {
+    el.querySelector('#simpleOn').onclick = async () => {
+      try { if (!today.enabled) await api('/doses/settings', { method: 'PUT', body: { enabled: true } }); } catch (err) { toast(err.message, true); return; }
+      simples.turnOn(); location.hash = '#/'; location.reload();
+    };
   });
 }
 
